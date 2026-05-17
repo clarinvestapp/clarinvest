@@ -22,6 +22,14 @@ const C = {
   },
 };
 
+// ─── Stripe Price IDs ─────────────────────────────────────────────────────────
+const PRICE_IDS = {
+  essential_monthly: "price_1TXpfe2LvKDKlOmwCd2Kn1tM",
+  essential_yearly:  "price_1TXpgQ2LvKDKlOmwEmhpx87h",
+  pro_monthly:       "price_1TXph12LvKDKlOmwuRfaaKwJ",
+  pro_yearly:        "price_1TXpjD2LvKDKlOmwS2LiCkG6",
+};
+
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const CURR={
   GBP:{sym:"£",em:[9,79],  pr:[29,249]},
@@ -78,7 +86,7 @@ function Reveal({children,delay=0,passStyle={}}){
   );
 }
 
-// Chart reference line label — Google Sans
+// Chart reference line label
 const RefLabel=({viewBox,value,color})=>{
   if(!viewBox)return null;
   return(
@@ -91,18 +99,17 @@ const RefLabel=({viewBox,value,color})=>{
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Clarinvest(){
-  const[mode,   setMode]   =useState("dark");
-  const[billing,setBilling]=useState("yearly");
-  const[cur,    setCur]    =useState("GBP");
-  const[mouse,  setMouse]  =useState({x:0,y:0});
-  const[tab,    setTab]    =useState("overview");
-  const[hovPlan,setHovPlan]=useState(null);
-  const[solid,  setSolid]  =useState(false);
+  const[mode,          setMode]         =useState("dark");
+  const[billing,       setBilling]      =useState("yearly");
+  const[cur,           setCur]          =useState("GBP");
+  const[mouse,         setMouse]        =useState({x:0,y:0});
+  const[tab,           setTab]          =useState("overview");
+  const[hovPlan,       setHovPlan]      =useState(null);
+  const[solid,         setSolid]        =useState(false);
+  const[checkoutLoading,setCheckoutLoading]=useState(null); // tracks which plan is loading
 
   const c=C[mode], curr=CURR[cur];
-  // ns = Noto Serif → ONLY h1/h2 section headings + price number spans
   const ns="'Noto Serif',Georgia,serif";
-  // gs = Google Sans Flex → everything else
   const gs="'Google Sans Flex','DM Sans',sans-serif";
 
   const heroRef=useRef(null),featRef=useRef(null),markRef=useRef(null),priceRef=useRef(null),aboutRef=useRef(null);
@@ -110,7 +117,6 @@ export default function Clarinvest(){
 
   useEffect(()=>{fetch("https://ipapi.co/json/").then(r=>r.json()).then(d=>{const k=GEO[d.country_code];if(k)setCur(k);}).catch(()=>{});},[]);
 
-  // RAF-throttled mousemove → no mid-scroll state floods
   useEffect(()=>{
     let ticking=false;
     const h=e=>{
@@ -125,9 +131,34 @@ export default function Clarinvest(){
 
   useEffect(()=>{const h=()=>setSolid(window.scrollY>60);window.addEventListener("scroll",h,{passive:true});return()=>window.removeEventListener("scroll",h);},[]);
 
+  // ─── Stripe checkout handler ────────────────────────────────────────────────
+  const handleCheckout = async (planName) => {
+    const priceId = planName === "Pro"
+      ? (billing === "monthly" ? PRICE_IDS.pro_monthly       : PRICE_IDS.pro_yearly)
+      : (billing === "monthly" ? PRICE_IDS.essential_monthly : PRICE_IDS.essential_yearly);
+
+    setCheckoutLoading(planName);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("No URL returned from checkout API");
+        setCheckoutLoading(null);
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setCheckoutLoading(null);
+    }
+  };
+
   const NAV=[{label:"Features",ref:featRef},{label:"Markets",ref:markRef},{label:"Pricing",ref:priceRef},{label:"About",ref:aboutRef}];
 
-  // Chart tooltip — Google Sans
   const ChartTip=({active,payload})=>{
     if(!active||!payload?.length)return null;
     return(
@@ -148,7 +179,6 @@ export default function Clarinvest(){
         .nb{background:none;border:none;cursor:pointer;font-family:'Google Sans Flex','DM Sans',sans-serif;font-size:0.82rem;font-weight:500;transition:opacity 0.18s;}
         .nb:hover{opacity:0.4;}
 
-        /* All buttons use Google Sans */
         .cbtn{cursor:pointer;border:none;font-family:'Google Sans Flex','DM Sans',sans-serif;font-weight:600;font-size:0.84rem;letter-spacing:0.03em;transition:all 0.22s;}
         .cbtn:hover{transform:translateY(-2px);}
         .cbtn:active{transform:none;}
@@ -167,7 +197,6 @@ export default function Clarinvest(){
         @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
         @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(7px)}}
 
-        /* Seamless silver — symmetric gradient, 200% tile */
         .silver{
           background:linear-gradient(90deg,#686868 0%,#aaaaaa 16%,#e2e2e2 30%,#ffffff 45%,#e8e8e8 55%,#b0b0b0 70%,#727272 85%,#686868 100%);
           background-size:200% 100%;
@@ -176,14 +205,11 @@ export default function Clarinvest(){
         }
         @keyframes silverSlide{from{background-position:200% center}to{background-position:0% center}}
 
-        /* Hero orbs — transform only, NO filter:blur (causes scroll repaint) */
         @keyframes orbA{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(35px,-28px) scale(1.06)}66%{transform:translate(-22px,25px) scale(0.94)}}
         @keyframes orbB{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-28px,22px) scale(0.92)}66%{transform:translate(30px,-20px) scale(1.08)}}
 
-        /* Analysis tabs — Google Sans */
         .atab{cursor:pointer;border:none;background:none;font-family:'Google Sans Flex','DM Sans',sans-serif;font-weight:600;font-size:0.76rem;letter-spacing:0.02em;transition:all 0.18s;padding:5px 2px;}
 
-        /* Emoji flag — forces system emoji rendering */
         .flag-emoji{font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Android Emoji',emoji,sans-serif !important;font-style:normal;}
 
         ::-webkit-scrollbar{width:4px;}
@@ -204,7 +230,7 @@ export default function Clarinvest(){
       {/* ══ NAV ══════════════════════════════════════════════════════════════ */}
       <nav style={{
         position:"fixed",top:0,left:0,right:0,zIndex:200,height:"62px",
-        backdropFilter:"blur(12px)",  /* reduced from 20px — less expensive */
+        backdropFilter:"blur(12px)",
         background:solid
           ?mode==="dark"?"rgba(9,9,9,0.97)":"rgba(247,247,245,0.97)"
           :mode==="dark"?"rgba(9,9,9,0.60)":"rgba(247,247,245,0.60)",
@@ -220,7 +246,6 @@ export default function Clarinvest(){
             <rect x="8"   y="108" width="84" height="84" rx="10" fill={c.text} opacity="0.22"/>
             <rect x="108" y="108" width="84" height="84" rx="10" fill={c.text}/>
           </svg>
-          {/* Playfair Display 600 — logotype ONLY */}
           <span style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:"1.1rem",fontWeight:600,letterSpacing:"0.03em",textTransform:"uppercase",color:c.text}}>
             Clarinvest
           </span>
@@ -246,30 +271,20 @@ export default function Clarinvest(){
 
       {/* ══ HERO ═════════════════════════════════════════════════════════════ */}
       <section ref={heroRef} style={{minHeight:"100vh",paddingTop:"62px",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-
-        {/* Background — NO filter:blur on any element */}
         <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
-          {/* Static dot grid */}
           <div style={{position:"absolute",inset:0,
             backgroundImage:`radial-gradient(${c.borderHi} 1px,transparent 1px)`,
             backgroundSize:"28px 28px",opacity:mode==="dark"?0.5:0.4,
             maskImage:"radial-gradient(ellipse 80% 70% at 50% 50%,black 20%,transparent 80%)"
           }}/>
-          {/* Orb A — gradient only, no filter, GPU-composited transform animation */}
-          <div style={{
-            position:"absolute",top:"0%",left:"-10%",width:"65%",height:"75%",borderRadius:"50%",
+          <div style={{position:"absolute",top:"0%",left:"-10%",width:"65%",height:"75%",borderRadius:"50%",
             background:`radial-gradient(ellipse at center,${mode==="dark"?"rgba(50,50,55,0.55)":"rgba(180,180,178,0.40)"} 0%,transparent 70%)`,
-            willChange:"transform",animation:"orbA 18s ease-in-out infinite",
-          }}/>
-          {/* Orb B */}
-          <div style={{
-            position:"absolute",bottom:"-10%",right:"-8%",width:"55%",height:"65%",borderRadius:"50%",
+            willChange:"transform",animation:"orbA 18s ease-in-out infinite"}}/>
+          <div style={{position:"absolute",bottom:"-10%",right:"-8%",width:"55%",height:"65%",borderRadius:"50%",
             background:`radial-gradient(ellipse at center,${mode==="dark"?"rgba(38,38,42,0.60)":"rgba(190,190,188,0.45)"} 0%,transparent 70%)`,
-            willChange:"transform",animation:"orbB 22s ease-in-out infinite",
-          }}/>
+            willChange:"transform",animation:"orbB 22s ease-in-out infinite"}}/>
         </div>
 
-        {/* Floating chips */}
         {CHIPS.map((chip,i)=>{
           const pos=chip.chg.startsWith("+");
           const scoreColor=chip.score>=80?c.green:chip.score>=65?c.text:c.red;
@@ -281,13 +296,10 @@ export default function Clarinvest(){
               transform:`translate(${mouse.x*chip.mul}px,${mouse.y*(chip.mul*0.5)}px)`,
               transition:"transform 0.5s ease",zIndex:5,
             }}>
-              <div style={{
-                background:mode==="dark"?"rgba(14,14,16,0.92)":"rgba(255,255,255,0.92)",
-                backdropFilter:"blur(10px)",
-                border:`1px solid ${c.borderHi}`,borderRadius:"12px",
+              <div style={{background:mode==="dark"?"rgba(14,14,16,0.92)":"rgba(255,255,255,0.92)",
+                backdropFilter:"blur(10px)",border:`1px solid ${c.borderHi}`,borderRadius:"12px",
                 padding:"14px 16px",width:"230px",
-                boxShadow:mode==="dark"?"0 10px 40px rgba(0,0,0,0.6)":"0 8px 28px rgba(0,0,0,0.10)",
-              }}>
+                boxShadow:mode==="dark"?"0 10px 40px rgba(0,0,0,0.6)":"0 8px 28px rgba(0,0,0,0.10)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}}>
                   <span style={{fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.text}}>{chip.ticker}</span>
                   <span style={{fontFamily:gs,fontSize:"0.9rem",fontWeight:700,color:c.text}}>{chip.price}</span>
@@ -305,7 +317,6 @@ export default function Clarinvest(){
           );
         })}
 
-        {/* Hero copy */}
         <div style={{position:"relative",zIndex:10,textAlign:"center",maxWidth:"720px",padding:"0 1.5rem 6rem"}}>
           <div style={{animation:"fadeUp 0.7s ease 0.1s both"}}>
             <div style={{display:"inline-flex",alignItems:"center",gap:"0.5rem",border:`1px solid ${c.borderHi}`,borderRadius:"50px",padding:"5px 18px",
@@ -317,7 +328,6 @@ export default function Clarinvest(){
             </div>
           </div>
 
-          {/* h1 — Noto Serif */}
           <h1 style={{fontFamily:ns,fontSize:"clamp(2.8rem,6.5vw,5rem)",fontWeight:700,lineHeight:1.1,letterSpacing:"-0.02em",marginBottom:"1.5rem",animation:"fadeUp 0.8s ease 0.18s both"}}>
             Invest with<br/><span className="silver">Absolute Clarity</span>
           </h1>
@@ -331,7 +341,6 @@ export default function Clarinvest(){
             <button className="cbtn" style={{background:"transparent",border:`1px solid ${c.borderHi}`,color:c.text,padding:"14px 38px",borderRadius:"4px"}}>See a sample report</button>
           </div>
 
-          {/* 3 green diamonds */}
           <div className="hero-trust" style={{marginTop:"2.5rem",display:"flex",gap:"2rem",justifyContent:"center",animation:"fadeUp 0.8s ease 0.46s both"}}>
             {["US, EU and UK markets","Real-time data","Cancel anytime"].map((t,i)=>(
               <span key={i} style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.09em",textTransform:"uppercase",display:"flex",alignItems:"center",gap:"5px"}}>
@@ -360,7 +369,6 @@ export default function Clarinvest(){
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"4rem"}}>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>What Clarinvest Does</p>
-            {/* h2 — Noto Serif */}
             <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,lineHeight:1.2}}>
               Every layer of analysis,<br/><em>made intelligible</em>
             </h2>
@@ -390,7 +398,6 @@ export default function Clarinvest(){
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"3rem"}}>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Live Example</p>
-            {/* h2 — Noto Serif */}
             <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,lineHeight:1.2,marginBottom:"0.7rem"}}>The smart way to invest</h2>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.95rem"}}>NVIDIA Corp. (NVDA) — 6-month AI analysis sample</p>
           </div>
@@ -400,7 +407,6 @@ export default function Clarinvest(){
           <div style={{border:`1px solid ${c.borderHi}`,borderRadius:"16px",overflow:"hidden",background:c.card,
             boxShadow:mode==="dark"?"0 0 60px rgba(0,0,0,0.5)":"0 12px 50px rgba(0,0,0,0.07)"}}>
 
-            {/* Stock header — all Google Sans except ticker symbol */}
             <div style={{padding:"1.4rem 2rem",borderBottom:`1px solid ${c.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"1rem",
               background:mode==="dark"?"linear-gradient(90deg,#111113,#141418)":"linear-gradient(90deg,#FFFFFF,#F5F5F8)"}}>
               <div style={{display:"flex",alignItems:"center",gap:"2rem",flexWrap:"wrap"}}>
@@ -427,7 +433,6 @@ export default function Clarinvest(){
               </div>
             </div>
 
-            {/* Chart + panel */}
             <div className="ag" style={{display:"grid",gridTemplateColumns:"1fr 360px",alignItems:"start"}}>
               <div style={{padding:"1.6rem 1.4rem 1.4rem",borderRight:`1px solid ${c.border}`}}>
                 <div style={{fontFamily:gs,fontSize:"0.66rem",color:c.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"1.2rem",fontWeight:500}}>
@@ -452,7 +457,6 @@ export default function Clarinvest(){
                 </ResponsiveContainer>
               </div>
 
-              {/* Analysis panel — Google Sans throughout */}
               <div style={{padding:"1.5rem"}}>
                 <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.4rem",borderBottom:`1px solid ${c.border}`,paddingBottom:0}}>
                   {["overview","valuation","risk"].map(t=>(
@@ -536,7 +540,6 @@ export default function Clarinvest(){
           <Reveal>
             <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
               <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Markets</p>
-              {/* h2 — Noto Serif */}
               <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700}}>Three major markets, one platform</h2>
             </div>
           </Reveal>
@@ -550,9 +553,7 @@ export default function Clarinvest(){
                 <div style={{
                   background:mode==="dark"?"linear-gradient(150deg,#161618 0%,#111113 100%)":"linear-gradient(150deg,#FFFFFF 0%,#EBEBF0 100%)",
                   border:`1px solid ${c.border}`,borderRadius:"14px",padding:"2.2rem",textAlign:"center",
-                  boxShadow:mode==="dark"?"0 2px 20px rgba(0,0,0,0.3)":"0 2px 16px rgba(0,0,0,0.05)",
-                }}>
-                  {/* .flag-emoji forces system emoji font — fixes desktop rendering */}
+                  boxShadow:mode==="dark"?"0 2px 20px rgba(0,0,0,0.3)":"0 2px 16px rgba(0,0,0,0.05)"}}>
                   <div className="flag-emoji" style={{fontSize:"2.2rem",marginBottom:"1rem",lineHeight:1.3}}>{m.flag}</div>
                   <div style={{fontFamily:gs,fontSize:"1.1rem",fontWeight:700,marginBottom:"0.4rem",color:c.text}}>{m.name}</div>
                   <div style={{fontFamily:gs,color:c.muted,fontSize:"0.81rem",marginBottom:"0.5rem"}}>{m.sub}</div>
@@ -569,7 +570,6 @@ export default function Clarinvest(){
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Pricing</p>
-            {/* h2 — Noto Serif */}
             <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
             <p style={{fontFamily:gs,color:c.muted,maxWidth:"400px",margin:"0 auto 0.5rem",lineHeight:1.72,fontSize:"0.94rem"}}>
               No hidden fees. No lock-in. Prices shown in your local currency.
@@ -583,8 +583,6 @@ export default function Clarinvest(){
                 </span>
               ))}
             </p>
-
-            {/* Billing toggle */}
             <div style={{display:"inline-flex",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"4px"}}>
               {["monthly","yearly"].map(b=>(
                 <button key={b} onClick={()=>setBilling(b)} style={{
@@ -596,7 +594,6 @@ export default function Clarinvest(){
                 }}>
                   {b}
                   {b==="yearly"&&(
-                    /* Fix 3: monochrome bg, bold green text */
                     <span style={{
                       background:mode==="dark"?"#1A1A1C":"#FFFFFF",
                       border:`1px solid ${c.borderHi}`,
@@ -622,6 +619,7 @@ export default function Clarinvest(){
              feats:["Unlimited AI stock reports","Deep fundamental analysis","Earnings and guidance breakdown","Momentum and alpha signals","Dividend intelligence","Risk flag alerts","Favourites and watchlists","Priority data refresh"]},
           ].map((plan,i)=>{
             const price=billing==="monthly"?plan.monthly:plan.yearly;
+            const isLoading=checkoutLoading===plan.name;
             return(
               <Reveal key={i} delay={i*0.1}>
                 <div className="pcard"
@@ -650,7 +648,6 @@ export default function Clarinvest(){
                   <p style={{fontFamily:gs,color:plan.hi?c.green:c.muted,fontSize:"0.67rem",letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:"0.3rem"}}>{plan.name}</p>
                   <p style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",marginBottom:"1.5rem"}}>{plan.tag}</p>
 
-                  {/* Price — Noto Serif for number + currency symbol ONLY */}
                   <div style={{display:"flex",alignItems:"flex-end",gap:"0.25rem",marginBottom:billing==="yearly"?"0.3rem":"1.8rem"}}>
                     <span style={{fontFamily:ns,fontSize:"3rem",fontWeight:700,lineHeight:1,color:c.text}}>{curr.sym}{price}</span>
                     <span style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",paddingBottom:"0.45rem"}}>{billing==="monthly"?"/month":"/year"}</span>
@@ -662,12 +659,21 @@ export default function Clarinvest(){
                     </p>
                   )}
 
-                  <button className="cbtn" style={{
-                    width:"100%",padding:"13px",borderRadius:"5px",marginBottom:"2rem",
-                    background:plan.hi?c.text:"transparent",color:plan.hi?c.bg:c.text,
-                    border:plan.hi?"none":`1px solid ${c.borderHi}`,fontSize:"0.84rem",
-                  }}>
-                    Start {plan.name}
+                  {/* Checkout button — wired to Stripe */}
+                  <button
+                    className="cbtn"
+                    onClick={()=>handleCheckout(plan.name)}
+                    disabled={isLoading}
+                    style={{
+                      width:"100%",padding:"13px",borderRadius:"5px",marginBottom:"2rem",
+                      background:plan.hi?c.text:"transparent",
+                      color:plan.hi?c.bg:c.text,
+                      border:plan.hi?"none":`1px solid ${c.borderHi}`,
+                      fontSize:"0.84rem",
+                      opacity:isLoading?0.7:1,
+                      cursor:isLoading?"not-allowed":"pointer",
+                    }}>
+                    {isLoading ? "Redirecting..." : `Start ${plan.name}`}
                   </button>
 
                   {plan.feats.map((f,j)=>(
@@ -711,7 +717,6 @@ export default function Clarinvest(){
         <div style={{maxWidth:"660px",margin:"0 auto",textAlign:"center"}}>
           <Reveal>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>About</p>
-            {/* h2 — Noto Serif */}
             <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"1.5rem"}}>Built for the modern investor</h2>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"1rem",lineHeight:1.82,marginBottom:"1.5rem"}}>
               Clarinvest was built on a single belief: that institutional-quality stock analysis should be accessible to every investor, not just hedge funds with Bloomberg terminals.
@@ -744,4 +749,3 @@ export default function Clarinvest(){
     </div>
   );
 }
-
