@@ -24,6 +24,7 @@ export async function POST(request) {
     return new Response(`Webhook error: ${err.message}`, { status: 400 });
   }
 
+  // ── Payment confirmed ────────────────────────────────────────────────────
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const email = session.customer_email;
@@ -31,7 +32,6 @@ export async function POST(request) {
     const subscriptionId = session.subscription;
     const priceId = session.metadata?.priceId;
 
-    // Determine plan and billing period from price ID
     const planMap = {
       "price_1TXpfe2LvKDKlOmwCd2Kn1tM": { plan: "essential", billing: "monthly" },
       "price_1TXpgQ2LvKDKlOmwEmhpx87h": { plan: "essential", billing: "yearly"  },
@@ -40,40 +40,47 @@ export async function POST(request) {
     };
     const { plan, billing } = planMap[priceId] || { plan: "essential", billing: "monthly" };
 
-    // Create Supabase user account
-    const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      email_confirm: false,
-      user_metadata: {
-        plan,
-        billing,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: subscriptionId,
-      },
-    });
+    // Check if user already exists (e.g. upgrading their plan)
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
 
-    if (error) {
-      console.error("Error creating user:", error.message);
-      return new Response("Error creating user", { status: 500 });
-    }
-
-    // Send password setup email
-    await supabase.auth.admin.generateLink({
-      type: "recovery",
-      email,
-      options: {
+    if (existingUser) {
+      // User exists — just update their plan metadata
+      await supabase.auth.admin.updateUserById(existingUser.id, {
+        user_metadata: {
+          ...existingUser.user_metadata,
+          plan,
+          billing,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+        },
+      });
+      console.log(`Plan updated for existing user: ${email} → ${plan} ${billing}`);
+    } else {
+      // New user — invite them (creates account + sends setup email automatically)
+      const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
-      },
-    });
+        data: {
+          plan,
+          billing,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+        },
+      });
 
-    console.log(`User created: ${email} on ${plan} ${billing}`);
+      if (error) {
+        console.error("Error inviting user:", error.message);
+        return new Response("Error inviting user", { status: 500 });
+      }
+      console.log(`New user invited: ${email} on ${plan} ${billing}`);
+    }
   }
 
+  // ── Subscription cancelled ───────────────────────────────────────────────
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object;
     const customerId = subscription.customer;
 
-    // Find user by stripe customer id and update their metadata
     const { data: users } = await supabase.auth.admin.listUsers();
     const user = users?.users?.find(
       u => u.user_metadata?.stripe_customer_id === customerId
