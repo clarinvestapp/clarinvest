@@ -17,7 +17,7 @@ const planMap = {
 
 async function sendSetupEmail(email, setupLink, plan) {
   const planLabel = plan === "pro" ? "Pro" : "Essential";
-  await fetch("https://api.resend.com/emails", {
+  const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
@@ -35,48 +35,23 @@ async function sendSetupEmail(email, setupLink, plan) {
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#090909;padding:40px 20px;">
             <tr><td align="center">
               <table width="560" cellpadding="0" cellspacing="0" style="background:#111113;border:1px solid #232325;border-radius:12px;overflow:hidden;">
-
-                <!-- Header -->
                 <tr><td style="padding:32px 40px;border-bottom:1px solid #232325;">
-                  <p style="margin:0;font-family:Georgia,serif;font-size:18px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#F0F0F0;">
-                    Clarinvest
-                  </p>
+                  <p style="margin:0;font-family:Georgia,serif;font-size:18px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#F0F0F0;">Clarinvest</p>
                 </td></tr>
-
-                <!-- Body -->
                 <tr><td style="padding:40px;">
-                  <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:26px;font-weight:700;color:#F0F0F0;line-height:1.2;">
-                    Welcome to Clarinvest
-                  </h1>
-                  <p style="margin:0 0 12px;font-size:15px;color:#7A7A80;line-height:1.7;">
-                    Your <strong style="color:#F0F0F0;">${planLabel}</strong> subscription is active. Click the button below to set your password and access your dashboard.
-                  </p>
-                  <p style="margin:0 0 32px;font-size:15px;color:#7A7A80;line-height:1.7;">
-                    This link expires in 24 hours.
-                  </p>
-
-                  <!-- CTA Button -->
+                  <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:26px;font-weight:700;color:#F0F0F0;line-height:1.2;">Welcome to Clarinvest</h1>
+                  <p style="margin:0 0 12px;font-size:15px;color:#7A7A80;line-height:1.7;">Your <strong style="color:#F0F0F0;">${planLabel}</strong> subscription is active. Click the button below to set your password and access your dashboard.</p>
+                  <p style="margin:0 0 32px;font-size:15px;color:#7A7A80;line-height:1.7;">This link expires in 24 hours.</p>
                   <table cellpadding="0" cellspacing="0">
                     <tr><td style="border-radius:5px;background:#F0F0F0;">
-                      <a href="${setupLink}"
-                        style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:600;color:#090909;text-decoration:none;letter-spacing:0.03em;">
-                        Set up my account →
-                      </a>
+                      <a href="${setupLink}" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:600;color:#090909;text-decoration:none;letter-spacing:0.03em;">Set up my account →</a>
                     </td></tr>
                   </table>
-
-                  <p style="margin:32px 0 0;font-size:13px;color:#3A3A3A;line-height:1.7;">
-                    If you did not make this purchase, please ignore this email or contact us at support@clarinvest.app
-                  </p>
+                  <p style="margin:32px 0 0;font-size:13px;color:#3A3A3A;line-height:1.7;">If you did not make this purchase, please ignore this email or contact us at support@clarinvest.app</p>
                 </td></tr>
-
-                <!-- Footer -->
                 <tr><td style="padding:24px 40px;border-top:1px solid #232325;">
-                  <p style="margin:0;font-size:12px;color:#3A3A3A;">
-                    © 2026 Clarinvest · For informational purposes only · Not financial advice
-                  </p>
+                  <p style="margin:0;font-size:12px;color:#3A3A3A;">© 2026 Clarinvest · For informational purposes only · Not financial advice</p>
                 </td></tr>
-
               </table>
             </td></tr>
           </table>
@@ -85,6 +60,10 @@ async function sendSetupEmail(email, setupLink, plan) {
       `,
     }),
   });
+
+  const result = await response.json();
+  console.log("Resend status:", response.status, "Response:", JSON.stringify(result));
+  return result;
 }
 
 export async function POST(request) {
