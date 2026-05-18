@@ -136,7 +136,7 @@ export async function POST(request) {
         type: "recovery",
         email,
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/setup-password`,
         },
       });
 
