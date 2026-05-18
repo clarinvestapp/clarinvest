@@ -3,77 +3,50 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
-export default function SetupPasswordPage() {
-  const [password, setPassword]   = useState("");
-  const [confirm,  setConfirm]    = useState("");
-  const [error,    setError]      = useState(null);
-  const [loading,  setLoading]    = useState(false);
-  const [ready,    setReady]      = useState(false);
-  const router  = useRouter();
+export default function ResetPasswordPage() {
+  const [password, setPassword] = useState("");
+  const [confirm,  setConfirm]  = useState("");
+  const [error,    setError]    = useState(null);
+  const [loading,  setLoading]  = useState(false);
+  const [ready,    setReady]    = useState(false);
+  const router   = useRouter();
   const supabase = createClient();
 
   const c = {
     bg:"#090909", card:"#111113", border:"#232325",
-    text:"#F0F0F0", muted:"#7A7A80", green:"#00E676",
+    text:"#F0F0F0", muted:"#7A7A80",
   };
 
-  // Extract tokens from URL hash and establish session
   useEffect(() => {
     const hash = window.location.hash;
     if (!hash) return;
-
     const params = new URLSearchParams(hash.replace("#", ""));
     const accessToken  = params.get("access_token");
     const refreshToken = params.get("refresh_token");
-
     if (accessToken && refreshToken) {
       supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
         .then(({ error }) => {
-          if (error) {
-            setError("This setup link is invalid or has expired. Please contact support.");
-          } else {
-            setReady(true);
-          }
+          if (error) setError("This reset link is invalid or has expired. Please request a new one.");
+          else setReady(true);
         });
     } else {
-      setError("No setup token found. Please use the link from your email.");
+      setError("No reset token found. Please use the link from your email.");
     }
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (!/[A-Z]/.test(password)) {
-      setError("Password must contain at least one uppercase letter.");
-      return;
-    }
-    if (!/[0-9]/.test(password)) {
-      setError("Password must contain at least one number.");
-      return;
-    }
-    if (!/[^A-Za-z0-9]/.test(password)) {
-      setError("Password must contain at least one special character (e.g. !, @, #).");
-      return;
-    }
-    if (password !== confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
+    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    if (!/[A-Z]/.test(password)) { setError("Password must contain at least one uppercase letter."); return; }
+    if (!/[0-9]/.test(password)) { setError("Password must contain at least one number."); return; }
+    if (!/[^A-Za-z0-9]/.test(password)) { setError("Password must contain at least one special character."); return; }
+    if (password !== confirm) { setError("Passwords do not match."); return; }
 
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
-      router.push("/dashboard");
-    }
+    if (error) { setError(error.message); setLoading(false); }
+    else router.push("/dashboard");
   };
 
   const inputStyle = {
@@ -101,10 +74,10 @@ export default function SetupPasswordPage() {
 
         <div style={{ background:c.card, border:`1px solid ${c.border}`, borderRadius:"14px", padding:"2.5rem 2rem" }}>
           <h1 style={{ fontFamily:"'Noto Serif',serif", fontSize:"1.6rem", fontWeight:700, color:c.text, marginBottom:"0.5rem" }}>
-            Set your password
+            Reset your password
           </h1>
           <p style={{ color:c.muted, fontSize:"0.9rem", marginBottom:"2rem" }}>
-            Choose a secure password to access your Clarinvest account.
+            Choose a new password for your Clarinvest account.
           </p>
 
           {!ready && !error && (
@@ -121,27 +94,21 @@ export default function SetupPasswordPage() {
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom:"1.25rem" }}>
                 <label style={labelStyle}>New password</label>
-                <input
-                  type="password" required value={password}
+                <input type="password" required value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Min 8 chars, uppercase, number, symbol"
-                  style={inputStyle}
-                />
+                  style={inputStyle}/>
               </div>
-
               <div style={{ marginBottom:"1.75rem" }}>
                 <label style={labelStyle}>Confirm password</label>
-                <input
-                  type="password" required value={confirm}
+                <input type="password" required value={confirm}
                   onChange={e => setConfirm(e.target.value)}
                   placeholder="Repeat your password"
-                  style={inputStyle}
-                />
+                  style={inputStyle}/>
               </div>
-
               <button type="submit" disabled={loading}
-                style={{ width:"100%", background:c.text, color:c.bg, border:"none", borderRadius:"5px", padding:"13px", fontSize:"0.88rem", fontWeight:600, fontFamily:"inherit", cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1, letterSpacing:"0.04em" }}>
-                {loading ? "Setting up account..." : "Set password and continue →"}
+                style={{ width:"100%", background:c.text, color:c.bg, border:"none", borderRadius:"5px", padding:"13px", fontSize:"0.88rem", fontWeight:600, fontFamily:"inherit", cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1 }}>
+                {loading ? "Updating password..." : "Set new password →"}
               </button>
             </form>
           )}
