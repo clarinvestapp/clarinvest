@@ -4,12 +4,12 @@ import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 export default function SetupPasswordPage() {
-  const [password, setPassword]   = useState("");
-  const [confirm,  setConfirm]    = useState("");
-  const [error,    setError]      = useState(null);
-  const [loading,  setLoading]    = useState(false);
-  const [ready,    setReady]      = useState(false);
-  const router  = useRouter();
+  const [password, setPassword] = useState("");
+  const [confirm,  setConfirm]  = useState("");
+  const [error,    setError]    = useState(null);
+  const [loading,  setLoading]  = useState(false);
+  const [ready,    setReady]    = useState(false);
+  const router   = useRouter();
   const supabase = createClient();
 
   const c = {
@@ -17,84 +17,29 @@ export default function SetupPasswordPage() {
     text:"#F0F0F0", muted:"#7A7A80", green:"#00E676",
   };
 
-  // Extract tokens from URL hash and establish session
-useEffect(() => {
-  const handleTokens = async () => {
-    // Method 1: PKCE flow — ?code= in query string
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-
-    if (code) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error) {
-        setError("This setup link is invalid or has expired. Please contact support.");
-      } else {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
         setReady(true);
+      } else {
+        setError("This setup link is invalid or has expired. Please contact support.");
       }
-      return;
-    }
-
-    // Method 2: Implicit flow — #access_token= in hash
-    const hash = window.location.hash;
-    if (hash) {
-      const hashParams = new URLSearchParams(hash.replace("#", ""));
-      const accessToken  = hashParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token");
-
-      if (accessToken && refreshToken) {
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-        if (error) {
-          setError("This setup link is invalid or has expired. Please contact support.");
-        } else {
-          setReady(true);
-        }
-        return;
-      }
-    }
-
-    setError("No setup token found. Please use the link from your email.");
-  };
-
-  handleTokens();
-}, []);
+    });
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (!/[A-Z]/.test(password)) {
-      setError("Password must contain at least one uppercase letter.");
-      return;
-    }
-    if (!/[0-9]/.test(password)) {
-      setError("Password must contain at least one number.");
-      return;
-    }
-    if (!/[^A-Za-z0-9]/.test(password)) {
-      setError("Password must contain at least one special character (e.g. !, @, #).");
-      return;
-    }
-    if (password !== confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
+    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    if (!/[A-Z]/.test(password)) { setError("Password must contain at least one uppercase letter."); return; }
+    if (!/[0-9]/.test(password)) { setError("Password must contain at least one number."); return; }
+    if (!/[^A-Za-z0-9]/.test(password)) { setError("Password must contain at least one special character."); return; }
+    if (password !== confirm) { setError("Passwords do not match."); return; }
 
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
-      router.push("/dashboard");
-    }
+    if (error) { setError(error.message); setLoading(false); }
+    else router.push("/dashboard");
   };
 
   const inputStyle = {
@@ -129,7 +74,9 @@ useEffect(() => {
           </p>
 
           {!ready && !error && (
-            <p style={{ color:c.muted, fontSize:"0.9rem", textAlign:"center" }}>Verifying your link...</p>
+            <p style={{ color:c.muted, fontSize:"0.9rem", textAlign:"center" }}>
+              Verifying your link...
+            </p>
           )}
 
           {error && (
@@ -142,26 +89,20 @@ useEffect(() => {
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom:"1.25rem" }}>
                 <label style={labelStyle}>New password</label>
-                <input
-                  type="password" required value={password}
+                <input type="password" required value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Min 8 chars, uppercase, number, symbol"
-                  style={inputStyle}
-                />
+                  style={inputStyle}/>
               </div>
-
               <div style={{ marginBottom:"1.75rem" }}>
                 <label style={labelStyle}>Confirm password</label>
-                <input
-                  type="password" required value={confirm}
+                <input type="password" required value={confirm}
                   onChange={e => setConfirm(e.target.value)}
                   placeholder="Repeat your password"
-                  style={inputStyle}
-                />
+                  style={inputStyle}/>
               </div>
-
               <button type="submit" disabled={loading}
-                style={{ width:"100%", background:c.text, color:c.bg, border:"none", borderRadius:"5px", padding:"13px", fontSize:"0.88rem", fontWeight:600, fontFamily:"inherit", cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1, letterSpacing:"0.04em" }}>
+                style={{ width:"100%", background:c.text, color:c.bg, border:"none", borderRadius:"5px", padding:"13px", fontSize:"0.88rem", fontWeight:600, fontFamily:"inherit", cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1 }}>
                 {loading ? "Setting up account..." : "Set password and continue →"}
               </button>
             </form>
@@ -170,7 +111,9 @@ useEffect(() => {
 
         <p style={{ textAlign:"center", marginTop:"1.5rem", color:c.muted, fontSize:"0.88rem" }}>
           Need help?{" "}
-          <a href="mailto:support@clarinvest.app" style={{ color:c.text, fontWeight:600, textDecoration:"none" }}>Contact support</a>
+          <a href="mailto:support@clarinvest.app" style={{ color:c.text, fontWeight:600, textDecoration:"none" }}>
+            Contact support
+          </a>
         </p>
       </div>
     </div>

@@ -18,46 +18,13 @@ export default function ResetPasswordPage() {
   };
 
   useEffect(() => {
-    const handleTokens = async () => {
-      // Method 1: PKCE flow — token comes as ?code= in query string
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          setError("This reset link is invalid or has expired. Please request a new one.");
-        } else {
-          setReady(true);
-        }
-        return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setReady(true);
+      } else {
+        setError("Session not found. Please request a new reset link.");
       }
-
-      // Method 2: Implicit flow — token comes as #access_token= in hash
-      const hash = window.location.hash;
-      if (hash) {
-        const hashParams = new URLSearchParams(hash.replace("#", ""));
-        const accessToken  = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-
-        if (accessToken && refreshToken) {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          if (error) {
-            setError("This reset link is invalid or has expired. Please request a new one.");
-          } else {
-            setReady(true);
-          }
-          return;
-        }
-      }
-
-      setError("No reset token found. Please use the link from your email.");
-    };
-
-    handleTokens();
+    });
   }, []);
 
   const handleSubmit = async (e) => {
@@ -115,7 +82,7 @@ export default function ResetPasswordPage() {
           {error && (
             <div style={{ background:"rgba(255,24,0,0.08)", border:"1px solid rgba(255,24,0,0.25)", borderRadius:"6px", padding:"10px 14px", marginBottom:"1.25rem" }}>
               <p style={{ color:"#FF1800", fontSize:"0.85rem", margin:0 }}>{error}</p>
-              <p style={{ marginTop:"0.75rem", margin:0 }}>
+              <p style={{ marginTop:"0.75rem", margin:"8px 0 0" }}>
                 <a href="/forgot-password" style={{ color:c.text, fontSize:"0.85rem", fontWeight:600 }}>
                   Request a new reset link
                 </a>
