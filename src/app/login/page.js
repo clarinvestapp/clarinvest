@@ -70,7 +70,7 @@ export default function LoginPage() {
             </div>
 
             <div style={{ textAlign:"right", marginBottom:"1.75rem" }}>
-              <a href="/reset-password" style={{ color:c.muted, fontSize:"0.83rem", textDecoration:"none" }}>Forgot password?</a>
+             <a href="/forgot-password" style={{ color:c.muted, fontSize:"0.83rem", textDecoration:"none" }}>Forgot password?</a>
             </div>
 
             {error && (
