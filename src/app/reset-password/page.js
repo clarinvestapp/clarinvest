@@ -18,20 +18,46 @@ export default function ResetPasswordPage() {
   };
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash) return;
-    const params = new URLSearchParams(hash.replace("#", ""));
-    const accessToken  = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
-    if (accessToken && refreshToken) {
-      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-        .then(({ error }) => {
-          if (error) setError("This reset link is invalid or has expired. Please request a new one.");
-          else setReady(true);
-        });
-    } else {
+    const handleTokens = async () => {
+      // Method 1: PKCE flow — token comes as ?code= in query string
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          setError("This reset link is invalid or has expired. Please request a new one.");
+        } else {
+          setReady(true);
+        }
+        return;
+      }
+
+      // Method 2: Implicit flow — token comes as #access_token= in hash
+      const hash = window.location.hash;
+      if (hash) {
+        const hashParams = new URLSearchParams(hash.replace("#", ""));
+        const accessToken  = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (error) {
+            setError("This reset link is invalid or has expired. Please request a new one.");
+          } else {
+            setReady(true);
+          }
+          return;
+        }
+      }
+
       setError("No reset token found. Please use the link from your email.");
-    }
+    };
+
+    handleTokens();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -81,12 +107,19 @@ export default function ResetPasswordPage() {
           </p>
 
           {!ready && !error && (
-            <p style={{ color:c.muted, fontSize:"0.9rem", textAlign:"center" }}>Verifying your link...</p>
+            <p style={{ color:c.muted, fontSize:"0.9rem", textAlign:"center" }}>
+              Verifying your link...
+            </p>
           )}
 
           {error && (
             <div style={{ background:"rgba(255,24,0,0.08)", border:"1px solid rgba(255,24,0,0.25)", borderRadius:"6px", padding:"10px 14px", marginBottom:"1.25rem" }}>
               <p style={{ color:"#FF1800", fontSize:"0.85rem", margin:0 }}>{error}</p>
+              <p style={{ marginTop:"0.75rem", margin:0 }}>
+                <a href="/forgot-password" style={{ color:c.text, fontSize:"0.85rem", fontWeight:600 }}>
+                  Request a new reset link
+                </a>
+              </p>
             </div>
           )}
 
@@ -116,7 +149,9 @@ export default function ResetPasswordPage() {
 
         <p style={{ textAlign:"center", marginTop:"1.5rem", color:c.muted, fontSize:"0.88rem" }}>
           Need help?{" "}
-          <a href="mailto:support@clarinvest.app" style={{ color:c.text, fontWeight:600, textDecoration:"none" }}>Contact support</a>
+          <a href="mailto:support@clarinvest.app" style={{ color:c.text, fontWeight:600, textDecoration:"none" }}>
+            Contact support
+          </a>
         </p>
       </div>
     </div>

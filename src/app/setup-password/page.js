@@ -18,27 +18,48 @@ export default function SetupPasswordPage() {
   };
 
   // Extract tokens from URL hash and establish session
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash) return;
+useEffect(() => {
+  const handleTokens = async () => {
+    // Method 1: PKCE flow — ?code= in query string
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
 
-    const params = new URLSearchParams(hash.replace("#", ""));
-    const accessToken  = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
-
-    if (accessToken && refreshToken) {
-      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-        .then(({ error }) => {
-          if (error) {
-            setError("This setup link is invalid or has expired. Please contact support.");
-          } else {
-            setReady(true);
-          }
-        });
-    } else {
-      setError("No setup token found. Please use the link from your email.");
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) {
+        setError("This setup link is invalid or has expired. Please contact support.");
+      } else {
+        setReady(true);
+      }
+      return;
     }
-  }, []);
+
+    // Method 2: Implicit flow — #access_token= in hash
+    const hash = window.location.hash;
+    if (hash) {
+      const hashParams = new URLSearchParams(hash.replace("#", ""));
+      const accessToken  = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (error) {
+          setError("This setup link is invalid or has expired. Please contact support.");
+        } else {
+          setReady(true);
+        }
+        return;
+      }
+    }
+
+    setError("No setup token found. Please use the link from your email.");
+  };
+
+  handleTokens();
+}, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
