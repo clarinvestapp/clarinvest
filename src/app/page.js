@@ -26,17 +26,19 @@ const C = {
 const PRICE_IDS = {
   essential_monthly: "price_1TXpfe2LvKDKlOmwCd2Kn1tM",
   essential_yearly:  "price_1TXpgQ2LvKDKlOmwEmhpx87h",
-  pro_monthly:       "price_1TXph12LvKDKlOmwuRfaaKwJ",
-  pro_yearly:        "price_1TXpjD2LvKDKlOmwS2LiCkG6",
+  pro_monthly:       "price_1TZ4LX2LvKDKlOmwYOQ1bzc6",
+  pro_yearly:        "price_1TZ4M22LvKDKlOmwhURhQS9B",
+  ultimate_monthly:  "price_1TXph12LvKDKlOmwuRfaaKwJ",
+  ultimate_yearly:   "price_1TXpjD2LvKDKlOmwS2LiCkG6",
 };
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const CURR={
-  GBP:{sym:"£",em:[9,79],  pr:[29,249]},
-  USD:{sym:"$",em:[12,99], pr:[35,299]},
-  EUR:{sym:"€",em:[10,89], pr:[32,269]},
-  CAD:{sym:"C$",em:[16,129],pr:[45,379]},
-  AUD:{sym:"A$",em:[18,149],pr:[52,429]},
+  GBP:{sym:"£", em:[9,79],   pr:[19,159],  ul:[29,249]},
+  USD:{sym:"$", em:[12,99],  pr:[25,209],  ul:[35,299]},
+  EUR:{sym:"€", em:[10,89],  pr:[22,189],  ul:[32,269]},
+  CAD:{sym:"C$",em:[16,129], pr:[32,269],  ul:[45,379]},
+  AUD:{sym:"A$",em:[18,149], pr:[36,299],  ul:[52,429]},
 };
 const GEO={GB:"GBP",US:"USD",CA:"CAD",AU:"AUD",DE:"EUR",FR:"EUR",IT:"EUR",ES:"EUR",NL:"EUR",PT:"EUR",BE:"EUR",AT:"EUR",IE:"EUR",FI:"EUR",GR:"EUR"};
 
@@ -109,7 +111,6 @@ export default function Clarinvest(){
   const[checkoutLoading,setCheckoutLoading]=useState(null); // tracks which plan is loading
 
   const c=C[mode], curr=CURR[cur];
-  const ns="'Noto Serif',Georgia,serif";
   const gs="'Google Sans Flex','DM Sans',sans-serif";
 
   const heroRef=useRef(null),featRef=useRef(null),markRef=useRef(null),priceRef=useRef(null),aboutRef=useRef(null);
@@ -133,9 +134,12 @@ export default function Clarinvest(){
 
   // ─── Stripe checkout handler ────────────────────────────────────────────────
   const handleCheckout = async (planName) => {
-    const priceId = planName === "Pro"
-      ? (billing === "monthly" ? PRICE_IDS.pro_monthly       : PRICE_IDS.pro_yearly)
-      : (billing === "monthly" ? PRICE_IDS.essential_monthly : PRICE_IDS.essential_yearly);
+    const priceId =
+      planName === "Ultimate"
+        ? (billing === "monthly" ? PRICE_IDS.ultimate_monthly : PRICE_IDS.ultimate_yearly)
+      : planName === "Pro"
+        ? (billing === "monthly" ? PRICE_IDS.pro_monthly      : PRICE_IDS.pro_yearly)
+        : (billing === "monthly" ? PRICE_IDS.essential_monthly: PRICE_IDS.essential_yearly);
 
     setCheckoutLoading(planName);
     try {
@@ -566,11 +570,11 @@ export default function Clarinvest(){
       </section>
 
       {/* ══ PRICING ══════════════════════════════════════════════════════════ */}
-      <section ref={priceRef} style={{padding:"8rem 2rem",maxWidth:"900px",margin:"0 auto"}}>
+      <section ref={priceRef} style={{padding:"8rem 2rem",maxWidth:"1100px",margin:"0 auto"}}>
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Pricing</p>
-            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
+            <h2 style={{fontFamily:gs,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
             <p style={{fontFamily:gs,color:c.muted,maxWidth:"400px",margin:"0 auto 0.5rem",lineHeight:1.72,fontSize:"0.94rem"}}>
               No hidden fees. No lock-in. Prices shown in your local currency.
             </p>
@@ -609,66 +613,72 @@ export default function Clarinvest(){
           </div>
         </Reveal>
 
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:"1.5rem"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:"1.25rem"}}>
           {[
-            {name:"Essential",tag:"For curious investors",hi:false,
-             monthly:curr.em[0],yearly:curr.em[1],
-             feats:["5 AI stock reports per month","Key financial ratios","Basic AI summary per stock","US, EU and UK markets","Sector filter and search"]},
-            {name:"Pro",tag:"For serious investors",hi:true,
-             monthly:curr.pr[0],yearly:curr.pr[1],
-             feats:["Unlimited AI stock reports","Deep fundamental analysis","Earnings and guidance breakdown","Momentum and alpha signals","Dividend intelligence","Risk flag alerts","Favourites and watchlists","Priority data refresh"]},
+            {name:"Essential", tag:"For curious investors",      badge:null,            hi:false, monthly:curr.em[0], yearly:curr.em[1],
+             feats:["5 AI stock reports per month","Basic AI summary per stock","Stocks — US, EU and UK markets","Commodities","Key financial ratios","Watchlist","Monthly market digest"]},
+            {name:"Pro",       tag:"For serious investors",       badge:"Most Popular",  hi:true,  monthly:curr.pr[0], yearly:curr.pr[1],
+             feats:["Unlimited AI summaries","15 AI full reports per month","Stocks, Commodities and Indexes","Valuation, Liquidity and Leverage stats","Per Share and Growth metrics","Income Statement","Virtual Portfolio","Watchlist","Weekly market digest"]},
+            {name:"Ultimate",  tag:"For the most demanding investors", badge:"Full Access", hi:false, monthly:curr.ul[0], yearly:curr.ul[1],
+             feats:["Unlimited AI full reports","All instruments including ETFs","Full financial statements","Balance Sheet and Cash Flow","Sankey flow diagrams","Advanced analytics","Priority data refresh","Watchlist and Virtual Portfolio","Weekly digest and early access"]},
           ].map((plan,i)=>{
             const price=billing==="monthly"?plan.monthly:plan.yearly;
             const isLoading=checkoutLoading===plan.name;
+            const isHi=plan.hi;
+            const isUlt=plan.name==="Ultimate";
             return(
               <Reveal key={i} delay={i*0.1}>
                 <div className="pcard"
                   onMouseEnter={()=>setHovPlan(i)}
                   onMouseLeave={()=>setHovPlan(null)}
                   style={{
-                    background:plan.hi
+                    background:isHi
                       ?mode==="dark"?"linear-gradient(150deg,#1A1A1E 0%,#111115 100%)":"linear-gradient(150deg,#FFFFFF 0%,#F5F5F8 100%)"
-                      :mode==="dark"?"linear-gradient(150deg,#131315 0%,#0E0E10 100%)":"linear-gradient(150deg,#F5F5F3 0%,#EEEEED 100%)",
-                    border:plan.hi?`1px solid ${c.text}`:`1px solid ${c.border}`,
+                      :isUlt
+                        ?mode==="dark"?"linear-gradient(150deg,#161618 0%,#111113 100%)":"linear-gradient(150deg,#F8F8F6 0%,#F0F0EE 100%)"
+                        :mode==="dark"?"linear-gradient(150deg,#131315 0%,#0E0E10 100%)":"linear-gradient(150deg,#F5F5F3 0%,#EEEEED 100%)",
+                    border:isHi?`1px solid ${c.text}`:isUlt?`1px solid ${c.borderHi}`:`1px solid ${c.border}`,
                     borderRadius:"14px",padding:"2.5rem 2rem",position:"relative",
-                    boxShadow:plan.hi
+                    boxShadow:isHi
                       ?mode==="dark"?`0 0 0 1px ${c.text},0 16px 48px rgba(0,0,0,0.4)`:`0 0 0 1px ${c.text},0 16px 40px rgba(0,0,0,0.09)`
-                      :"none",
+                      :isUlt
+                        ?mode==="dark"?"0 4px 28px rgba(0,0,0,0.3)":"0 4px 20px rgba(0,0,0,0.06)"
+                        :"none",
                     transform:hovPlan===i?"translateY(-6px)":"translateY(0)",
                   }}>
 
-                  {plan.hi&&(
+                  {plan.badge&&(
                     <div style={{position:"absolute",top:"-13px",left:"50%",transform:"translateX(-50%)",
-                      background:c.text,color:c.bg,fontFamily:gs,fontSize:"0.59rem",fontWeight:700,
+                      background:isHi?c.text:c.muted,color:isHi?c.bg:mode==="dark"?"#090909":"#fff",
+                      fontFamily:gs,fontSize:"0.59rem",fontWeight:700,
                       letterSpacing:"0.12em",textTransform:"uppercase",padding:"4px 16px",borderRadius:"50px"}}>
-                      Most Popular
+                      {plan.badge}
                     </div>
                   )}
 
-                  <p style={{fontFamily:gs,color:plan.hi?c.green:c.muted,fontSize:"0.67rem",letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:"0.3rem"}}>{plan.name}</p>
+                  <p style={{fontFamily:gs,color:isHi?c.green:c.muted,fontSize:"0.67rem",letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:"0.3rem"}}>{plan.name}</p>
                   <p style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",marginBottom:"1.5rem"}}>{plan.tag}</p>
 
                   <div style={{display:"flex",alignItems:"flex-end",gap:"0.25rem",marginBottom:billing==="yearly"?"0.3rem":"1.8rem"}}>
-                    <span style={{fontFamily:ns,fontSize:"3rem",fontWeight:700,lineHeight:1,color:c.text}}>{curr.sym}{price}</span>
+                    <span style={{fontFamily:gs,fontSize:"3rem",fontWeight:700,lineHeight:1,color:c.text}}>{curr.sym}{price}</span>
                     <span style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",paddingBottom:"0.45rem"}}>{billing==="monthly"?"/month":"/year"}</span>
                   </div>
 
                   {billing==="yearly"&&(
-                    <p style={{fontFamily:gs,color:plan.hi?c.green:c.muted,fontSize:"0.77rem",marginBottom:"1.7rem",fontWeight:600}}>
+                    <p style={{fontFamily:gs,color:isHi?c.green:c.muted,fontSize:"0.77rem",marginBottom:"1.7rem",fontWeight:600}}>
                       {curr.sym}{(price/12).toFixed(2)}/month · 28% saved
                     </p>
                   )}
 
-                  {/* Checkout button — wired to Stripe */}
                   <button
                     className="cbtn"
                     onClick={()=>handleCheckout(plan.name)}
                     disabled={isLoading}
                     style={{
                       width:"100%",padding:"13px",borderRadius:"5px",marginBottom:"2rem",
-                      background:plan.hi?c.text:"transparent",
-                      color:plan.hi?c.bg:c.text,
-                      border:plan.hi?"none":`1px solid ${c.borderHi}`,
+                      background:isHi?c.text:isUlt?c.surface:"transparent",
+                      color:isHi?c.bg:c.text,
+                      border:isHi?"none":`1px solid ${c.borderHi}`,
                       fontSize:"0.84rem",
                       opacity:isLoading?0.7:1,
                       cursor:isLoading?"not-allowed":"pointer",
@@ -678,7 +688,7 @@ export default function Clarinvest(){
 
                   {plan.feats.map((f,j)=>(
                     <div key={j} style={{display:"flex",gap:"0.7rem",alignItems:"flex-start",marginBottom:"0.85rem"}}>
-                      <span style={{fontFamily:gs,color:c.text,fontSize:"0.75rem",marginTop:"0.12rem",flexShrink:0,fontWeight:700}}>✓</span>
+                      <span style={{fontFamily:gs,color:isHi?c.green:c.muted,fontSize:"0.75rem",marginTop:"0.12rem",flexShrink:0,fontWeight:700}}>✓</span>
                       <span style={{fontFamily:gs,color:c.muted,fontSize:"0.86rem",lineHeight:1.5}}>{f}</span>
                     </div>
                   ))}
