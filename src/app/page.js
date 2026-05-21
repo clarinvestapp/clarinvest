@@ -93,15 +93,30 @@ function FlagSVG({ market, height = 16 }) {
   const w = Math.round(height * (19/13));
   const s = { borderRadius:"2px", display:"inline-block", verticalAlign:"middle", flexShrink:0 };
   if (market === "US") return (
-    <svg width={w} height={height} viewBox="0 0 19 13" xmlns="http://www.w3.org/2000/svg" style={s}>
-      <rect width="19" height="13" fill="#B22234"/>
-      {[1,3,5,7,9,11].map(y=><rect key={y} y={y} width="19" height="1" fill="#fff"/>)}
-      <rect width="8" height="7" fill="#3C3B6E"/>
-      {[[1.3,1],[2.6,1],[3.9,1],[5.2,1],[6.5,1],[1.95,2.1],[3.25,2.1],[4.55,2.1],[5.85,2.1],
-        [1.3,3.2],[2.6,3.2],[3.9,3.2],[5.2,3.2],[6.5,3.2],[1.95,4.3],[3.25,4.3],[4.55,4.3],[5.85,4.3],
-        [1.3,5.4],[2.6,5.4],[3.9,5.4],[5.2,5.4],[6.5,5.4]].map(([cx,cy],i)=>(
-        <circle key={i} cx={cx} cy={cy} r="0.38" fill="#fff"/>
-      ))}
+    <svg width={w} height={height} viewBox="0 0 7410 3900" xmlns="http://www.w3.org/2000/svg" style={s}>
+      <path fill="#b22234" d="M0 0h7410v3900H0z"/>
+      <path d="M0 450h7410m0 600H0m0 600h7410m0 600H0m0 600h7410m0 600H0" stroke="#fff" strokeWidth="300"/>
+      <path fill="#3c3b6e" d="M0 0h2964v2100H0z"/>
+      <g fill="#fff">
+        <g id="us-d">
+          <g id="us-c">
+            <g id="us-e">
+              <g id="us-b">
+                <path id="us-a" d="M247 90l70.534 217.082-184.66-134.164h228.253L176.466 307.082z"/>
+                <use href="#us-a" y="420"/>
+                <use href="#us-a" y="840"/>
+                <use href="#us-a" y="1260"/>
+              </g>
+              <use href="#us-a" y="1680"/>
+            </g>
+            <use href="#us-b" x="247" y="210"/>
+          </g>
+          <use href="#us-c" x="494"/>
+        </g>
+        <use href="#us-d" x="988"/>
+        <use href="#us-c" x="1976"/>
+        <use href="#us-e" x="2470"/>
+      </g>
     </svg>
   );
   if (market === "UK") return (
@@ -120,12 +135,33 @@ function FlagSVG({ market, height = 16 }) {
     </svg>
   );
   if (market === "EU") return (
-    <svg width={w} height={height} viewBox="0 0 19 13" xmlns="http://www.w3.org/2000/svg" style={s}>
-      <rect width="19" height="13" fill="#003399"/>
-      {Array.from({length:12}).map((_,i)=>{
-        const a=(i*30-90)*Math.PI/180;
-        return <circle key={i} cx={9.5+3.5*Math.cos(a)} cy={6.5+3.5*Math.sin(a)} r="0.62" fill="#FFCC00"/>;
-      })}
+    <svg width={w} height={height} viewBox="0 0 810 540" xmlns="http://www.w3.org/2000/svg" style={s}>
+      <defs>
+        <g id="eu-d">
+          <g id="eu-b">
+            <path id="eu-a" d="M0 0v1h.5z" transform="rotate(18 3.157 -.5)"/>
+            <use href="#eu-a" transform="scale(-1 1)"/>
+          </g>
+          <g id="eu-c">
+            <use href="#eu-b" transform="rotate(72)"/>
+            <use href="#eu-b" transform="rotate(144)"/>
+          </g>
+          <use href="#eu-c" transform="scale(-1 1)"/>
+        </g>
+      </defs>
+      <path fill="#039" d="M0 0h810v540H0z"/>
+      <g fill="#fc0" transform="matrix(30 0 0 30 405 270)">
+        <use href="#eu-d" y="-6"/>
+        <use href="#eu-d" y="6"/>
+        <g id="eu-e">
+          <use href="#eu-d" x="-6"/>
+          <use href="#eu-d" transform="rotate(-144 -2.344 -2.11)"/>
+          <use href="#eu-d" transform="rotate(144 -2.11 -2.344)"/>
+          <use href="#eu-d" transform="rotate(72 -4.663 -2.076)"/>
+          <use href="#eu-d" transform="rotate(72 -5.076 .534)"/>
+        </g>
+        <use href="#eu-e" transform="scale(-1 1)"/>
+      </g>
     </svg>
   );
   return <span style={{fontFamily:"monospace",fontSize:"0.7rem",color:"#888"}}>{market}</span>;
