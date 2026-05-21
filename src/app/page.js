@@ -111,7 +111,7 @@ export default function Clarinvest(){
   const[checkoutLoading,setCheckoutLoading]=useState(null); // tracks which plan is loading
 
   const c=C[mode], curr=CURR[cur];
-  const gs="'Google Sans Flex','DM Sans',sans-serif";
+  const ns=gs; // Noto Serif retired — Google Sans everywhere
 
   const heroRef=useRef(null),featRef=useRef(null),markRef=useRef(null),priceRef=useRef(null),aboutRef=useRef(null);
   const go=r=>r.current?.scrollIntoView({behavior:"smooth"});
