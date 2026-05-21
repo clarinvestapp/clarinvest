@@ -106,15 +106,17 @@ function FlagSVG({ market, height = 16 }) {
   );
   if (market === "UK") return (
     <svg width={w} height={height} viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg" style={s}>
-      <rect width="60" height="30" fill="#012169"/>
-      <line x1="0" y1="0" x2="60" y2="30" stroke="#fff" strokeWidth="10"/>
-      <line x1="60" y1="0" x2="0" y2="30" stroke="#fff" strokeWidth="10"/>
-      <line x1="0" y1="0" x2="60" y2="30" stroke="#C8102E" strokeWidth="4"/>
-      <line x1="60" y1="0" x2="0" y2="30" stroke="#C8102E" strokeWidth="4"/>
-      <rect x="24" y="0" width="12" height="30" fill="#fff"/>
-      <rect x="0" y="9" width="60" height="12" fill="#fff"/>
-      <rect x="27" y="0" width="6" height="30" fill="#C8102E"/>
-      <rect x="0" y="12" width="60" height="6" fill="#C8102E"/>
+      <defs>
+        <clipPath id="uj-a"><path d="M0 0v30h60V0z"/></clipPath>
+        <clipPath id="uj-b"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath>
+      </defs>
+      <g clipPath="url(#uj-a)">
+        <path d="M0 0v30h60V0z" fill="#012169"/>
+        <path d="M0 0l60 30m0-30L0 30" stroke="#fff" strokeWidth="6"/>
+        <path d="M0 0l60 30m0-30L0 30" clipPath="url(#uj-b)" stroke="#C8102E" strokeWidth="4"/>
+        <path d="M30 0v30M0 15h60" stroke="#fff" strokeWidth="10"/>
+        <path d="M30 0v30M0 15h60" stroke="#C8102E" strokeWidth="6"/>
+      </g>
     </svg>
   );
   if (market === "EU") return (
