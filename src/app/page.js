@@ -112,7 +112,7 @@ export default function Clarinvest(){
 
   const c=C[mode], curr=CURR[cur];
   const gs="'Google Sans Flex','DM Sans',sans-serif";
-  const ns=gs; // Noto Serif retired — Google Sans everywhere
+  const ns="'Noto Serif',Georgia,serif"; // headings + price numbers only
 
   const heroRef=useRef(null),featRef=useRef(null),markRef=useRef(null),priceRef=useRef(null),aboutRef=useRef(null);
   const go=r=>r.current?.scrollIntoView({behavior:"smooth"});
@@ -616,12 +616,15 @@ export default function Clarinvest(){
 
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:"1.25rem"}}>
           {[
-            {name:"Essential", tag:"For curious investors",      badge:null,            hi:false, monthly:curr.em[0], yearly:curr.em[1],
-             feats:["5 AI stock reports per month","Basic AI summary per stock","Stocks — US, EU and UK markets","Commodities","Key financial ratios","Watchlist","Monthly market digest"]},
-            {name:"Pro",       tag:"For serious investors",       badge:"Most Popular",  hi:true,  monthly:curr.pr[0], yearly:curr.pr[1],
-             feats:["Unlimited AI summaries","15 AI full reports per month","Stocks, Commodities and Indexes","Valuation, Liquidity and Leverage stats","Per Share and Growth metrics","Income Statement","Virtual Portfolio","Watchlist","Weekly market digest"]},
-            {name:"Ultimate",  tag:"For the most demanding investors", badge:"Full Access", hi:false, monthly:curr.ul[0], yearly:curr.ul[1],
-             feats:["Unlimited AI full reports","All instruments including ETFs","Full financial statements","Balance Sheet and Cash Flow","Sankey flow diagrams","Advanced analytics","Priority data refresh","Watchlist and Virtual Portfolio","Weekly digest and early access"]},
+            {name:"Essential", tag:"For curious investors",           badge:null,           hi:false, monthly:curr.em[0], yearly:curr.em[1],
+             plusLabel: null,
+             feats:["5 AI summaries per month","Basic AI summary per stock","Stocks — US, EU and UK","Commodities","Key financial ratios","Watchlist","Monthly market digest"]},
+            {name:"Pro",       tag:"For serious investors",           badge:"Most Popular",  hi:true,  monthly:curr.pr[0], yearly:curr.pr[1],
+             plusLabel: "Everything in Essential, plus:",
+             feats:["Unlimited AI summaries","15 AI full reports per month","Indexes","Valuation, liquidity and leverage stats","Per Share and growth metrics","Income Statement","Virtual Portfolio","Weekly market digest"]},
+            {name:"Ultimate",  tag:"For the most demanding investors",badge:"Full Access",   hi:false, monthly:curr.ul[0], yearly:curr.ul[1],
+             plusLabel: "Everything in Pro, plus:",
+             feats:["Unlimited AI full reports","ETFs","Full financial statements","Balance Sheet and Cash Flow","Sankey flow diagrams","Advanced analytics","Priority data refresh","Early access to new features"]},
           ].map((plan,i)=>{
             const price=billing==="monthly"?plan.monthly:plan.yearly;
             const isLoading=checkoutLoading===plan.name;
@@ -657,11 +660,13 @@ export default function Clarinvest(){
                     </div>
                   )}
 
-                  <p style={{fontFamily:gs,color:isHi?c.green:c.muted,fontSize:"0.67rem",letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:"0.3rem"}}>{plan.name}</p>
+                  {/* All tier names green */}
+                  <p style={{fontFamily:gs,color:c.green,fontSize:"0.67rem",letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:"0.3rem"}}>{plan.name}</p>
                   <p style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",marginBottom:"1.5rem"}}>{plan.tag}</p>
 
+                  {/* Price in Noto Serif */}
                   <div style={{display:"flex",alignItems:"flex-end",gap:"0.25rem",marginBottom:billing==="yearly"?"0.3rem":"1.8rem"}}>
-                    <span style={{fontFamily:gs,fontSize:"3rem",fontWeight:700,lineHeight:1,color:c.text}}>{curr.sym}{price}</span>
+                    <span style={{fontFamily:ns,fontSize:"3rem",fontWeight:700,lineHeight:1,color:c.text}}>{curr.sym}{price}</span>
                     <span style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",paddingBottom:"0.45rem"}}>{billing==="monthly"?"/month":"/year"}</span>
                   </div>
 
@@ -687,9 +692,18 @@ export default function Clarinvest(){
                     {isLoading ? "Redirecting..." : `Start ${plan.name}`}
                   </button>
 
+                  {/* "Everything in X plus:" label */}
+                  {plan.plusLabel&&(
+                    <div style={{marginBottom:"0.85rem"}}>
+                      <p style={{fontFamily:gs,fontSize:"0.74rem",color:c.muted,fontStyle:"italic",marginBottom:"0.6rem"}}>{plan.plusLabel}</p>
+                      <div style={{height:"1px",background:c.border}}/>
+                    </div>
+                  )}
+
+                  {/* All ✓ green for every tier */}
                   {plan.feats.map((f,j)=>(
                     <div key={j} style={{display:"flex",gap:"0.7rem",alignItems:"flex-start",marginBottom:"0.85rem"}}>
-                      <span style={{fontFamily:gs,color:isHi?c.green:c.muted,fontSize:"0.75rem",marginTop:"0.12rem",flexShrink:0,fontWeight:700}}>✓</span>
+                      <span style={{fontFamily:gs,color:c.green,fontSize:"0.75rem",marginTop:"0.12rem",flexShrink:0,fontWeight:700}}>✓</span>
                       <span style={{fontFamily:gs,color:c.muted,fontSize:"0.86rem",lineHeight:1.5}}>{f}</span>
                     </div>
                   ))}
