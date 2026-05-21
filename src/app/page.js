@@ -656,7 +656,7 @@ export default function Clarinvest(){
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Pricing</p>
-            <h2 style={{fontFamily:gs,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
+            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"1.5rem"}}>Simple, transparent pricing</h2>
             <p style={{fontFamily:gs,color:c.muted,maxWidth:"400px",margin:"0 auto 0.5rem",lineHeight:1.72,fontSize:"0.94rem"}}>
               No hidden fees. No lock-in. Prices shown in your local currency.
             </p>
