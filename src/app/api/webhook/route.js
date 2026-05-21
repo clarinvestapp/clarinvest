@@ -11,8 +11,10 @@ const supabase = createClient(
 const planMap = {
   "price_1TXpfe2LvKDKlOmwCd2Kn1tM": { plan: "essential", billing: "monthly" },
   "price_1TXpgQ2LvKDKlOmwEmhpx87h": { plan: "essential", billing: "yearly"  },
-  "price_1TXph12LvKDKlOmwuRfaaKwJ": { plan: "pro",       billing: "monthly" },
-  "price_1TXpjD2LvKDKlOmwS2LiCkG6": { plan: "pro",       billing: "yearly"  },
+  "price_1TZ4LX2LvKDKlOmwYOQ1bzc6": { plan: "pro",       billing: "monthly" },
+  "price_1TZ4M22LvKDKlOmwhURhQS9B": { plan: "pro",       billing: "yearly"  },
+  "price_1TXph12LvKDKlOmwuRfaaKwJ": { plan: "ultimate",  billing: "monthly" },
+  "price_1TXpjD2LvKDKlOmwS2LiCkG6": { plan: "ultimate",  billing: "yearly"  },
 };
 
 async function sendSetupEmail(email, setupLink, plan) {
