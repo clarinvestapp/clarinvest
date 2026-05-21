@@ -88,6 +88,47 @@ function Reveal({children,delay=0,passStyle={}}){
   );
 }
 
+// ─── Inline SVG flags — no network, works on Windows Chrome/Edge ─────────────
+function FlagSVG({ market, height = 16 }) {
+  const w = Math.round(height * (19/13));
+  const s = { borderRadius:"2px", display:"inline-block", verticalAlign:"middle", flexShrink:0 };
+  if (market === "US") return (
+    <svg width={w} height={height} viewBox="0 0 19 13" xmlns="http://www.w3.org/2000/svg" style={s}>
+      <rect width="19" height="13" fill="#B22234"/>
+      {[1,3,5,7,9,11].map(y=><rect key={y} y={y} width="19" height="1" fill="#fff"/>)}
+      <rect width="8" height="7" fill="#3C3B6E"/>
+      {[[1.3,1],[2.6,1],[3.9,1],[5.2,1],[6.5,1],[1.95,2.1],[3.25,2.1],[4.55,2.1],[5.85,2.1],
+        [1.3,3.2],[2.6,3.2],[3.9,3.2],[5.2,3.2],[6.5,3.2],[1.95,4.3],[3.25,4.3],[4.55,4.3],[5.85,4.3],
+        [1.3,5.4],[2.6,5.4],[3.9,5.4],[5.2,5.4],[6.5,5.4]].map(([cx,cy],i)=>(
+        <circle key={i} cx={cx} cy={cy} r="0.38" fill="#fff"/>
+      ))}
+    </svg>
+  );
+  if (market === "UK") return (
+    <svg width={w} height={height} viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg" style={s}>
+      <rect width="60" height="30" fill="#012169"/>
+      <line x1="0" y1="0" x2="60" y2="30" stroke="#fff" strokeWidth="10"/>
+      <line x1="60" y1="0" x2="0" y2="30" stroke="#fff" strokeWidth="10"/>
+      <line x1="0" y1="0" x2="60" y2="30" stroke="#C8102E" strokeWidth="4"/>
+      <line x1="60" y1="0" x2="0" y2="30" stroke="#C8102E" strokeWidth="4"/>
+      <rect x="24" y="0" width="12" height="30" fill="#fff"/>
+      <rect x="0" y="9" width="60" height="12" fill="#fff"/>
+      <rect x="27" y="0" width="6" height="30" fill="#C8102E"/>
+      <rect x="0" y="12" width="60" height="6" fill="#C8102E"/>
+    </svg>
+  );
+  if (market === "EU") return (
+    <svg width={w} height={height} viewBox="0 0 19 13" xmlns="http://www.w3.org/2000/svg" style={s}>
+      <rect width="19" height="13" fill="#003399"/>
+      {Array.from({length:12}).map((_,i)=>{
+        const a=(i*30-90)*Math.PI/180;
+        return <circle key={i} cx={9.5+3.5*Math.cos(a)} cy={6.5+3.5*Math.sin(a)} r="0.62" fill="#FFCC00"/>;
+      })}
+    </svg>
+  );
+  return <span style={{fontFamily:"monospace",fontSize:"0.7rem",color:"#888"}}>{market}</span>;
+}
+
 // Chart reference line label
 const RefLabel=({viewBox,value,color})=>{
   if(!viewBox)return null;
@@ -550,16 +591,18 @@ export default function Clarinvest(){
           </Reveal>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"1.25rem"}}>
             {[
-              {flag:"🇺🇸",name:"United States",sub:"NYSE · NASDAQ · S&P 500",detail:"3,500+ stocks covered"},
-              {flag:"🇬🇧",name:"United Kingdom",sub:"LSE · AIM · FTSE 100",   detail:"800+ stocks covered"},
-              {flag:"🇪🇺",name:"Europe",         sub:"DAX · CAC 40 · FTSE MIB",detail:"1,200+ stocks covered"},
+              {code:"US",name:"United States",sub:"NYSE · NASDAQ · S&P 500",detail:"3,500+ stocks covered"},
+              {code:"UK",name:"United Kingdom",sub:"LSE · AIM · FTSE 100",   detail:"800+ stocks covered"},
+              {code:"EU",name:"Europe",         sub:"DAX · CAC 40 · FTSE MIB",detail:"1,200+ stocks covered"},
             ].map((m,i)=>(
               <Reveal key={i} delay={i*0.1}>
                 <div style={{
                   background:mode==="dark"?"linear-gradient(150deg,#161618 0%,#111113 100%)":"linear-gradient(150deg,#FFFFFF 0%,#EBEBF0 100%)",
                   border:`1px solid ${c.border}`,borderRadius:"14px",padding:"2.2rem",textAlign:"center",
                   boxShadow:mode==="dark"?"0 2px 20px rgba(0,0,0,0.3)":"0 2px 16px rgba(0,0,0,0.05)"}}>
-                  <div className="flag-emoji" style={{fontSize:"2.2rem",marginBottom:"1rem",lineHeight:1.3}}>{m.flag}</div>
+                  <div style={{display:"flex",justifyContent:"center",marginBottom:"1rem"}}>
+                    <FlagSVG market={m.code} height={32}/>
+                  </div>
                   <div style={{fontFamily:gs,fontSize:"1.1rem",fontWeight:700,marginBottom:"0.4rem",color:c.text}}>{m.name}</div>
                   <div style={{fontFamily:gs,color:c.muted,fontSize:"0.81rem",marginBottom:"0.5rem"}}>{m.sub}</div>
                   <div style={{fontFamily:gs,color:c.blue,fontSize:"0.72rem",fontWeight:700,letterSpacing:"0.04em"}}>{m.detail}</div>
@@ -575,7 +618,7 @@ export default function Clarinvest(){
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Pricing</p>
-            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"1.5rem"}}>Simple, transparent pricing</h2>
+            <h2 style={{fontFamily:gs,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
             <p style={{fontFamily:gs,color:c.muted,maxWidth:"400px",margin:"0 auto 0.5rem",lineHeight:1.72,fontSize:"0.94rem"}}>
               No hidden fees. No lock-in. Prices shown in your local currency.
             </p>
