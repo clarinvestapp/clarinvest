@@ -1,7 +1,8 @@
 "use client";
-import { use, useState, useEffect, useMemo } from "react";
+import { use, useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/theme";
+import { createClient } from "@/lib/supabase";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine,
@@ -150,6 +151,39 @@ export default function StockPage({ params }) {
   const [statTab, setStatTab] = useState("general");
   const [scrolled,setScrolled]= useState(false);
 
+  // AI analysis state
+  const [analysis,    setAnalysis]    = useState(null);
+  const [aiLoading,   setAiLoading]   = useState(false);
+  const [aiError,     setAiError]     = useState(null);
+  const [aiType,      setAiType]      = useState("summary"); // 'summary' | 'full'
+  const supabase = createClient();
+
+  const generateAnalysis = useCallback(async (type = "summary") => {
+    setAiLoading(true); setAiError(null); setAiType(type);
+    try {
+      const { data:{ session } } = await supabase.auth.getSession();
+      if (!session) { setAiError("Please log in to generate analysis."); return; }
+      const res  = await fetch("/api/analyse", {
+        method: "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ ticker, type }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        setAiError(result.error || "Analysis failed.");
+        return;
+      }
+      setAnalysis(result);
+    } catch (err) {
+      setAiError(err.message);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [ticker, supabase]);
+
   useEffect(() => {
     fetch(`/api/stock/${ticker}`)
       .then(r => r.json())
@@ -186,8 +220,9 @@ export default function StockPage({ params }) {
   const positive   = (changePct??0) >= 0;
   const stColor    = c[status.col] || c.muted;
 
-  // AI score placeholder (real generation comes in AI layer build)
-  const aiScore = null;
+  // Use real AI score if available
+  const aiScore   = analysis?.score   ?? null;
+  const aiVerdict = analysis?.verdict ?? null;
 
   const pill = (active) => ({
     background:active?c.text:"transparent", color:active?c.bg:c.muted,
@@ -340,25 +375,98 @@ export default function StockPage({ params }) {
 
         {/* ── AI Analysis ── */}
         <div style={{ background:c.card, border:`1px solid ${c.border}`, borderRadius:"14px", padding:"1.5rem", marginBottom:"2rem" }}>
-          <p style={{ fontFamily:gs, fontSize:"0.62rem", color:c.green, letterSpacing:"0.12em", textTransform:"uppercase", fontWeight:600, marginBottom:"1rem" }}>AI Analysis</p>
-          <div style={{ display:"flex", gap:"1.5rem", alignItems:"flex-start", flexWrap:"wrap" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
+            <p style={{ fontFamily:gs, fontSize:"0.62rem", color:c.green, letterSpacing:"0.12em", textTransform:"uppercase", fontWeight:600 }}>AI Analysis</p>
+            {analysis?.cached && (
+              <span style={{ fontFamily:gs, fontSize:"0.62rem", color:c.muted, background:c.surface, border:`1px solid ${c.border}`, borderRadius:"4px", padding:"2px 8px" }}>
+                Cached · refreshes in 24h
+              </span>
+            )}
+          </div>
+
+          {/* Score + verdict row */}
+          <div style={{ display:"flex", gap:"1.5rem", alignItems:"flex-start", flexWrap:"wrap", marginBottom:"1.25rem" }}>
             <ScoreCircle score={aiScore} c={c} size={80}/>
-            <div style={{ flex:1, minWidth:"240px" }}>
-              <div style={{ display:"flex", gap:"0.5rem", marginBottom:"0.85rem", flexWrap:"wrap" }}>
-                <span style={{ fontFamily:gs, fontSize:"0.72rem", color:c.muted, background:c.surface, border:`1px solid ${c.border}`, borderRadius:"4px", padding:"3px 10px" }}>
-                  AI Score pending
-                </span>
-                <span style={{ fontFamily:gs, fontSize:"0.72rem", color:c.muted, background:c.surface, border:`1px solid ${c.border}`, borderRadius:"4px", padding:"3px 10px" }}>
-                  Verdict pending
-                </span>
-              </div>
-              <p style={{ fontFamily:gs, fontSize:"0.84rem", color:c.muted, lineHeight:1.7, marginBottom:"1rem" }}>
-                AI-generated analysis for {p?.companyName||ticker} will appear here once generated. Click the button below to generate a full analysis using Claude AI.
-              </p>
-              <button style={{ background:c.green, color:"#050505", border:"none", borderRadius:"6px", padding:"10px 22px", fontFamily:gs, fontSize:"0.82rem", fontWeight:700, cursor:"pointer", letterSpacing:"0.02em" }}>
-                Generate AI Analysis →
-              </button>
+            <div style={{ flex:1, minWidth:"200px" }}>
+              {aiVerdict && (
+                <div style={{ marginBottom:"0.75rem" }}>
+                  <span style={{ fontFamily:gs, fontSize:"0.78rem", fontWeight:700,
+                    color:aiVerdict==="Strong Buy"||aiVerdict==="Buy"?c.green:aiVerdict==="Sell"||aiVerdict==="Strong Sell"?c.red:c.muted,
+                    background:aiVerdict==="Strong Buy"||aiVerdict==="Buy"?c.greenDim:aiVerdict==="Sell"||aiVerdict==="Strong Sell"?c.redDim:c.surface,
+                    border:`1px solid ${aiVerdict==="Strong Buy"||aiVerdict==="Buy"?c.green+"50":aiVerdict==="Sell"||aiVerdict==="Strong Sell"?c.red+"50":c.border}`,
+                    borderRadius:"5px", padding:"4px 12px",
+                  }}>{aiVerdict}</span>
+                </div>
+              )}
+              {analysis?.summary ? (
+                <p style={{ fontFamily:gs, fontSize:"0.84rem", color:c.text, lineHeight:1.72 }}>{analysis.summary}</p>
+              ) : (
+                <p style={{ fontFamily:gs, fontSize:"0.84rem", color:c.muted, lineHeight:1.7 }}>
+                  {aiLoading ? "Generating analysis…" : "Click below to generate an AI analysis of this stock."}
+                </p>
+              )}
             </div>
+          </div>
+
+          {/* Full report sections */}
+          {analysis?.full_report && (
+            <div style={{ borderTop:`1px solid ${c.border}`, paddingTop:"1.25rem", marginBottom:"1.25rem" }}>
+              {Object.entries(analysis.full_report).map(([key, text]) => (
+                <div key={key} style={{ marginBottom:"1rem" }}>
+                  <p style={{ fontFamily:gs, fontSize:"0.65rem", color:c.muted, letterSpacing:"0.09em", textTransform:"uppercase", fontWeight:600, marginBottom:"4px" }}>
+                    {key.charAt(0).toUpperCase()+key.slice(1)}
+                  </p>
+                  <p style={{ fontFamily:gs, fontSize:"0.83rem", color:c.text, lineHeight:1.7 }}>{text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Risk flags */}
+          {analysis?.risk_flags?.length > 0 && (
+            <div style={{ borderTop:`1px solid ${c.border}`, paddingTop:"1rem", marginBottom:"1.25rem" }}>
+              <p style={{ fontFamily:gs, fontSize:"0.65rem", color:c.muted, letterSpacing:"0.09em", textTransform:"uppercase", fontWeight:600, marginBottom:"0.75rem" }}>Risk Flags</p>
+              <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
+                {analysis.risk_flags.map((rf, i) => {
+                  const col = rf.level==="High"?c.red:rf.level==="Medium"?c.amber:c.green;
+                  return (
+                    <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:c.surface, borderRadius:"7px", padding:"8px 12px" }}>
+                      <span style={{ fontFamily:gs, fontSize:"0.8rem", color:c.text }}>{rf.flag}</span>
+                      <span style={{ fontFamily:gs, fontSize:"0.65rem", fontWeight:700, color:col, letterSpacing:"0.05em", textTransform:"uppercase", flexShrink:0, marginLeft:"0.5rem" }}>{rf.level}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Error */}
+          {aiError && (
+            <div style={{ background:c.redDim, border:`1px solid ${c.red}40`, borderRadius:"7px", padding:"10px 14px", marginBottom:"1rem" }}>
+              <p style={{ fontFamily:gs, fontSize:"0.82rem", color:c.red }}>{aiError}</p>
+            </div>
+          )}
+
+          {/* CTA buttons */}
+          <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap" }}>
+            {!analysis && (
+              <button onClick={() => generateAnalysis("summary")} disabled={aiLoading}
+                style={{ background:c.green, color:"#050505", border:"none", borderRadius:"6px", padding:"10px 22px", fontFamily:gs, fontSize:"0.82rem", fontWeight:700, cursor:aiLoading?"not-allowed":"pointer", opacity:aiLoading?0.65:1, display:"flex", alignItems:"center", gap:"6px" }}>
+                {aiLoading&&aiType==="summary" ? "Generating…" : "Generate AI Summary"}
+              </button>
+            )}
+            {(!analysis?.full_report) && (
+              <button onClick={() => generateAnalysis("full")} disabled={aiLoading}
+                style={{ background:"transparent", color:c.text, border:`1px solid ${c.borderHi}`, borderRadius:"6px", padding:"10px 22px", fontFamily:gs, fontSize:"0.82rem", fontWeight:600, cursor:aiLoading?"not-allowed":"pointer", opacity:aiLoading?0.65:1 }}>
+                {aiLoading&&aiType==="full" ? "Generating…" : analysis ? "Generate Full Report →" : "Generate Full Report"}
+              </button>
+            )}
+            {analysis && (
+              <button onClick={() => { setAnalysis(null); setAiError(null); }}
+                style={{ background:"transparent", color:c.muted, border:"none", borderRadius:"6px", padding:"10px 14px", fontFamily:gs, fontSize:"0.78rem", cursor:"pointer" }}>
+                Regenerate
+              </button>
+            )}
           </div>
         </div>
 
