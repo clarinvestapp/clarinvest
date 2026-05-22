@@ -173,19 +173,16 @@ function StockPanel({ stock, c, mode, onClose, onFullAnalysis }) {
     <>
       {/* Backdrop — clicking closes panel */}
       <div onClick={onClose}
-        style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", zIndex:300, backdropFilter:"blur(2px)", transition:"opacity 0.3s", opacity:visible?1:0 }}/>
+        style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:300, backdropFilter:"blur(3px)", transition:"opacity 0.28s", opacity:visible?1:0 }}/>
 
-      {/* Panel */}
+      {/* Panel — centered floating on desktop, bottom sheet on mobile */}
       <div ref={panelRef}
+        className={`stock-panel${visible?" open":""}`}
         style={{
-          position:"fixed", top:"58px", right:0, bottom:0, zIndex:301,
-          width:"min(480px, 100vw)",
           background:mode==="dark"?"#0E0E10":"#FFFFFF",
-          borderLeft:`1px solid ${c.borderHi}`,
-          boxShadow:"-12px 0 40px rgba(0,0,0,0.3)",
+          border:`1px solid ${c.borderHi}`,
+          boxShadow:"0 24px 80px rgba(0,0,0,0.45)",
           display:"flex", flexDirection:"column",
-          transform:visible?"translateX(0)":"translateX(100%)",
-          transition:"transform 0.3s cubic-bezier(0.32,0.72,0,1)",
           overflowY:"auto",
         }}>
 
@@ -371,7 +368,32 @@ export default function DiscoveryPage() {
         .rbow{animation:rbow 2.8s linear infinite;border-color:transparent !important;}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
         .sk>div{animation:pulse 1.4s ease infinite;}
+
+        /* ── Floating stock panel ── */
+        .stock-panel{
+          position:fixed;
+          top:50%; left:50%;
+          transform:translate(-50%,-50%) scale(0.96);
+          width:min(520px,90vw);
+          max-height:85vh;
+          border-radius:16px;
+          z-index:301;
+          opacity:0;
+          transition:transform 0.28s cubic-bezier(0.32,0.72,0,1),opacity 0.24s ease;
+        }
+        .stock-panel.open{
+          transform:translate(-50%,-50%) scale(1);
+          opacity:1;
+        }
         @media(max-width:700px){
+          .stock-panel{
+            top:auto; left:0; right:0; bottom:0;
+            transform:translateY(6%);
+            width:100%;
+            border-radius:16px 16px 0 0;
+            max-height:90vh;
+          }
+          .stock-panel.open{transform:translateY(0);opacity:1;}
           .sw{flex-wrap:nowrap;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
           .sw::-webkit-scrollbar{display:none;}
           .ppd{padding:1.5rem 1.25rem !important;}
