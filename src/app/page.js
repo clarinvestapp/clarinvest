@@ -629,21 +629,29 @@ export default function Clarinvest(){
           </Reveal>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"1.25rem"}}>
             {[
-              {code:"US",name:"United States",sub:"NYSE · NASDAQ · S&P 500",detail:"3,500+ stocks covered"},
-              {code:"UK",name:"United Kingdom",sub:"LSE · AIM · FTSE 100",   detail:"800+ stocks covered"},
-              {code:"EU",name:"Europe",         sub:"DAX · CAC 40 · FTSE MIB",detail:"1,200+ stocks covered"},
+              {code:"US",name:"United States",sub:"NYSE · NASDAQ · S&P 500",detail:"3,500+ stocks · Live",       live:true },
+              {code:"EU",name:"Europe",        sub:"DAX · CAC 40 · FTSE MIB", detail:"Coming soon",              live:false},
+              {code:"UK",name:"United Kingdom",sub:"LSE · AIM · FTSE 100",    detail:"Coming soon",              live:false},
             ].map((m,i)=>(
               <Reveal key={i} delay={i*0.1}>
                 <div style={{
                   background:mode==="dark"?"linear-gradient(150deg,#161618 0%,#111113 100%)":"linear-gradient(150deg,#FFFFFF 0%,#EBEBF0 100%)",
-                  border:`1px solid ${c.border}`,borderRadius:"14px",padding:"2.2rem",textAlign:"center",
-                  boxShadow:mode==="dark"?"0 2px 20px rgba(0,0,0,0.3)":"0 2px 16px rgba(0,0,0,0.05)"}}>
+                  border:`1px solid ${m.live?c.border:c.borderHi}`,borderRadius:"14px",padding:"2.2rem",textAlign:"center",
+                  boxShadow:mode==="dark"?"0 2px 20px rgba(0,0,0,0.3)":"0 2px 16px rgba(0,0,0,0.05)",
+                  opacity:m.live?1:0.65,
+                  position:"relative",overflow:"hidden",
+                }}>
+                  {!m.live&&(
+                    <div style={{position:"absolute",top:"12px",right:"12px",background:mode==="dark"?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.06)",borderRadius:"50px",padding:"2px 10px"}}>
+                      <span style={{fontFamily:gs,fontSize:"0.58rem",color:c.muted,fontWeight:600,letterSpacing:"0.06em"}}>SOON</span>
+                    </div>
+                  )}
                   <div style={{display:"flex",justifyContent:"center",marginBottom:"1rem"}}>
                     <FlagSVG market={m.code} height={32}/>
                   </div>
                   <div style={{fontFamily:gs,fontSize:"1.1rem",fontWeight:700,marginBottom:"0.4rem",color:c.text}}>{m.name}</div>
                   <div style={{fontFamily:gs,color:c.muted,fontSize:"0.81rem",marginBottom:"0.5rem"}}>{m.sub}</div>
-                  <div style={{fontFamily:gs,color:c.blue,fontSize:"0.72rem",fontWeight:700,letterSpacing:"0.04em"}}>{m.detail}</div>
+                  <div style={{fontFamily:gs,color:m.live?c.blue:c.muted,fontSize:"0.72rem",fontWeight:700,letterSpacing:"0.04em"}}>{m.detail}</div>
                 </div>
               </Reveal>
             ))}
@@ -656,7 +664,7 @@ export default function Clarinvest(){
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Pricing</p>
-            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"1.5rem"}}>Simple, transparent pricing</h2>
+            <h2 style={{fontFamily:gs,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
             <p style={{fontFamily:gs,color:c.muted,maxWidth:"400px",margin:"0 auto 0.5rem",lineHeight:1.72,fontSize:"0.94rem"}}>
               No hidden fees. No lock-in. Prices shown in your local currency.
             </p>
@@ -699,13 +707,13 @@ export default function Clarinvest(){
           {[
             {name:"Essential", tag:"For curious investors",           badge:null,           hi:false, monthly:curr.em[0], yearly:curr.em[1],
              plusLabel: null,
-             feats:["5 AI summaries per month","Basic AI summary per stock","Stocks — US, EU and UK","Commodities","Key financial ratios","Watchlist","Monthly market digest"]},
+             feats:["5 AI summaries per month","Basic AI summary per stock","US stocks (EU and UK coming soon)","Commodities","Key financial ratios","Watchlist","Monthly market digest"]},
             {name:"Pro",       tag:"For serious investors",           badge:"Most Popular",  hi:true,  monthly:curr.pr[0], yearly:curr.pr[1],
              plusLabel: "Everything in Essential, plus:",
              feats:["Unlimited AI summaries","15 AI full reports per month","Indexes","Valuation, liquidity and leverage stats","Per Share and growth metrics","Income Statement","Virtual Portfolio","Weekly market digest"]},
             {name:"Ultimate",  tag:"For the most demanding investors",badge:"Full Access",   hi:false, monthly:curr.ul[0], yearly:curr.ul[1],
              plusLabel: "Everything in Pro, plus:",
-             feats:["Unlimited AI full reports","ETFs","Full financial statements","Balance Sheet and Cash Flow","Sankey flow diagrams","Advanced analytics","Priority data refresh","Early access to new features"]},
+             feats:["Unlimited AI full reports","ETFs","Full financial statements","Balance Sheet and Cash Flow","Sankey flow diagrams","Dividend intelligence and forecasting","Advanced analytics","Priority data refresh","Early access to new features"]},
           ].map((plan,i)=>{
             const price=billing==="monthly"?plan.monthly:plan.yearly;
             const isLoading=checkoutLoading===plan.name;

@@ -13,10 +13,10 @@ const gs = "'Google Sans Flex','DM Sans',sans-serif";
 const pf = "'Playfair Display',Georgia,serif";
 
 const NAV_ITEMS = [
-  { label:"Discovery",  href:"/dashboard",            icon:"◈" },
-  { label:"Watchlist",  href:"/dashboard/watchlist",  icon:"♡" },
-  { label:"Portfolio",  href:"/dashboard/portfolio",  icon:"▲" },
-  { label:"Account",    href:"/dashboard/account",    icon:"○" },
+  { label:"Discovery",  href:"/dashboard",           icon:"◈", ready:true  },
+  { label:"Watchlist",  href:"/dashboard/watchlist", icon:"♡", ready:false },
+  { label:"Portfolio",  href:"/dashboard/portfolio", icon:"▲", ready:false },
+  { label:"Account",    href:"/dashboard/account",   icon:"○", ready:true  },
 ];
 
 // ─── Inner shell (needs ThemeContext) ─────────────────────────────────────────
@@ -104,8 +104,9 @@ function DashboardShell({ children }) {
             const active = pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(n.href));
             return (
               <button key={n.href} className="nav-link"
-                onClick={() => router.push(n.href)}
-                style={{ fontFamily:gs, fontSize:"0.83rem", fontWeight:active?600:400, color:active?c.text:c.muted, padding:"6px 14px", borderRadius:"5px", background:active?c.surface:"transparent" }}>
+                onClick={() => n.ready && router.push(n.href)}
+                title={n.ready ? n.label : `${n.label} — coming soon`}
+                style={{ fontFamily:gs, fontSize:"0.83rem", fontWeight:active?600:400, color:active?c.text:c.muted, padding:"6px 14px", borderRadius:"5px", background:active?c.surface:"transparent", opacity:n.ready?1:0.4, cursor:n.ready?"pointer":"default" }}>
                 {n.label}
               </button>
             );
@@ -149,10 +150,11 @@ function DashboardShell({ children }) {
         {NAV_ITEMS.map(n => {
           const active = pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(n.href));
           return (
-            <button key={n.href} onClick={() => router.push(n.href)}
-              style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:"3px", padding:"6px 12px", flex:1 }}>
-              <span style={{ fontSize:"1.1rem", color:active?c.green:c.muted }}>{n.icon}</span>
-              <span style={{ fontFamily:gs, fontSize:"0.62rem", fontWeight:active?600:400, color:active?c.text:c.muted, letterSpacing:"0.04em" }}>{n.label}</span>
+            <button key={n.href} className="nav-link"
+              onClick={() => n.ready && router.push(n.href)}
+              title={n.ready ? n.label : `${n.label} — coming soon`}
+              style={{ fontFamily:gs, fontSize:"0.83rem", fontWeight:active?600:400, color:active?c.text:c.muted, padding:"6px 14px", borderRadius:"5px", background:active?c.surface:"transparent", opacity:n.ready?1:0.4, cursor:n.ready?"pointer":"default" }}>
+            {n.label}
             </button>
           );
         })}
