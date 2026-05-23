@@ -1,569 +1,898 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useTheme } from "@/lib/theme";
-import { createClient } from "@/lib/supabase";
+import { useState, useEffect, useRef } from "react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from "recharts";
 
+// ─── Colors ───────────────────────────────────────────────────────────────────
 const C = {
-  dark:  { bg:"#090909", card:"#111113", surface:"#141416", border:"#232325", borderHi:"#333336", text:"#F0F0F0", muted:"#7A7A80", green:"#00E676", greenDim:"rgba(0,230,118,0.10)", blue:"#4488FF", blueDim:"rgba(68,136,255,0.12)", red:"#FF1800", amber:"#F59E0B", cg:"linear-gradient(145deg,#131316,#0F0F12)", cgh:"linear-gradient(145deg,#1C1C20,#141418)" },
-  light: { bg:"#F7F7F5", card:"#FFFFFF",  surface:"#EEEEED", border:"#DEDEDD",  borderHi:"#BABAB8", text:"#0A0A0A", muted:"#606065", green:"#008A38", greenDim:"rgba(0,138,56,0.09)", blue:"#1E55CC", blueDim:"rgba(30,85,204,0.09)", red:"#CC0000", amber:"#B45309", cg:"linear-gradient(145deg,#FFFFFF,#F2F2F0)", cgh:"linear-gradient(145deg,#F5F5F3,#EBEBEA)" },
+  dark: {
+    bg:"#090909",card:"#111113",surface:"#141416",
+    border:"#232325",borderHi:"#333336",
+    text:"#F0F0F0",muted:"#7A7A80",
+    green:"#00E676",greenDim:"rgba(0,230,118,0.10)",
+    blue:"#4488FF", blueDim:"rgba(68,136,255,0.12)",
+    red:"#FF1800",  redDim:"rgba(255,24,0,0.12)",
+  },
+  light: {
+    bg:"#F7F7F5",card:"#FFFFFF",surface:"#EEEEED",
+    border:"#DEDEDD",borderHi:"#BABAB8",
+    text:"#0A0A0A",muted:"#606065",
+    green:"#008A38",greenDim:"rgba(0,138,56,0.09)",
+    blue:"#1E55CC", blueDim:"rgba(30,85,204,0.09)",
+    red:"#CC0000",  redDim:"rgba(204,0,0,0.10)",
+  },
 };
-const gs = "'Google Sans Flex','DM Sans',sans-serif";
 
-const VIEWS   = [
-  { id:"gainers", label:"Top Gainers" },
-  { id:"losers",  label:"Top Losers"  },
-  { id:"active",  label:"Most Active" },
-];
-const MARKETS = [
-  { id:"All", label:"All",   on:true  },
-  { id:"US",  label:"US",    on:true  },
-  { id:"EU",  label:"EU 🔜", on:false },
-  { id:"UK",  label:"UK 🔜", on:false },
-];
-const SECTORS = [
-  "All","Technology","Financials","Healthcare","Energy",
-  "Consumer Discretionary","Consumer Staples","Industrials","Materials",
-  "Real Estate","Utilities","Communication","Defence","Automotive",
-  "Mining","Luxury","Biotech",
-];
-
-// ─── Market status ─────────────────────────────────────────────────────────────
-const MARKET_META = {
-  US: { currency:"USD", exchange:"NYSE / NASDAQ", hours:"09:30 – 16:00 ET",  openUTC:[870,1260], preUTC:[840,870]  },
-  UK: { currency:"GBP", exchange:"London Stock Exchange", hours:"08:00 – 16:30 GMT", openUTC:[480,990],  preUTC:[450,480]  },
-  EU: { currency:"EUR", exchange:"Various EU Exchanges", hours:"09:00 – 17:30 CET", openUTC:[480,1050], preUTC:[450,480]  },
+// ─── Stripe Price IDs ─────────────────────────────────────────────────────────
+const PRICE_IDS = {
+  essential_monthly: "price_1TXpfe2LvKDKlOmwCd2Kn1tM",
+  essential_yearly:  "price_1TXpgQ2LvKDKlOmwEmhpx87h",
+  pro_monthly:       "price_1TZ4LX2LvKDKlOmwYOQ1bzc6",
+  pro_yearly:        "price_1TZ4M22LvKDKlOmwhURhQS9B",
+  ultimate_monthly:  "price_1TXph12LvKDKlOmwuRfaaKwJ",
+  ultimate_yearly:   "price_1TXpjD2LvKDKlOmwS2LiCkG6",
 };
-function marketStatus(market) {
-  const now = new Date();
-  if ([0,6].includes(now.getUTCDay())) return { label:"Weekend", col:"muted" };
-  const t = now.getUTCHours()*60 + now.getUTCMinutes();
-  const m = MARKET_META[market];
-  if (!m) return { label:"Unknown", col:"muted" };
-  if (t >= m.openUTC[0] && t < m.openUTC[1]) return { label:"Open",       col:"green" };
-  if (t >= m.preUTC[0]  && t < m.preUTC[1] ) return { label:"Pre-Market", col:"amber" };
-  return { label:"Closed", col:"red" };
-}
 
-// ─── Flag image ────────────────────────────────────────────────────────────────
-function FlagImg({ market, height = 18 }) {
-  const codes = { US:"us", UK:"uk", EU:"eu" };
-  return (
-    <img src={`/flags/${codes[market]||"us"}.svg`} alt={market}
-      style={{ height, width:Math.round(height*1.35), display:"inline-block", verticalAlign:"middle", borderRadius:"1px" }}
-    />
-  );
-}
+// ─── Data ─────────────────────────────────────────────────────────────────────
+const CURR={
+  GBP:{sym:"£", em:[9,79],   pr:[19,159],  ul:[29,249]},
+  USD:{sym:"$", em:[12,99],  pr:[25,209],  ul:[35,299]},
+  EUR:{sym:"€", em:[10,89],  pr:[22,189],  ul:[32,269]},
+  CAD:{sym:"C$",em:[16,129], pr:[32,269],  ul:[45,379]},
+  AUD:{sym:"A$",em:[18,149], pr:[36,299],  ul:[52,429]},
+};
+const GEO={GB:"GBP",US:"USD",CA:"CAD",AU:"AUD",DE:"EUR",FR:"EUR",IT:"EUR",ES:"EUR",NL:"EUR",PT:"EUR",BE:"EUR",AT:"EUR",IE:"EUR",FI:"EUR",GR:"EUR"};
 
-// ─── AI score circle ───────────────────────────────────────────────────────────
-function ScoreBadge({ score, c, size = 48 }) {
-  if (score == null) return (
-    <div style={{ width:size, height:size, borderRadius:"50%", border:`2px solid ${c.border}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-      <span style={{ fontFamily:gs, fontSize:"0.5rem", color:c.muted, textAlign:"center", lineHeight:1.2 }}>AI<br/>—</span>
+const CHART_DATA=[
+  {w:"Jan W1",p:495},{w:"Jan W3",p:528},
+  {w:"Feb W1",p:552},{w:"Feb W3",p:641},
+  {w:"Mar W1",p:791},{w:"Mar W3",p:878},
+  {w:"Apr W1",p:762},{w:"Apr W3",p:796},
+  {w:"May W1",p:876},{w:"May W3",p:946},
+  {w:"Jun W1",p:1042},{w:"Jun W3",p:1208},
+];
+
+const FEATS=[
+  {icon:"◈",title:"AI Stock Reports",       desc:"Plain-English analysis in seconds. Earnings, valuation, momentum. No jargon, no noise, just the signal you need."},
+  {icon:"▲",title:"Value and Growth Signals",desc:"Screening for undervalued compounders, momentum breakouts, dividend consistency, and alpha across every sector."},
+  {icon:"▣",title:"Deep Fundamentals",       desc:"P/E, EV/EBITDA, revenue growth, debt, margins, all contextualised by AI against sector peers and historical norms."},
+  {icon:"◉",title:"Earnings Intelligence",   desc:"Beat/miss analysis and guidance interpretation. What the numbers actually mean for the stock trajectory ahead."},
+  {icon:"◈",title:"Multi-Market Coverage",   desc:"US, European and UK equities in one interface. Filter by market, sector, or signal type with a single tap."},
+  {icon:"◇",title:"Risk Flag Alerts",        desc:"AI-surfaced red flags: insider selling, covenant risk, sector headwinds, and concentration concerns surfaced fast."},
+];
+
+const CHIPS=[
+  {ticker:"NVDA",name:"NVIDIA Corp.",        price:"$875", chg:"+5.4%",score:93,label:"Strong Buy",top:"22%",right:"7%", mul:18, delay:"0s"  },
+  {ticker:"AAPL",name:"Apple Inc.",          price:"$184", chg:"+2.1%",score:78,label:"Buy",        top:"62%",right:"4%", mul:12, delay:"1.5s"},
+  {ticker:"TSLA",name:"Tesla Inc.",          price:"$171", chg:"-1.2%",score:61,label:"Hold",       top:"26%",left:"4%",  mul:-14,delay:"0.8s"},
+  {ticker:"TSM", name:"Taiwan Semiconductor",price:"$138", chg:"+3.1%",score:82,label:"Buy",        top:"65%",left:"5%",  mul:-10,delay:"2.1s"},
+];
+
+const TICKERS=["AAPL +2.1%","MSFT +0.8%","NVDA +5.4%","TSLA -1.2%","AMZN +1.9%","GOOGL +0.3%","META +3.1%","TSM +3.1%","ASML.AS +1.8%","AZN.L +2.0%","VOD.L -0.5%","SIE.DE +1.1%","MC.PA +0.9%","BP.L -0.9%","SHEL.L +0.7%","BARC.L -0.3%"];
+
+// ─── Scroll Reveal ─────────────────────────────────────────────────────────────
+function useReveal(){
+  const ref=useRef(null),[v,setV]=useState(false);
+  useEffect(()=>{
+    const o=new IntersectionObserver(([e])=>{if(e.isIntersecting){setV(true);o.disconnect();}},{threshold:0.08});
+    if(ref.current)o.observe(ref.current);
+  
+  return()=>o.disconnect();
+  },[]);
+  return[ref,v];
+}
+function Reveal({children,delay=0,passStyle={}}){
+  const[ref,v]=useReveal();
+  return(
+    <div ref={ref} style={{opacity:v?1:0,transform:v?"none":"translateY(22px)",transition:`opacity 0.7s ease ${delay}s,transform 0.7s ease ${delay}s`,...passStyle}}>
+      {children}
     </div>
   );
-  const sc = score>=80?c.green:score>=65?c.text:c.red;
-  const r=(size-6)/2, cx=size/2, cy=size/2, circ=2*Math.PI*r, offset=circ*(1-score/100);
-  return (
-    <div style={{ position:"relative", width:size, height:size, flexShrink:0 }}>
-      <div style={{ position:"absolute", inset:"5px", borderRadius:"50%", background:`radial-gradient(circle,${sc}28 0%,transparent 75%)`, filter:"blur(4px)", pointerEvents:"none" }}/>
-      <svg width={size} height={size} style={{ position:"absolute", top:0, left:0, transform:"rotate(-90deg)" }}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke={c.border} strokeWidth="2.5"/>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke={sc} strokeWidth="2.5" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"/>
-      </svg>
-      <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <span style={{ fontFamily:gs, fontSize:"0.76rem", fontWeight:800, color:sc }}>{score}</span>
-      </div>
-    </div>
-  );
 }
 
-// ─── Stock card ────────────────────────────────────────────────────────────────
-function StockCard({ s, c, isActive, isWatchlisted, onWatchlistToggle, onClick }) {
-  const [hov, setHov] = useState(false);
-  const pos = (s.chg ?? 0) >= 0;
+// ─── Inline SVG flags — no network, works on Windows Chrome/Edge ─────────────
+function FlagSVG({ market, height = 16 }) {
+  const w = Math.round(height * (19/13));
+  const s = { borderRadius:"2px", display:"inline-block", verticalAlign:"middle", flexShrink:0 };
+  if (market === "US") return (
+    <svg width={w} height={height} viewBox="0 0 7410 3900" xmlns="http://www.w3.org/2000/svg" style={s}>
+      <path fill="#b22234" d="M0 0h7410v3900H0z"/>
+      <path d="M0 450h7410m0 600H0m0 600h7410m0 600H0m0 600h7410m0 600H0" stroke="#fff" strokeWidth="300"/>
+      <path fill="#3c3b6e" d="M0 0h2964v2100H0z"/>
+      <g fill="#fff">
+        <g id="us-d">
+          <g id="us-c">
+            <g id="us-e">
+              <g id="us-b">
+                <path id="us-a" d="M247 90l70.534 217.082-184.66-134.164h228.253L176.466 307.082z"/>
+                <use href="#us-a" y="420"/>
+                <use href="#us-a" y="840"/>
+                <use href="#us-a" y="1260"/>
+              </g>
+              <use href="#us-a" y="1680"/>
+            </g>
+            <use href="#us-b" x="247" y="210"/>
+          </g>
+          <use href="#us-c" x="494"/>
+        </g>
+        <use href="#us-d" x="988"/>
+        <use href="#us-c" x="1976"/>
+        <use href="#us-e" x="2470"/>
+      </g>
+    </svg>
+  );
+  if (market === "UK") return (
+    <svg width={w} height={height} viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg" style={s}>
+      <defs>
+        <clipPath id="uj-a"><path d="M0 0v30h60V0z"/></clipPath>
+        <clipPath id="uj-b"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath>
+      </defs>
+      <g clipPath="url(#uj-a)">
+        <path d="M0 0v30h60V0z" fill="#012169"/>
+        <path d="M0 0l60 30m0-30L0 30" stroke="#fff" strokeWidth="6"/>
+        <path d="M0 0l60 30m0-30L0 30" clipPath="url(#uj-b)" stroke="#C8102E" strokeWidth="4"/>
+        <path d="M30 0v30M0 15h60" stroke="#fff" strokeWidth="10"/>
+        <path d="M30 0v30M0 15h60" stroke="#C8102E" strokeWidth="6"/>
+      </g>
+    </svg>
+  );
+  if (market === "EU") return (
+    <svg width={w} height={height} viewBox="0 0 810 540" xmlns="http://www.w3.org/2000/svg" style={s}>
+      <defs>
+        <g id="eu-d">
+          <g id="eu-b">
+            <path id="eu-a" d="M0 0v1h.5z" transform="rotate(18 3.157 -.5)"/>
+            <use href="#eu-a" transform="scale(-1 1)"/>
+          </g>
+          <g id="eu-c">
+            <use href="#eu-b" transform="rotate(72)"/>
+            <use href="#eu-b" transform="rotate(144)"/>
+          </g>
+          <use href="#eu-c" transform="scale(-1 1)"/>
+        </g>
+      </defs>
+      <path fill="#039" d="M0 0h810v540H0z"/>
+      <g fill="#fc0" transform="matrix(30 0 0 30 405 270)">
+        <use href="#eu-d" y="-6"/>
+        <use href="#eu-d" y="6"/>
+        <g id="eu-e">
+          <use href="#eu-d" x="-6"/>
+          <use href="#eu-d" transform="rotate(-144 -2.344 -2.11)"/>
+          <use href="#eu-d" transform="rotate(144 -2.11 -2.344)"/>
+          <use href="#eu-d" transform="rotate(72 -4.663 -2.076)"/>
+          <use href="#eu-d" transform="rotate(72 -5.076 .534)"/>
+        </g>
+        <use href="#eu-e" transform="scale(-1 1)"/>
+      </g>
+    </svg>
+  );
+  return <span style={{fontFamily:"monospace",fontSize:"0.7rem",color:"#888"}}>{market}</span>;
+}
+
+// Chart reference line label
+const RefLabel=({viewBox,value,color})=>{
+  if(!viewBox)return null;
+  return(
+    <text x={viewBox.x} y={(viewBox.y||0)-8} fill={color} fontSize={9}
+      textAnchor="middle" fontFamily="'Google Sans Flex','DM Sans',sans-serif" fontWeight={600}>
+      {value}
+    </text>
+  );
+};
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+// ─── Banner strip (shown above nav on landing page) ─────────────────────────
+const BCOLS = {
+  dark:  { info:{bg:"rgba(68,136,255,0.12)",brd:"rgba(68,136,255,0.35)",txt:"#4488FF"}, promo:{bg:"rgba(0,230,118,0.10)",brd:"rgba(0,230,118,0.35)",txt:"#00E676"}, urgent:{bg:"rgba(255,24,0,0.10)",brd:"rgba(255,24,0,0.35)",txt:"#FF1800"} },
+  light: { info:{bg:"rgba(30,85,204,0.08)", brd:"rgba(30,85,204,0.30)", txt:"#1E55CC"}, promo:{bg:"rgba(0,138,56,0.08)", brd:"rgba(0,138,56,0.30)", txt:"#008A38"}, urgent:{bg:"rgba(204,0,0,0.08)", brd:"rgba(204,0,0,0.30)", txt:"#CC0000"} },
+};
+
+function BannerStrip({ list, mode, onDismiss }) {
+  if (!list || list.length === 0) return null;
   return (
-    <div onClick={() => onClick(s)}
-      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ background:hov||isActive?c.cgh:c.cg, border:`1px solid ${isActive?c.text:hov?c.borderHi:c.border}`, borderRadius:"16px", padding:"1.5rem 1.4rem", cursor:"pointer", transition:"all 0.22s", transform:hov&&!isActive?"translateY(-4px)":"none", boxShadow:hov?"0 10px 32px rgba(0,0,0,0.25)":"0 1px 8px rgba(0,0,0,0.08)", position:"relative" }}>
-
-      {/* Heart / watchlist button */}
-      <button onClick={(e) => onWatchlistToggle(e, s)}
-        title={isWatchlisted ? "Remove from watchlist" : "Add to watchlist"}
-        style={{ position:"absolute", top:"0.9rem", right:"0.9rem", background:"none", border:"none", cursor:"pointer", fontSize:"1rem", color:isWatchlisted?c.green:c.muted, transition:"color 0.18s, transform 0.18s", transform:isWatchlisted?"scale(1.1)":"scale(1)", padding:"2px" }}>
-        {isWatchlisted ? "♥" : "♡"}
-      </button>
-
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"1rem", paddingRight:"1.75rem" }}>
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"0.45rem", marginBottom:"0.3rem" }}>
-            <FlagImg market={s.market} height={16}/>
-            <span style={{ fontFamily:gs, fontSize:"1.1rem", fontWeight:700, color:c.text }}>{s.ticker}</span>
+    <div>
+      {list.map(b => {
+        const col = (BCOLS[mode]||BCOLS.dark)[b.type] || BCOLS.dark.info;
+        return (
+          <div key={b.id} style={{ background:col.bg, borderBottom:"1px solid "+col.brd, padding:"9px 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"0.75rem" }}>
+            <p style={{ fontFamily:"'Google Sans Flex','DM Sans',sans-serif", fontSize:"0.82rem", color:col.txt, flex:1, textAlign:"center" }}>{b.text}</p>
+            <button onClick={() => onDismiss(b.id)}
+              style={{ background:"none", border:"none", cursor:"pointer", color:col.txt, opacity:0.6, fontSize:"0.9rem", flexShrink:0, padding:"0 4px" }}>✕</button>
           </div>
-          <p style={{ fontFamily:gs, fontSize:"0.72rem", color:c.muted, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.name}</p>
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"3px", flexShrink:0 }}>
-          <ScoreBadge score={s.score} c={c} size={46}/>
-          <span style={{ fontFamily:gs, fontSize:"0.52rem", color:c.muted, letterSpacing:"0.05em", textTransform:"uppercase" }}>AI Score</span>
-        </div>
-      </div>
-      <div style={{ marginBottom:"1rem" }}>
-        {s.price != null ? (
-          <>
-            <span style={{ fontFamily:gs, fontSize:"1.5rem", fontWeight:700, color:c.text }}>${s.price.toFixed(2)}</span>
-            <span style={{ fontFamily:gs, fontSize:"0.86rem", fontWeight:700, color:pos?c.green:c.red, marginLeft:"0.5rem" }}>{pos?"▲":"▼"} {Math.abs(s.chg??0).toFixed(2)}%</span>
-          </>
-        ) : (
-          <span style={{ fontFamily:gs, fontSize:"0.8rem", color:c.muted, fontStyle:"italic" }}>Price loading…</span>
-        )}
-      </div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:"0.75rem", borderTop:`1px solid ${c.border}` }}>
-        <div style={{ display:"flex", gap:"0.35rem", flexWrap:"wrap" }}>
-          <span style={{ fontFamily:gs, fontSize:"0.6rem", color:c.muted, background:c.surface, border:`1px solid ${c.border}`, borderRadius:"4px", padding:"2px 7px" }}>{s.sector||"—"}</span>
-          <span style={{ fontFamily:gs, fontSize:"0.6rem", color:c.muted, background:c.surface, border:`1px solid ${c.border}`, borderRadius:"4px", padding:"2px 7px" }}>{s.market}</span>
-        </div>
-        <span style={{ fontFamily:gs, fontSize:"0.66rem", fontWeight:600, color:isActive?c.green:c.muted }}>
-          {isActive ? "Open ▶" : "View →"}
-        </span>
-      </div>
+        );
+      })}
     </div>
   );
 }
 
-// ─── Skeleton card ─────────────────────────────────────────────────────────────
-function SkeletonCard({ c }) {
-  return (
-    <div style={{ background:c.cg, border:`1px solid ${c.border}`, borderRadius:"16px", padding:"1.5rem 1.4rem" }}>
-      {[["80px","16px"],["120px","12px"]].map(([w,h],i)=>(
-        <div key={i} style={{ width:w, height:h, background:c.surface, borderRadius:"4px", marginBottom:"8px" }}/>
-      ))}
-      <div style={{ width:"100px", height:"24px", background:c.surface, borderRadius:"4px", margin:"0.75rem 0" }}/>
-      <div style={{ height:"1px", background:c.border, margin:"0.75rem 0" }}/>
-      <div style={{ display:"flex", gap:"0.4rem" }}>
-        <div style={{ width:"70px", height:"20px", background:c.surface, borderRadius:"4px" }}/>
-        <div style={{ width:"40px", height:"20px", background:c.surface, borderRadius:"4px" }}/>
-      </div>
-    </div>
-  );
-}
+export default function Clarinvest(){
+  const[mode,          setMode]         =useState("dark");
+  const[billing,       setBilling]      =useState("yearly");
+  const[cur,           setCur]          =useState("GBP");
+  const[mouse,         setMouse]        =useState({x:0,y:0});
+  const[tab,           setTab]          =useState("overview");
+  const[hovPlan,       setHovPlan]      =useState(null);
+  const[solid,         setSolid]        =useState(false);
+  const[checkoutLoading,setCheckoutLoading]=useState(null);
+  const[banners,       setBanners]      =useState([]);
+  const[dismissed,     setDismissed]    =useState(new Set());
 
-// ─── Slide-over stock panel ────────────────────────────────────────────────────
-function StockPanel({ stock, c, mode, onClose, onFullAnalysis }) {
-  const panelRef = useRef(null);
-  const [visible, setVisible] = useState(false);
-  const pos = (stock?.chg ?? 0) >= 0;
-  const meta = stock ? MARKET_META[stock.market] : null;
-  const status = stock ? marketStatus(stock.market) : null;
-  const stCol = status ? (c[status.col] || c.muted) : c.muted;
+  const c=C[mode], curr=CURR[cur];
+  const gs="'Google Sans Flex','DM Sans',sans-serif";
+  const ns="'Noto Serif',Georgia,serif"; // headings + price numbers only
 
-  // Animate in
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 10);
-    return () => clearTimeout(t);
-  }, []);
+  const heroRef=useRef(null),featRef=useRef(null),markRef=useRef(null),priceRef=useRef(null),aboutRef=useRef(null);
+  const go=r=>r.current?.scrollIntoView({behavior:"smooth"});
 
-  // Close on Escape key
-  useEffect(() => {
-    const h = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [onClose]);
+  useEffect(()=>{fetch("https://ipapi.co/json/").then(r=>r.json()).then(d=>{const k=GEO[d.country_code];if(k)setCur(k);}).catch(()=>{});},[]);
+  useEffect(()=>{
+    fetch("/api/banners?target=all")
+      .then(r=>r.json()).then(d=>setBanners(d.banners||[])).catch(()=>{});
+  },[]);
 
-  if (!stock) return null;
+  useEffect(()=>{
+    let ticking=false;
+    const h=e=>{
+      if(!ticking){
+        requestAnimationFrame(()=>{setMouse({x:e.clientX/window.innerWidth-0.5,y:e.clientY/window.innerHeight-0.5});ticking=false;});
+        ticking=true;
+      }
+    };
+    window.addEventListener("mousemove",h,{passive:true});
+    return()=>window.removeEventListener("mousemove",h);
+  },[]);
 
-  const AI_SUMMARIES = {
-    default: `${stock.name} shows consistent fundamentals with a well-established market position. Key metrics suggest the stock warrants further analysis before making any investment decision.`,
-    bullish: `${stock.name} demonstrates strong momentum with improving fundamentals. Revenue growth and margin expansion support a constructive near-term outlook for patient investors.`,
-    bearish: `${stock.name} faces near-term headwinds including valuation pressure and slowing growth. Caution is warranted at current levels until clearer catalysts emerge.`,
+  useEffect(()=>{const h=()=>setSolid(window.scrollY>60);window.addEventListener("scroll",h,{passive:true});return()=>window.removeEventListener("scroll",h);},[]);
+
+  // ─── Stripe checkout handler ────────────────────────────────────────────────
+  const handleCheckout = async (planName) => {
+    const priceId =
+      planName === "Ultimate"
+        ? (billing === "monthly" ? PRICE_IDS.ultimate_monthly : PRICE_IDS.ultimate_yearly)
+      : planName === "Pro"
+        ? (billing === "monthly" ? PRICE_IDS.pro_monthly      : PRICE_IDS.pro_yearly)
+        : (billing === "monthly" ? PRICE_IDS.essential_monthly: PRICE_IDS.essential_yearly);
+
+    setCheckoutLoading(planName);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("No URL returned from checkout API");
+        setCheckoutLoading(null);
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setCheckoutLoading(null);
+    }
   };
-  const summary = (stock.chg??0)>2 ? AI_SUMMARIES.bullish : (stock.chg??0)<-1 ? AI_SUMMARIES.bearish : AI_SUMMARIES.default;
 
-  return (
-    <>
-      {/* Backdrop — clicking closes panel */}
-      <div onClick={onClose}
-        style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:300, backdropFilter:"blur(3px)", transition:"opacity 0.28s", opacity:visible?1:0 }}/>
+  const NAV=[{label:"Features",ref:featRef},{label:"Markets",ref:markRef},{label:"Pricing",ref:priceRef},{label:"About",ref:aboutRef}];
 
-      {/* Panel — centered floating on desktop, bottom sheet on mobile */}
-      <div ref={panelRef}
-        className={`stock-panel${visible?" open":""}`}
-        style={{
-          background:mode==="dark"?"#0E0E10":"#FFFFFF",
-          border:`1px solid ${c.borderHi}`,
-          boxShadow:"0 24px 80px rgba(0,0,0,0.45)",
-          display:"flex", flexDirection:"column",
-          overflowY:"auto",
-        }}>
+  const ChartTip=({active,payload})=>{
+    if(!active||!payload?.length)return null;
+    return(
+      <div style={{background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"6px",padding:"9px 13px",fontFamily:gs,fontSize:"0.8rem"}}>
+        <div style={{color:c.muted,marginBottom:"3px"}}>{payload[0].payload.w}</div>
+        <div style={{color:c.text,fontWeight:600}}>${payload[0].value.toLocaleString()}</div>
+      </div>
+    );
+  };
 
-        {/* Panel header */}
-        <div style={{ padding:"1.25rem 1.5rem", borderBottom:`1px solid ${c.border}`, display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexShrink:0, position:"sticky", top:0, background:mode==="dark"?"#0E0E10":"#FFFFFF", zIndex:1 }}>
-          <div>
-            <div style={{ display:"flex", alignItems:"center", gap:"0.55rem", marginBottom:"0.25rem" }}>
-              <FlagImg market={stock.market} height={18}/>
-              <span style={{ fontFamily:gs, fontSize:"1.3rem", fontWeight:700, color:c.text }}>{stock.ticker}</span>
-              <span style={{ fontFamily:gs, fontSize:"0.58rem", fontWeight:700, color:stCol, background:`${stCol}18`, border:`1px solid ${stCol}40`, borderRadius:"4px", padding:"2px 7px", letterSpacing:"0.05em", textTransform:"uppercase" }}>{status?.label}</span>
-            </div>
-            <p style={{ fontFamily:gs, fontSize:"0.78rem", color:c.muted }}>{stock.name}</p>
-          </div>
-          <button onClick={onClose}
-            style={{ background:c.surface, border:`1px solid ${c.border}`, borderRadius:"6px", padding:"6px 10px", cursor:"pointer", color:c.muted, fontFamily:gs, fontSize:"0.8rem", flexShrink:0, marginLeft:"0.5rem" }}>
-            ✕
+  return(
+    <div style={{fontFamily:gs,background:c.bg,color:c.text,minHeight:"100vh",overflowX:"hidden",transition:"background 0.4s,color 0.4s"}}>
+      <BannerStrip list={banners.filter(b=>b.position==="top"&&!dismissed.has(b.id))} mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=Google+Sans+Flex:ital,opsz,wght@0,8..144,300..700;1,8..144,300..700&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;}
+        ::selection{background:rgba(240,240,240,0.15);}
+
+        .nb{background:none;border:none;cursor:pointer;font-family:'Google Sans Flex','DM Sans',sans-serif;font-size:0.82rem;font-weight:500;transition:opacity 0.18s;}
+        .nb:hover{opacity:0.4;}
+
+        .cbtn{cursor:pointer;border:none;font-family:'Google Sans Flex','DM Sans',sans-serif;font-weight:600;font-size:0.84rem;letter-spacing:0.03em;transition:all 0.22s;}
+        .cbtn:hover{transform:translateY(-2px);}
+        .cbtn:active{transform:none;}
+
+        .fcard{transition:transform 0.28s ease,box-shadow 0.28s ease;display:flex;flex-direction:column;}
+        .fcard:hover{transform:translateY(-5px);}
+        .pcard{transition:transform 0.28s ease;}
+
+        .twrap{overflow:hidden;}
+        .tinner{display:flex;gap:2.5rem;animation:tick 34s linear infinite;white-space:nowrap;}
+        @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+        .chip{animation:floaty 6s ease-in-out infinite;}
+        @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
+
+        @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(7px)}}
+
+        .silver{
+          background:linear-gradient(90deg,#686868 0%,#aaaaaa 16%,#e2e2e2 30%,#ffffff 45%,#e8e8e8 55%,#b0b0b0 70%,#727272 85%,#686868 100%);
+          background-size:200% 100%;
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+          animation:silverSlide 3s linear infinite;
+        }
+        @keyframes silverSlide{from{background-position:200% center}to{background-position:0% center}}
+
+        @keyframes orbA{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(35px,-28px) scale(1.06)}66%{transform:translate(-22px,25px) scale(0.94)}}
+        @keyframes orbB{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-28px,22px) scale(0.92)}66%{transform:translate(30px,-20px) scale(1.08)}}
+
+        .atab{cursor:pointer;border:none;background:none;font-family:'Google Sans Flex','DM Sans',sans-serif;font-weight:600;font-size:0.76rem;letter-spacing:0.02em;transition:all 0.18s;padding:5px 2px;}
+
+        .flag-emoji{font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Android Emoji',emoji,sans-serif !important;font-style:normal;}
+
+        ::-webkit-scrollbar{width:4px;}
+        ::-webkit-scrollbar-thumb{background:#303032;border-radius:2px;}
+
+        .nav-links{display:flex;gap:2rem;overflow-x:auto;white-space:nowrap;-ms-overflow-style:none;scrollbar-width:none;}
+        .nav-links::-webkit-scrollbar{display:none;}
+
+        @media(min-width:700px){.feat-reveal{display:flex;}.fcard{flex:1;}}
+        @media(max-width:700px){
+          .chip{display:none !important;}
+          .ag{grid-template-columns:1fr !important;}
+          .hero-trust{flex-wrap:wrap !important;justify-content:center !important;gap:0.7rem !important;}
+        }
+        @media(max-width:900px){.chip:nth-child(even){display:none;}}
+      `}</style>
+
+      {/* ══ NAV ══════════════════════════════════════════════════════════════ */}
+      <nav style={{
+        position:"fixed",top:0,left:0,right:0,zIndex:200,height:"62px",
+        backdropFilter:"blur(12px)",
+        background:solid
+          ?mode==="dark"?"rgba(9,9,9,0.97)":"rgba(247,247,245,0.97)"
+          :mode==="dark"?"rgba(9,9,9,0.60)":"rgba(247,247,245,0.60)",
+        borderBottom:`1px solid ${solid?c.border:"transparent"}`,
+        display:"flex",alignItems:"center",justifyContent:"space-between",
+        padding:"0 2.5rem",gap:"1rem",
+        transition:"background 0.35s,border-color 0.35s",
+      }}>
+        <button onClick={()=>go(heroRef)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.65rem",flexShrink:0}}>
+          <svg width="22" height="22" viewBox="0 0 200 200">
+            <rect x="8"   y="8"   width="84" height="84" rx="10" fill={c.text}/>
+            <rect x="108" y="8"   width="84" height="84" rx="10" fill={c.text} opacity="0.22"/>
+            <rect x="8"   y="108" width="84" height="84" rx="10" fill={c.text} opacity="0.22"/>
+            <rect x="108" y="108" width="84" height="84" rx="10" fill={c.text}/>
+          </svg>
+          <span style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:"1.1rem",fontWeight:600,letterSpacing:"0.03em",textTransform:"uppercase",color:c.text}}>
+            Clarinvest
+          </span>
+        </button>
+
+        <div className="nav-links" style={{flex:1,justifyContent:"center"}}>
+          {NAV.map(n=>(
+            <button key={n.label} className="nb" style={{color:c.muted}} onClick={()=>go(n.ref)}>{n.label}</button>
+          ))}
+        </div>
+
+        <div style={{display:"flex",gap:"0.7rem",alignItems:"center",flexShrink:0}}>
+          <button onClick={()=>setMode(m=>m==="dark"?"light":"dark")}
+            style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"50px",padding:"5px 13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"5px",color:c.muted,fontSize:"0.78rem",fontFamily:gs,transition:"background 0.3s"}}>
+            <span>{mode==="dark"?"☀":"☾"}</span>
+            <span>{mode==="dark"?"Light":"Dark"}</span>
+          </button>
+          <button className="cbtn" onClick={()=>go(priceRef)} style={{background:c.text,color:c.bg,padding:"8px 20px",borderRadius:"4px"}}>
+            Get started
           </button>
         </div>
+      </nav>
 
-        {/* Scrollable content */}
-        <div style={{ padding:"1.5rem", flex:1 }}>
+      {/* ══ HERO ═════════════════════════════════════════════════════════════ */}
+      <section ref={heroRef} style={{minHeight:"100vh",paddingTop:"62px",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+        <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
+          <div style={{position:"absolute",inset:0,
+            backgroundImage:`radial-gradient(${c.borderHi} 1px,transparent 1px)`,
+            backgroundSize:"28px 28px",opacity:mode==="dark"?0.5:0.4,
+            maskImage:"radial-gradient(ellipse 80% 70% at 50% 50%,black 20%,transparent 80%)"
+          }}/>
+          <div style={{position:"absolute",top:"0%",left:"-10%",width:"65%",height:"75%",borderRadius:"50%",
+            background:`radial-gradient(ellipse at center,${mode==="dark"?"rgba(50,50,55,0.55)":"rgba(180,180,178,0.40)"} 0%,transparent 70%)`,
+            willChange:"transform",animation:"orbA 18s ease-in-out infinite"}}/>
+          <div style={{position:"absolute",bottom:"-10%",right:"-8%",width:"55%",height:"65%",borderRadius:"50%",
+            background:`radial-gradient(ellipse at center,${mode==="dark"?"rgba(38,38,42,0.60)":"rgba(190,190,188,0.45)"} 0%,transparent 70%)`,
+            willChange:"transform",animation:"orbB 22s ease-in-out infinite"}}/>
+        </div>
 
-          {/* Price */}
-          <div style={{ marginBottom:"1.5rem" }}>
-            {stock.price != null ? (
-              <>
-                <div style={{ fontFamily:gs, fontSize:"2.2rem", fontWeight:700, color:c.text, lineHeight:1 }}>${stock.price.toFixed(2)}</div>
-                <div style={{ fontFamily:gs, fontSize:"1rem", fontWeight:700, color:pos?c.green:c.red, marginTop:"0.3rem" }}>
-                  {pos?"▲":"▼"} {Math.abs(stock.chg??0).toFixed(2)}% today
+        {CHIPS.map((chip,i)=>{
+          const pos=chip.chg.startsWith("+");
+          const scoreColor=chip.score>=80?c.green:chip.score>=65?c.text:c.red;
+          return(
+            <div key={i} className="chip" style={{
+              position:"absolute",top:chip.top,
+              ...(chip.left?{left:chip.left}:{right:chip.right}),
+              animationDelay:chip.delay,
+              transform:`translate(${mouse.x*chip.mul}px,${mouse.y*(chip.mul*0.5)}px)`,
+              transition:"transform 0.5s ease",zIndex:5,
+            }}>
+              <div style={{background:mode==="dark"?"rgba(14,14,16,0.92)":"rgba(255,255,255,0.92)",
+                backdropFilter:"blur(10px)",border:`1px solid ${c.borderHi}`,borderRadius:"12px",
+                padding:"14px 16px",width:"230px",
+                boxShadow:mode==="dark"?"0 10px 40px rgba(0,0,0,0.6)":"0 8px 28px rgba(0,0,0,0.10)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}}>
+                  <span style={{fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.text}}>{chip.ticker}</span>
+                  <span style={{fontFamily:gs,fontSize:"0.9rem",fontWeight:700,color:c.text}}>{chip.price}</span>
                 </div>
-              </>
-            ) : (
-              <div style={{ fontFamily:gs, color:c.muted, fontStyle:"italic" }}>Price unavailable</div>
-            )}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+                  <span style={{fontFamily:gs,fontSize:"0.68rem",color:c.muted,flex:1,marginRight:"6px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{chip.name}</span>
+                  <span style={{fontFamily:gs,fontSize:"0.72rem",fontWeight:700,color:pos?c.green:c.red,flexShrink:0}}>{chip.chg}</span>
+                </div>
+                <div style={{background:mode==="dark"?"#1A1A1C":"#F0F0EE",borderRadius:"5px",padding:"5px 10px",border:`1px solid ${c.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}}>
+                  <span style={{fontFamily:gs,color:c.muted,fontSize:"0.59rem",letterSpacing:"0.08em",fontWeight:600,textTransform:"uppercase",flexShrink:0}}>AI Score</span>
+                  <span style={{fontFamily:gs,color:scoreColor,fontSize:"0.72rem",fontWeight:700,flexShrink:0}}>{chip.score} · {chip.label}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        <div style={{position:"relative",zIndex:10,textAlign:"center",maxWidth:"720px",padding:"0 1.5rem 6rem"}}>
+          <div style={{animation:"fadeUp 0.7s ease 0.1s both"}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:"0.5rem",border:`1px solid ${c.borderHi}`,borderRadius:"50px",padding:"5px 18px",
+              background:mode==="dark"?"rgba(0,230,118,0.07)":"rgba(0,138,56,0.07)",marginBottom:"2rem"}}>
+              <span style={{width:"6px",height:"6px",borderRadius:"50%",background:c.green,display:"inline-block",boxShadow:`0 0 8px ${c.green}`}}/>
+              <span style={{fontFamily:gs,color:c.green,fontSize:"0.68rem",fontWeight:600,letterSpacing:"0.12em",textTransform:"uppercase"}}>
+                AI-Powered Stock Intelligence
+              </span>
+            </div>
           </div>
 
-          {/* AI Score + Verdict + Sector */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"0.6rem", marginBottom:"1.25rem" }}>
-            {[
-              { label:"AI Score", node:<ScoreBadge score={stock.score} c={c} size={36}/> },
-              { label:"Sector",   value:stock.sector||"—", color:c.muted },
-              { label:"Currency", value:meta?.currency||"USD", color:c.text },
-            ].map((item,i) => (
-              <div key={i} style={{ background:c.surface, border:`1px solid ${c.border}`, borderRadius:"8px", padding:"0.75rem 0.6rem", display:"flex", flexDirection:"column", alignItems:"center", gap:"4px" }}>
-                <div style={{ fontFamily:gs, fontSize:"0.56rem", color:c.muted, letterSpacing:"0.09em", textTransform:"uppercase" }}>{item.label}</div>
-                {item.node || <div style={{ fontFamily:gs, fontSize:"0.8rem", fontWeight:600, color:item.color, textAlign:"center" }}>{item.value}</div>}
-              </div>
+          <h1 style={{fontFamily:ns,fontSize:"clamp(2.8rem,6.5vw,5rem)",fontWeight:700,lineHeight:1.1,letterSpacing:"-0.02em",marginBottom:"1.5rem",animation:"fadeUp 0.8s ease 0.18s both"}}>
+            Invest with<br/><span className="silver">Absolute Clarity</span>
+          </h1>
+
+          <p style={{fontFamily:gs,color:c.muted,fontSize:"1.05rem",lineHeight:1.78,maxWidth:"510px",margin:"0 auto 2.5rem",animation:"fadeUp 0.8s ease 0.28s both"}}>
+            Clarinvest turns raw financial data into sharp AI-generated analysis. From quick stock breakdowns to deep value, growth, and alpha signals across US, EU and UK markets.
+          </p>
+
+          <div style={{display:"flex",gap:"1rem",justifyContent:"center",flexWrap:"wrap",animation:"fadeUp 0.8s ease 0.38s both"}}>
+            <button className="cbtn" onClick={()=>go(priceRef)} style={{background:c.text,color:c.bg,padding:"14px 38px",borderRadius:"4px"}}>View plans →</button>
+            <button className="cbtn" style={{background:"transparent",border:`1px solid ${c.borderHi}`,color:c.text,padding:"14px 38px",borderRadius:"4px"}}>See a sample report</button>
+          </div>
+
+          <div className="hero-trust" style={{marginTop:"2.5rem",display:"flex",gap:"2rem",justifyContent:"center",animation:"fadeUp 0.8s ease 0.46s both"}}>
+            {["US, EU and UK markets","Real-time data","Cancel anytime"].map((t,i)=>(
+              <span key={i} style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.09em",textTransform:"uppercase",display:"flex",alignItems:"center",gap:"5px"}}>
+                <span style={{color:c.green,fontSize:"0.52rem"}}>◆</span>{t}
+              </span>
             ))}
           </div>
+        </div>
 
-          {/* Market details */}
-          <div style={{ background:c.surface, border:`1px solid ${c.border}`, borderRadius:"10px", padding:"1rem", marginBottom:"1.25rem" }}>
-            <p style={{ fontFamily:gs, fontSize:"0.6rem", color:c.muted, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:"0.75rem", fontWeight:600 }}>Market Details</p>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.6rem" }}>
-              {[
-                { label:"Exchange", value:meta?.exchange||stock.exchange||stock.market },
-                { label:"Hours",    value:meta?.hours||"N/A" },
-                { label:"Market",   value:stock.market },
-                { label:"Sector",   value:stock.sector||"—" },
-              ].map((row,i) => (
-                <div key={i}>
-                  <p style={{ fontFamily:gs, fontSize:"0.58rem", color:c.muted, letterSpacing:"0.07em", textTransform:"uppercase", marginBottom:"2px" }}>{row.label}</p>
-                  <p style={{ fontFamily:gs, fontSize:"0.78rem", fontWeight:600, color:c.text }}>{row.value}</p>
+        <div style={{position:"absolute",bottom:"2rem",left:"50%",textAlign:"center",color:c.muted,fontSize:"0.66rem",letterSpacing:"0.12em",textTransform:"uppercase",animation:"bounce 2.2s ease-in-out infinite",fontFamily:gs}}>
+          <div>Scroll</div><div style={{marginTop:"4px"}}>↓</div>
+        </div>
+      </section>
+
+      {/* ══ TICKER ═══════════════════════════════════════════════════════════ */}
+      <div className="twrap" style={{borderTop:`1px solid ${c.border}`,borderBottom:`1px solid ${c.border}`,background:c.surface,padding:"11px 0"}}>
+        <div className="tinner">
+          {[...TICKERS,...TICKERS].map((t,i)=>(
+            <span key={i} style={{fontFamily:gs,fontSize:"0.71rem",fontWeight:600,letterSpacing:"0.07em",color:t.includes("-")?c.red:c.green}}>{t}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* ══ FEATURES ═════════════════════════════════════════════════════════ */}
+      <section ref={featRef} style={{padding:"8rem 2rem",maxWidth:"1100px",margin:"0 auto"}}>
+        <Reveal>
+          <div style={{textAlign:"center",marginBottom:"4rem"}}>
+            <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>What Clarinvest Does</p>
+            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,lineHeight:1.2}}>
+              Every layer of analysis,<br/><em>made intelligible</em>
+            </h2>
+          </div>
+        </Reveal>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:"1.25rem"}}>
+          {FEATS.map((f,i)=>(
+            <Reveal key={i} delay={i*0.07} passStyle={{display:"flex"}}>
+              <div className="fcard" style={{
+                background:mode==="dark"?"linear-gradient(150deg,#1A1A1E 0%,#0D0D10 100%)":"linear-gradient(150deg,#FFFFFF 0%,#E6E6F0 100%)",
+                border:`1px solid ${c.border}`,borderRadius:"14px",padding:"2.4rem 2rem",
+                boxShadow:mode==="dark"?"0 4px 28px rgba(0,0,0,0.4)":"0 4px 20px rgba(0,0,0,0.07)",
+              }}>
+                <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"0.85rem"}}>
+                  <span style={{fontSize:"1rem",color:c.muted,flexShrink:0}}>{f.icon}</span>
+                  <h3 style={{fontFamily:gs,fontSize:"1.05rem",fontWeight:700,lineHeight:1.25,color:c.text}}>{f.title}</h3>
                 </div>
+                <p style={{fontFamily:gs,color:c.muted,fontSize:"0.87rem",lineHeight:1.72,flex:1}}>{f.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ══ SAMPLE ANALYSIS ══════════════════════════════════════════════════ */}
+      <section style={{padding:"0 2rem 8rem",maxWidth:"1100px",margin:"0 auto"}}>
+        <Reveal>
+          <div style={{textAlign:"center",marginBottom:"3rem"}}>
+            <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Live Example</p>
+            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,lineHeight:1.2,marginBottom:"0.7rem"}}>The smart way to invest</h2>
+            <p style={{fontFamily:gs,color:c.muted,fontSize:"0.95rem"}}>NVIDIA Corp. (NVDA) — 6-month AI analysis sample</p>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.1}>
+          <div style={{border:`1px solid ${c.borderHi}`,borderRadius:"16px",overflow:"hidden",background:c.card,
+            boxShadow:mode==="dark"?"0 0 60px rgba(0,0,0,0.5)":"0 12px 50px rgba(0,0,0,0.07)"}}>
+
+            <div style={{padding:"1.4rem 2rem",borderBottom:`1px solid ${c.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"1rem",
+              background:mode==="dark"?"linear-gradient(90deg,#111113,#141418)":"linear-gradient(90deg,#FFFFFF,#F5F5F8)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"2rem",flexWrap:"wrap"}}>
+                <div>
+                  <div style={{fontFamily:gs,fontSize:"1.6rem",fontWeight:700,color:c.text}}>NVDA</div>
+                  <div style={{fontFamily:gs,color:c.muted,fontSize:"0.78rem",marginTop:"2px"}}>NVIDIA Corporation · NASDAQ</div>
+                </div>
+                <div>
+                  <div style={{fontFamily:gs,fontSize:"1.55rem",fontWeight:700,color:c.text}}>$1,208.00</div>
+                  <div style={{fontFamily:gs,color:c.green,fontSize:"0.83rem",fontWeight:700}}>+$144.00 (+13.5%) · 6-month</div>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:"0.55rem",flexWrap:"wrap"}}>
+                {[
+                  {label:"AI Score",value:"93",        bg:c.greenDim,  bd:`${c.green}40`,vc:c.green},
+                  {label:"Verdict", value:"Strong Buy", bg:c.greenDim,  bd:`${c.green}35`,vc:c.green},
+                  {label:"Sector",  value:"Technology", bg:c.surface,   bd:c.border,      vc:c.muted},
+                ].map((b,i)=>(
+                  <div key={i} style={{background:b.bg,border:`1px solid ${b.bd}`,borderRadius:"6px",padding:"7px 13px"}}>
+                    <div style={{fontFamily:gs,color:c.muted,fontSize:"0.59rem",letterSpacing:"0.1em",textTransform:"uppercase"}}>{b.label}</div>
+                    <div style={{fontFamily:gs,color:b.vc,fontSize:"0.83rem",fontWeight:700,marginTop:"2px"}}>{b.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="ag" style={{display:"grid",gridTemplateColumns:"1fr 360px",alignItems:"start"}}>
+              <div style={{padding:"1.6rem 1.4rem 1.4rem",borderRight:`1px solid ${c.border}`}}>
+                <div style={{fontFamily:gs,fontSize:"0.66rem",color:c.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"1.2rem",fontWeight:500}}>
+                  Price History — January to June 2024
+                </div>
+                <ResponsiveContainer width="100%" height={270}>
+                  <AreaChart data={CHART_DATA} margin={{top:42,right:28,bottom:4,left:4}}>
+                    <defs>
+                      <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor={c.blue} stopOpacity={0.28}/>
+                        <stop offset="95%" stopColor={c.blue} stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke={c.border} vertical={false}/>
+                    <XAxis dataKey="w" tick={{fill:c.muted,fontSize:9,fontFamily:"'Google Sans Flex',sans-serif"}} axisLine={false} tickLine={false}/>
+                    <YAxis tick={{fill:c.muted,fontSize:9,fontFamily:"'Google Sans Flex',sans-serif"}} axisLine={false} tickLine={false} tickFormatter={v=>`$${v}`} domain={["auto","auto"]}/>
+                    <Tooltip content={<ChartTip/>}/>
+                    <ReferenceLine x="Feb W3" stroke={c.green} strokeDasharray="4 3" label={<RefLabel value="Earnings ↑" color={c.green}/>}/>
+                    <ReferenceLine x="May W1" stroke={c.blue}  strokeDasharray="4 3" label={<RefLabel value="AI Rally"   color={c.blue}/>}/>
+                    <Area type="monotone" dataKey="p" stroke={c.blue} strokeWidth={2.5} fill="url(#blueGrad)" dot={false}/>
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div style={{padding:"1.5rem"}}>
+                <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.4rem",borderBottom:`1px solid ${c.border}`,paddingBottom:0}}>
+                  {["overview","valuation","risk"].map(t=>(
+                    <button key={t} className="atab" onClick={()=>setTab(t)}
+                      style={{color:tab===t?c.text:c.muted,borderBottom:tab===t?`2px solid ${c.text}`:"2px solid transparent",paddingBottom:"8px",paddingRight:"4px",marginBottom:"-1px"}}>
+                      {t[0].toUpperCase()+t.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {tab==="overview"&&(
+                  <div style={{display:"flex",flexDirection:"column",gap:"0.85rem"}}>
+                    <div style={{background:mode==="dark"?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)",borderRadius:"8px",padding:"13px",borderLeft:`2.5px solid ${c.borderHi}`}}>
+                      <div style={{fontFamily:gs,color:c.muted,fontSize:"0.6rem",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"6px",fontWeight:700}}>AI Summary</div>
+                      <p style={{fontFamily:gs,color:c.text,fontSize:"0.81rem",lineHeight:1.68}}>NVIDIA's dominance in AI accelerators is structural, not cyclical. CUDA lock-in and data centre demand confirmed by Feb earnings. Momentum likely continues through H2.</p>
+                    </div>
+                    {[
+                      {label:"Revenue Growth (YoY)",value:"+122%", flag:"positive"},
+                      {label:"Gross Margin",         value:"78.4%", flag:"positive"},
+                      {label:"P/E Ratio",            value:"68×",   flag:"neutral"},
+                      {label:"Insider Activity",     value:"Neutral",flag:"neutral"},
+                    ].map((row,i)=>(
+                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${c.border}`}}>
+                        <span style={{fontFamily:gs,color:c.text,fontSize:"0.81rem"}}>{row.label}</span>
+                        <span style={{fontFamily:gs,fontWeight:700,fontSize:"0.84rem",color:row.flag==="positive"?c.green:row.flag==="negative"?c.red:c.text}}>{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {tab==="valuation"&&(
+                  <div style={{display:"flex",flexDirection:"column",gap:"0.85rem"}}>
+                    <div style={{background:mode==="dark"?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)",borderRadius:"8px",padding:"13px",borderLeft:`2.5px solid ${c.borderHi}`}}>
+                      <div style={{fontFamily:gs,color:c.muted,fontSize:"0.6rem",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"6px",fontWeight:700}}>Valuation Note</div>
+                      <p style={{fontFamily:gs,color:c.text,fontSize:"0.81rem",lineHeight:1.68}}>Premium to peers, but a PEG of 0.9 signals growth is not fully priced in. The AI infrastructure cycle justifies the multiple for patient investors.</p>
+                    </div>
+                    {[
+                      {label:"EV/EBITDA",        value:"42×",   flag:"negative"},
+                      {label:"Price/Sales",       value:"28×",   flag:"negative"},
+                      {label:"PEG Ratio",         value:"0.9",   flag:"positive"},
+                      {label:"vs Sector Avg P/E", value:"+185%", flag:"neutral"},
+                    ].map((row,i)=>(
+                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${c.border}`}}>
+                        <span style={{fontFamily:gs,color:c.text,fontSize:"0.81rem"}}>{row.label}</span>
+                        <span style={{fontFamily:gs,fontWeight:700,fontSize:"0.84rem",color:row.flag==="positive"?c.green:row.flag==="negative"?c.red:c.text}}>{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {tab==="risk"&&(
+                  <div style={{display:"flex",flexDirection:"column",gap:"0.7rem"}}>
+                    {[
+                      {flag:"⚠",label:"China export restrictions",       level:"High",  col:c.red  },
+                      {flag:"⚠",label:"Customer concentration risk",     level:"Medium",col:c.text },
+                      {flag:"◈",label:"AMD MI300X competitive pressure", level:"Low",   col:c.green},
+                      {flag:"⚠",label:"Supply chain TSMC dependency",    level:"Medium",col:c.text },
+                    ].map((r,i)=>(
+                      <div key={i} style={{display:"flex",alignItems:"center",gap:"0.7rem",padding:"10px 12px",
+                        background:mode==="dark"?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.03)",
+                        borderRadius:"8px",border:`1px solid ${c.border}`}}>
+                        <span style={{color:r.col,fontSize:"0.85rem"}}>{r.flag}</span>
+                        <span style={{fontFamily:gs,color:r.col,fontSize:"0.8rem",flex:1}}>{r.label}</span>
+                        <span style={{fontFamily:gs,color:r.col,fontSize:"0.66rem",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase"}}>{r.level}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ══ MARKETS ══════════════════════════════════════════════════════════ */}
+      <section ref={markRef} style={{
+        padding:"7rem 2rem",
+        background:mode==="dark"?"linear-gradient(180deg,#111113 0%,#0F0F11 100%)":"linear-gradient(180deg,#EEEEEC 0%,#E8E8E6 100%)",
+        borderTop:`1px solid ${c.border}`,borderBottom:`1px solid ${c.border}`}}>
+        <div style={{maxWidth:"900px",margin:"0 auto"}}>
+          <Reveal>
+            <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
+              <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Markets</p>
+              <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700}}>Three major markets, one platform</h2>
+            </div>
+          </Reveal>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"1.25rem"}}>
+            {[
+              {code:"US",name:"United States",sub:"NYSE · NASDAQ · S&P 500",detail:"3,500+ stocks · Live",       live:true },
+              {code:"EU",name:"Europe",        sub:"DAX · CAC 40 · FTSE MIB", detail:"Coming soon",              live:false},
+              {code:"UK",name:"United Kingdom",sub:"LSE · AIM · FTSE 100",    detail:"Coming soon",              live:false},
+            ].map((m,i)=>(
+              <Reveal key={i} delay={i*0.1}>
+                <div style={{
+                  background:mode==="dark"?"linear-gradient(150deg,#161618 0%,#111113 100%)":"linear-gradient(150deg,#FFFFFF 0%,#EBEBF0 100%)",
+                  border:`1px solid ${m.live?c.border:c.borderHi}`,borderRadius:"14px",padding:"2.2rem",textAlign:"center",
+                  boxShadow:mode==="dark"?"0 2px 20px rgba(0,0,0,0.3)":"0 2px 16px rgba(0,0,0,0.05)",
+                  opacity:m.live?1:0.65,
+                  position:"relative",overflow:"hidden",
+                }}>
+                  {!m.live&&(
+                    <div style={{position:"absolute",top:"12px",right:"12px",background:mode==="dark"?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.06)",borderRadius:"50px",padding:"2px 10px"}}>
+                      <span style={{fontFamily:gs,fontSize:"0.58rem",color:c.muted,fontWeight:600,letterSpacing:"0.06em"}}>SOON</span>
+                    </div>
+                  )}
+                  <div style={{display:"flex",justifyContent:"center",marginBottom:"1rem"}}>
+                    <FlagSVG market={m.code} height={32}/>
+                  </div>
+                  <div style={{fontFamily:gs,fontSize:"1.1rem",fontWeight:700,marginBottom:"0.4rem",color:c.text}}>{m.name}</div>
+                  <div style={{fontFamily:gs,color:c.muted,fontSize:"0.81rem",marginBottom:"0.5rem"}}>{m.sub}</div>
+                  <div style={{fontFamily:gs,color:m.live?c.blue:c.muted,fontSize:"0.72rem",fontWeight:700,letterSpacing:"0.04em"}}>{m.detail}</div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ PRICING ══════════════════════════════════════════════════════════ */}
+      <section ref={priceRef} style={{padding:"8rem 2rem",maxWidth:"1100px",margin:"0 auto"}}>
+        <Reveal>
+          <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
+            <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Pricing</p>
+            <h2 style={{fontFamily:gs,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
+            <p style={{fontFamily:gs,color:c.muted,maxWidth:"400px",margin:"0 auto 0.5rem",lineHeight:1.72,fontSize:"0.94rem"}}>
+              No hidden fees. No lock-in. Prices shown in your local currency.
+            </p>
+            <p style={{fontFamily:gs,color:c.muted,fontSize:"0.77rem",marginBottom:"2rem"}}>
+              Detected:&nbsp;<span style={{color:c.text,fontWeight:600}}>{cur}</span>&nbsp;·&nbsp;
+              {Object.keys(CURR).filter(k=>k!==cur).map((k,i,a)=>(
+                <span key={k}>
+                  <button onClick={()=>setCur(k)} style={{background:"none",border:"none",cursor:"pointer",color:c.muted,fontSize:"0.77rem",fontFamily:gs,textDecoration:"underline",padding:0}}>{k}</button>
+                  {i<a.length-1?" · ":""}
+                </span>
+              ))}
+            </p>
+            <div style={{display:"inline-flex",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"4px"}}>
+              {["monthly","yearly"].map(b=>(
+                <button key={b} onClick={()=>setBilling(b)} style={{
+                  background:billing===b?c.text:"transparent",color:billing===b?c.bg:c.muted,
+                  border:"none",cursor:"pointer",padding:"8px 22px",borderRadius:"4px",
+                  fontFamily:gs,fontSize:"0.8rem",fontWeight:600,letterSpacing:"0.03em",
+                  textTransform:"capitalize",transition:"all 0.22s",
+                  display:"flex",alignItems:"center",gap:"0.5rem",
+                }}>
+                  {b}
+                  {b==="yearly"&&(
+                    <span style={{
+                      background:mode==="dark"?"#1A1A1C":"#FFFFFF",
+                      border:`1px solid ${c.borderHi}`,
+                      color:c.green,fontSize:"0.59rem",fontWeight:800,
+                      padding:"2px 7px",borderRadius:"3px",letterSpacing:"0.02em",
+                    }}>
+                      −28%
+                    </span>
+                  )}
+                </button>
               ))}
             </div>
           </div>
+        </Reveal>
 
-          {/* AI Summary */}
-          <div style={{ background:c.blueDim, border:`1px solid ${c.blue}30`, borderRadius:"10px", padding:"1rem", marginBottom:"1.5rem" }}>
-            <p style={{ fontFamily:gs, fontSize:"0.6rem", color:c.blue, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:"6px", fontWeight:600 }}>AI Summary</p>
-            <p style={{ fontFamily:gs, fontSize:"0.82rem", color:c.text, lineHeight:1.68 }}>{summary}</p>
-            <p style={{ fontFamily:gs, fontSize:"0.68rem", color:c.muted, marginTop:"8px", fontStyle:"italic" }}>Live AI analysis available with Clarinvest subscription</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:"1.25rem"}}>
+          {[
+            {name:"Essential", tag:"For curious investors",           badge:null,           hi:false, monthly:curr.em[0], yearly:curr.em[1],
+             plusLabel: null,
+             feats:["5 AI summaries per month","Basic AI summary per stock","US stocks (EU and UK coming soon)","Commodities","Key financial ratios","Watchlist","Monthly market digest"]},
+            {name:"Pro",       tag:"For serious investors",           badge:"Most Popular",  hi:true,  monthly:curr.pr[0], yearly:curr.pr[1],
+             plusLabel: "Everything in Essential, plus:",
+             feats:["Unlimited AI summaries","15 AI full reports per month","Indexes","Valuation, liquidity and leverage stats","Per Share and growth metrics","Income Statement","Virtual Portfolio","Weekly market digest"]},
+            {name:"Ultimate",  tag:"For the most demanding investors",badge:"Full Access",   hi:false, monthly:curr.ul[0], yearly:curr.ul[1],
+             plusLabel: "Everything in Pro, plus:",
+             feats:["Unlimited AI full reports","ETFs","Full financial statements","Balance Sheet and Cash Flow","Sankey flow diagrams","Dividend intelligence and forecasting","Advanced analytics","Priority data refresh","Early access to new features"]},
+          ].map((plan,i)=>{
+            const price=billing==="monthly"?plan.monthly:plan.yearly;
+            const isLoading=checkoutLoading===plan.name;
+            const isHi=plan.hi;
+            const isUlt=plan.name==="Ultimate";
+            return(
+              <Reveal key={i} delay={i*0.1}>
+                <div className="pcard"
+                  onMouseEnter={()=>setHovPlan(i)}
+                  onMouseLeave={()=>setHovPlan(null)}
+                  style={{
+                    background:isHi
+                      ?mode==="dark"?"linear-gradient(150deg,#1A1A1E 0%,#111115 100%)":"linear-gradient(150deg,#FFFFFF 0%,#F5F5F8 100%)"
+                      :isUlt
+                        ?mode==="dark"?"linear-gradient(150deg,#161618 0%,#111113 100%)":"linear-gradient(150deg,#F8F8F6 0%,#F0F0EE 100%)"
+                        :mode==="dark"?"linear-gradient(150deg,#131315 0%,#0E0E10 100%)":"linear-gradient(150deg,#F5F5F3 0%,#EEEEED 100%)",
+                    border:isHi?`1px solid ${c.text}`:isUlt?`1px solid ${c.borderHi}`:`1px solid ${c.border}`,
+                    borderRadius:"14px",padding:"2.5rem 2rem",position:"relative",
+                    boxShadow:isHi
+                      ?mode==="dark"?`0 0 0 1px ${c.text},0 16px 48px rgba(0,0,0,0.4)`:`0 0 0 1px ${c.text},0 16px 40px rgba(0,0,0,0.09)`
+                      :isUlt
+                        ?mode==="dark"?"0 4px 28px rgba(0,0,0,0.3)":"0 4px 20px rgba(0,0,0,0.06)"
+                        :"none",
+                    transform:hovPlan===i?"translateY(-6px)":"translateY(0)",
+                  }}>
+
+                  {plan.badge&&(
+                    <div style={{position:"absolute",top:"-13px",left:"50%",transform:"translateX(-50%)",
+                      background:isHi?c.text:c.muted,color:isHi?c.bg:mode==="dark"?"#090909":"#fff",
+                      fontFamily:gs,fontSize:"0.59rem",fontWeight:700,
+                      letterSpacing:"0.12em",textTransform:"uppercase",padding:"4px 16px",borderRadius:"50px"}}>
+                      {plan.badge}
+                    </div>
+                  )}
+
+                  {/* All tier names green */}
+                  <p style={{fontFamily:gs,color:c.green,fontSize:"0.67rem",letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:"0.3rem"}}>{plan.name}</p>
+                  <p style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",marginBottom:"1.5rem"}}>{plan.tag}</p>
+
+                  {/* Price in Noto Serif */}
+                  <div style={{display:"flex",alignItems:"flex-end",gap:"0.25rem",marginBottom:billing==="yearly"?"0.3rem":"1.8rem"}}>
+                    <span style={{fontFamily:ns,fontSize:"3rem",fontWeight:700,lineHeight:1,color:c.text}}>{curr.sym}{price}</span>
+                    <span style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",paddingBottom:"0.45rem"}}>{billing==="monthly"?"/month":"/year"}</span>
+                  </div>
+
+                  {billing==="yearly"&&(
+                    <p style={{fontFamily:gs,color:isHi?c.green:c.muted,fontSize:"0.77rem",marginBottom:"1.7rem",fontWeight:600}}>
+                      {curr.sym}{(price/12).toFixed(2)}/month · 28% saved
+                    </p>
+                  )}
+
+                  <button
+                    className="cbtn"
+                    onClick={()=>handleCheckout(plan.name)}
+                    disabled={isLoading}
+                    style={{
+                      width:"100%",padding:"13px",borderRadius:"5px",marginBottom:"2rem",
+                      background:isHi?c.text:isUlt?c.surface:"transparent",
+                      color:isHi?c.bg:c.text,
+                      border:isHi?"none":`1px solid ${c.borderHi}`,
+                      fontSize:"0.84rem",
+                      opacity:isLoading?0.7:1,
+                      cursor:isLoading?"not-allowed":"pointer",
+                    }}>
+                    {isLoading ? "Redirecting..." : `Start ${plan.name}`}
+                  </button>
+
+                  {/* "Everything in X plus:" label */}
+                  {plan.plusLabel&&(
+                    <div style={{marginBottom:"0.85rem"}}>
+                      <p style={{fontFamily:gs,fontSize:"0.74rem",color:c.muted,fontStyle:"italic",marginBottom:"0.6rem"}}>{plan.plusLabel}</p>
+                      <div style={{height:"1px",background:c.border}}/>
+                    </div>
+                  )}
+
+                  {/* All ✓ green for every tier */}
+                  {plan.feats.map((f,j)=>(
+                    <div key={j} style={{display:"flex",gap:"0.7rem",alignItems:"flex-start",marginBottom:"0.85rem"}}>
+                      <span style={{fontFamily:gs,color:c.green,fontSize:"0.75rem",marginTop:"0.12rem",flexShrink:0,fontWeight:700}}>✓</span>
+                      <span style={{fontFamily:gs,color:c.muted,fontSize:"0.86rem",lineHeight:1.5}}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </Reveal>
+            );
+          })}
+        </div>
+
+        <Reveal delay={0.15}>
+          <div style={{marginTop:"2.5rem",textAlign:"center"}}>
+            <div style={{display:"flex",justifyContent:"center",gap:"2rem",flexWrap:"wrap",marginBottom:"1.2rem"}}>
+              {["Cancel anytime","No setup fees","Secure via Stripe"].map((t,i)=>(
+                <span key={i} style={{fontFamily:gs,color:c.muted,fontSize:"0.77rem",display:"flex",alignItems:"center",gap:"5px"}}>
+                  <span style={{color:c.green,fontWeight:700}}>✓</span>{t}
+                </span>
+              ))}
+            </div>
+            <div style={{display:"inline-flex",alignItems:"center",gap:"0.7rem",
+              background:mode==="dark"?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)",
+              border:`1px solid ${c.borderHi}`,borderRadius:"7px",padding:"10px 18px"}}>
+              <span style={{fontSize:"1rem"}}>💎</span>
+              <span style={{fontFamily:gs,color:c.muted,fontSize:"0.77rem",lineHeight:1.5}}>
+                Also accepts <strong style={{fontFamily:gs,color:c.text,fontWeight:700}}>USDC</strong> (USD Coin) via Stripe. Pay in stablecoin, no bank required.
+              </span>
+            </div>
           </div>
+        </Reveal>
+      </section>
 
-          {/* CTA — full analysis */}
-          <button onClick={() => onFullAnalysis(stock.ticker)}
-            style={{ width:"100%", background:c.text, color:c.bg, border:"none", borderRadius:"8px", padding:"14px", fontFamily:gs, fontSize:"0.88rem", fontWeight:600, cursor:"pointer", letterSpacing:"0.03em", marginBottom:"0.75rem" }}>
-            View Full Analysis →
-          </button>
-          <button onClick={onClose}
-            style={{ width:"100%", background:"transparent", color:c.muted, border:`1px solid ${c.border}`, borderRadius:"8px", padding:"11px", fontFamily:gs, fontSize:"0.84rem", cursor:"pointer" }}>
-            Back to Discovery
-          </button>
-        </div>
-      </div>
-    </>
-  );
-}
-
-// ─── Main page ─────────────────────────────────────────────────────────────────
-export default function DiscoveryPage() {
-  const { mode } = useTheme();
-  const c = C[mode];
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const [stocks,    setStocks]   = useState([]);
-  const [loading,   setLoading]  = useState(true);
-  const [error,     setError]    = useState(null);
-  const [isMock,    setIsMock]   = useState(false);
-  const [view,      setView]     = useState("gainers");
-  const [market,    setMarket]   = useState("All");
-  const [sector,    setSector]   = useState("All");
-  const [search,    setSearch]   = useState("");
-  const [sfoc,      setSfoc]     = useState(false);
-  const [debounced, setDebounced]= useState("");
-  const [watchlist, setWatchlist]= useState(new Set());
-  const [wlToken,   setWlToken]  = useState(null);
-  const supabase = createClient();
-
-  // Active stock from URL query param
-  const activeTickerParam = searchParams.get("stock");
-  const activeStock = stocks.find(s => s.ticker === activeTickerParam) || null;
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(search), 350);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  const fetchStocks = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const params = new URLSearchParams({ view, market });
-      if (debounced) params.set("q", debounced);
-      const res  = await fetch(`/api/stocks?${params}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setStocks(data.stocks || []);
-      setIsMock(data.mock === true);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [view, market, debounced]);
-
-  useEffect(() => { fetchStocks(); }, [fetchStocks]);
-
-  // Load watchlist on mount
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data:{ session } }) => {
-      if (!session) return;
-      setWlToken(session.access_token);
-      fetch("/api/watchlist", { headers:{ Authorization:`Bearer ${session.access_token}` } })
-        .then(r => r.json())
-        .then(d => setWatchlist(new Set((d.stocks||[]).map(s => s.ticker))))
-        .catch(() => {});
-    });
-  }, []);
-
-  const toggleWatchlist = useCallback(async (e, s) => {
-    e.stopPropagation();
-    if (!wlToken) return;
-    const inList = watchlist.has(s.ticker);
-    // Optimistic update
-    setWatchlist(prev => {
-      const next = new Set(prev);
-      inList ? next.delete(s.ticker) : next.add(s.ticker);
-      return next;
-    });
-    if (inList) {
-      await fetch(`/api/watchlist?ticker=${s.ticker}`, { method:"DELETE", headers:{ Authorization:`Bearer ${wlToken}` } });
-    } else {
-      await fetch("/api/watchlist", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", Authorization:`Bearer ${wlToken}` },
-        body: JSON.stringify({ ticker:s.ticker, name:s.name, sector:s.sector, market:s.market }),
-      });
-    }
-  }, [watchlist, wlToken]);
-
-  const filtered = useMemo(() => {
-    if (sector === "All") return stocks;
-    return stocks.filter(s => s.sector === sector);
-  }, [stocks, sector]);
-
-  // Open panel: update URL with ?stock=TICKER
-  const openStock = useCallback((s) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("stock", s.ticker);
-    router.push(`/dashboard?${params}`, { scroll: false });
-  }, [router, searchParams]);
-
-  // Close panel: remove ?stock from URL
-  const closePanel = useCallback(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("stock");
-    const qs = params.toString();
-    router.push(qs ? `/dashboard?${qs}` : "/dashboard", { scroll: false });
-  }, [router, searchParams]);
-
-  // Navigate to full analysis page
-  const goFullAnalysis = useCallback((ticker) => {
-    router.push(`/dashboard/stock/${ticker}`);
-  }, [router]);
-
-  const pill = (active) => ({
-    background:active?c.text:"transparent", color:active?c.bg:c.muted,
-    border:`1px solid ${active?c.text:c.border}`, borderRadius:"50px",
-    padding:"5px 14px", fontFamily:gs, fontSize:"0.73rem", fontWeight:600,
-    cursor:"pointer", transition:"all 0.18s", whiteSpace:"nowrap",
-  });
-
-  return (
-    <div style={{ background:c.bg, minHeight:"100vh" }}>
-      <style>{`
-        .sr{display:flex;gap:0.4rem;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
-        .sr::-webkit-scrollbar{display:none;}
-        .sw{display:flex;gap:0.4rem;flex-wrap:wrap;}
-        @keyframes rbow{
-          0%  {box-shadow:0 0 0 2px rgba(255,80,80,0.75), 0 0 20px 5px rgba(255,80,80,0.28);}
-          20% {box-shadow:0 0 0 2px rgba(255,180,50,0.75),0 0 20px 5px rgba(255,180,50,0.28);}
-          40% {box-shadow:0 0 0 2px rgba(60,220,120,0.75),0 0 20px 5px rgba(60,220,120,0.28);}
-          60% {box-shadow:0 0 0 2px rgba(68,160,255,0.75),0 0 20px 5px rgba(68,160,255,0.28);}
-          80% {box-shadow:0 0 0 2px rgba(180,80,255,0.75),0 0 20px 5px rgba(180,80,255,0.28);}
-          100%{box-shadow:0 0 0 2px rgba(255,80,80,0.75), 0 0 20px 5px rgba(255,80,80,0.28);}
-        }
-        .rbow{animation:rbow 2.8s linear infinite;border-color:transparent !important;}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-        .sk>div{animation:pulse 1.4s ease infinite;}
-
-        /* ── Floating stock panel ── */
-        .stock-panel{
-          position:fixed;
-          top:50%; left:50%;
-          transform:translate(-50%,-50%) scale(0.96);
-          width:min(520px,90vw);
-          max-height:85vh;
-          border-radius:16px;
-          z-index:301;
-          opacity:0;
-          transition:transform 0.28s cubic-bezier(0.32,0.72,0,1),opacity 0.24s ease;
-        }
-        .stock-panel.open{
-          transform:translate(-50%,-50%) scale(1);
-          opacity:1;
-        }
-        @media(max-width:700px){
-          .stock-panel{
-            top:auto; left:0; right:0; bottom:0;
-            transform:translateY(6%);
-            width:100%;
-            border-radius:16px 16px 0 0;
-            max-height:90vh;
-          }
-          .stock-panel.open{transform:translateY(0);opacity:1;}
-          .sw{flex-wrap:nowrap;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
-          .sw::-webkit-scrollbar{display:none;}
-          .ppd{padding:1.5rem 1.25rem !important;}
-        }
-      `}</style>
-
-      <div className="ppd" style={{ maxWidth:"1200px", margin:"0 auto", padding:"2.5rem 3.5rem" }}>
-
-        {/* Header */}
-        <div style={{ marginBottom:"1.75rem" }}>
-          <p style={{ fontFamily:gs, color:c.muted, fontSize:"0.65rem", letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"0.4rem", fontWeight:600 }}>Discovery</p>
-          <h1 style={{ fontFamily:gs, fontSize:"clamp(1.5rem,3vw,2.2rem)", fontWeight:700, color:c.text }}>Markets Overview</h1>
-        </div>
-
-        {/* Demo data banner */}
-        {isMock && (
-          <div style={{ background:mode==="dark"?"rgba(244,162,0,0.08)":"rgba(180,83,9,0.07)", border:`1px solid ${c.amber}40`, borderRadius:"8px", padding:"9px 14px", marginBottom:"1.25rem", display:"flex", alignItems:"center", gap:"0.6rem" }}>
-            <span style={{ color:c.amber, fontSize:"0.8rem" }}>⚠</span>
-            <span style={{ fontFamily:gs, fontSize:"0.76rem", color:c.amber }}>
-              Demo data · Upgrade to <strong>FMP Starter ($29/mo)</strong> at financialmodelingprep.com for live prices
-            </span>
-          </div>
-        )}
-
-        {/* Search */}
-        <div style={{ position:"relative", marginBottom:"1.25rem" }}>
-          <span style={{ position:"absolute", left:"14px", top:"50%", transform:"translateY(-50%)", color:c.muted, fontSize:"0.9rem", pointerEvents:"none" }}>⌕</span>
-          <input value={search} onChange={e=>setSearch(e.target.value)}
-            onFocus={()=>setSfoc(true)} onBlur={()=>setSfoc(false)}
-            placeholder="Ticker, company or keyword..."
-            className={sfoc?"rbow":""}
-            style={{ width:"100%", background:c.card, border:`1px solid ${sfoc?c.borderHi:c.border}`, borderRadius:"8px", padding:"11px 14px 11px 36px", color:c.text, fontSize:"0.9rem", fontFamily:gs, outline:"none", transition:"border-color 0.18s" }}
-          />
-          {search && <button onClick={()=>setSearch("")} style={{ position:"absolute", right:"12px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:c.muted, cursor:"pointer", fontSize:"0.85rem" }}>✕</button>}
-        </div>
-
-        {/* View selector */}
-        {!search && (
-          <div style={{ display:"flex", gap:"0.4rem", marginBottom:"1rem" }}>
-            {VIEWS.map(v=>(
-              <button key={v.id} onClick={()=>setView(v.id)}
-                style={{ ...pill(view===v.id), borderRadius:"5px", padding:"6px 14px" }}>
-                {v.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Market filter */}
-        <div className="sr" style={{ marginBottom:"0.6rem" }}>
-          {MARKETS.map(m=>(
-            <button key={m.id} onClick={()=>m.on&&setMarket(m.id)}
-              title={m.on?m.label:"Coming soon"}
-              style={{ ...pill(market===m.id), opacity:m.on?1:0.4, cursor:m.on?"pointer":"default" }}>
-              {m.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Sector filter */}
-        <div className="sw" style={{ marginBottom:"1.5rem" }}>
-          {SECTORS.map(s=>(
-            <button key={s} onClick={()=>setSector(s)} style={pill(sector===s)}>{s}</button>
-          ))}
-        </div>
-
-        {/* Results bar */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.25rem" }}>
-          <span style={{ fontFamily:gs, fontSize:"0.74rem", color:c.muted }}>
-            {loading?"Loading…":`${filtered.length} stock${filtered.length!==1?"s":""}`}
-          </span>
-          {error && (
-            <span style={{ fontFamily:gs, fontSize:"0.74rem", color:c.red }}>
-              {error.includes("403")||error.includes("402")||error.includes("401")
-                ? "FMP plan upgrade needed"
-                : error.includes("429") ? "Rate limit — try shortly"
-                : `Error: ${error.slice(0,50)}`}
-            </span>
-          )}
-        </div>
-
-        {/* Grid */}
-        {loading ? (
-          <div className="sk" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:"1.1rem" }}>
-            {Array.from({length:12}).map((_,i)=><SkeletonCard key={i} c={c}/>)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign:"center", padding:"5rem 0" }}>
-            <p style={{ fontFamily:gs, color:c.muted, fontSize:"0.95rem", marginBottom:"1rem" }}>
-              {search?`No results for "${search}"`:"No stocks match your filters."}
+      {/* ══ ABOUT ════════════════════════════════════════════════════════════ */}
+      <section ref={aboutRef} style={{
+        padding:"7rem 2rem",
+        background:mode==="dark"?"linear-gradient(180deg,#111113 0%,#0F0F11 100%)":"linear-gradient(180deg,#EEEEED 0%,#E8E8E6 100%)",
+        borderTop:`1px solid ${c.border}`}}>
+        <div style={{maxWidth:"660px",margin:"0 auto",textAlign:"center"}}>
+          <Reveal>
+            <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>About</p>
+            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"1.5rem"}}>Built for the modern investor</h2>
+            <p style={{fontFamily:gs,color:c.muted,fontSize:"1rem",lineHeight:1.82,marginBottom:"1.5rem"}}>
+              Clarinvest was built on a single belief: that institutional-quality stock analysis should be accessible to every investor, not just hedge funds with Bloomberg terminals.
             </p>
-            <button onClick={()=>{setMarket("All");setSector("All");setSearch("");}}
-              style={{ background:"none", border:`1px solid ${c.border}`, borderRadius:"6px", padding:"8px 20px", color:c.muted, fontFamily:gs, fontSize:"0.82rem", cursor:"pointer" }}>
-              Clear filters
-            </button>
-          </div>
-        ) : (
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:"1.1rem" }}>
-            {filtered.map(s=>(
-              <StockCard key={s.ticker} s={s} c={c}
-                isActive={s.ticker === activeTickerParam}
-                isWatchlisted={watchlist.has(s.ticker)}
-                onWatchlistToggle={toggleWatchlist}
-                onClick={openStock}
-              />
-            ))}
-          </div>
-        )}
+            <p style={{fontFamily:gs,color:c.muted,fontSize:"1rem",lineHeight:1.82}}>
+              By combining real-time financial data with state-of-the-art AI, we translate complex numbers into clear, actionable insights across US, UK and European markets. Invest with confidence, not guesswork.
+            </p>
+          </Reveal>
+        </div>
+      </section>
 
-        {!loading && filtered.length > 0 && (
-          <p style={{ fontFamily:gs, color:c.muted, fontSize:"0.7rem", textAlign:"center", marginTop:"2rem" }}>
-            For informational purposes only · Not financial advice · Data via Financial Modeling Prep
-          </p>
-        )}
-      </div>
-
-      {/* Slide-over panel */}
-      {activeTickerParam && (
-        <StockPanel
-          stock={activeStock || { ticker:activeTickerParam, name:activeTickerParam, market:"US", chg:null, price:null, score:null, sector:"—", exchange:"—" }}
-          c={c} mode={mode}
-          onClose={closePanel}
-          onFullAnalysis={goFullAnalysis}
-        />
-      )}
-    </div>
+      {/* ══ FOOTER ═══════════════════════════════════════════════════════════ */}
+      <footer style={{borderTop:`1px solid ${c.border}`,padding:"2.5rem",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"1rem",background:c.bg}}>
+        <div style={{display:"flex",alignItems:"center",gap:"0.6rem"}}>
+          <svg width="18" height="18" viewBox="0 0 200 200">
+            <rect x="8"   y="8"   width="84" height="84" rx="10" fill={c.text}/>
+            <rect x="108" y="8"   width="84" height="84" rx="10" fill={c.text} opacity="0.22"/>
+            <rect x="8"   y="108" width="84" height="84" rx="10" fill={c.text} opacity="0.22"/>
+            <rect x="108" y="108" width="84" height="84" rx="10" fill={c.text}/>
+          </svg>
+          <span style={{fontFamily:"'Playfair Display',serif",fontSize:"0.9rem",fontWeight:600,letterSpacing:"0.03em",textTransform:"uppercase",color:c.text}}>Clarinvest</span>
+        </div>
+        <p style={{fontFamily:gs,color:c.muted,fontSize:"0.73rem"}}>© 2026 Clarinvest · For informational purposes only · Not financial advice</p>
+        <div style={{display:"flex",gap:"1.5rem"}}>
+          {["Privacy","Terms","Contact"].map(l=>(
+            <button key={l} style={{background:"none",border:"none",cursor:"pointer",fontFamily:gs,color:c.muted,fontSize:"0.73rem"}}>{l}</button>
+          ))}
+        </div>
+      </footer>
+    <BannerStrip list={banners.filter(b=>b.position==="bottom"&&!dismissed.has(b.id))} mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
+  </div>
   );
 }
