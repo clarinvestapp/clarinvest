@@ -208,6 +208,13 @@ const RefLabel=({viewBox,value,color})=>{
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
+function BannerStrip({list,mode,onDismiss}){
+  const dk={info:{bg:"rgba(68,136,255,0.12)",brd:"rgba(68,136,255,0.35)",txt:"#4488FF"},promo:{bg:"rgba(0,230,118,0.10)",brd:"rgba(0,230,118,0.35)",txt:"#00E676"},urgent:{bg:"rgba(255,24,0,0.10)",brd:"rgba(255,24,0,0.35)",txt:"#FF1800"}};
+  const lk={info:{bg:"rgba(30,85,204,0.08)",brd:"rgba(30,85,204,0.30)",txt:"#1E55CC"},promo:{bg:"rgba(0,138,56,0.08)",brd:"rgba(0,138,56,0.30)",txt:"#008A38"},urgent:{bg:"rgba(204,0,0,0.08)",brd:"rgba(204,0,0,0.30)",txt:"#CC0000"}};
+  if(!list||!list.length)return null;
+  return(<div>{list.map(b=>{const col=(mode==="dark"?dk:lk)[b.type]||dk.info;return(<div key={b.id} style={{background:col.bg,borderBottom:"1px solid "+col.brd,padding:"9px 1.5rem",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"0.75rem"}}><p style={{fontFamily:"'Google Sans Flex',sans-serif",fontSize:"0.82rem",color:col.txt,flex:1,textAlign:"center"}}>{b.text}</p><button onClick={()=>onDismiss(b.id)} style={{background:"none",border:"none",cursor:"pointer",color:col.txt,opacity:0.6,fontSize:"0.9rem",padding:"0 4px"}}>✕</button></div>);})}</div>);
+}
+
 export default function Clarinvest(){
   const[mode,          setMode]         =useState("dark");
   const[billing,       setBilling]      =useState("yearly");
@@ -290,7 +297,7 @@ export default function Clarinvest(){
 
   return(
     <div style={{fontFamily:gs,background:c.bg,color:c.text,minHeight:"100vh",overflowX:"hidden",transition:"background 0.4s,color 0.4s"}}>
-      <BannerStrip list={topBanners}/>
+      <BannerStrip list={banners.filter(b=>b.position==="top"&&!dismissed.has(b.id))} mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=Google+Sans+Flex:ital,opsz,wght@0,8..144,300..700;1,8..144,300..700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
@@ -896,7 +903,7 @@ export default function Clarinvest(){
           ))}
         </div>
       </footer>
-    <BannerStrip list={bottomBanners}/>
+    <BannerStrip list={banners.filter(b=>b.position==="bottom"&&!dismissed.has(b.id))} mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
   </div>
   );
 }
