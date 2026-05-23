@@ -75,7 +75,36 @@ function useReveal(){
   useEffect(()=>{
     const o=new IntersectionObserver(([e])=>{if(e.isIntersecting){setV(true);o.disconnect();}},{threshold:0.08});
     if(ref.current)o.observe(ref.current);
-    return()=>o.disconnect();
+  
+  // ── Banner strip colours ──
+  const BANNER_COLORS = {
+    info:   { bg:'rgba(68,136,255,0.12)', border:'rgba(68,136,255,0.35)', text:'#4488FF'  },
+    promo:  { bg:'rgba(0,230,118,0.10)', border:'rgba(0,230,118,0.35)', text:'#00E676'  },
+    urgent: { bg:'rgba(255,24,0,0.10)',  border:'rgba(255,24,0,0.35)',  text:'#FF1800'  },
+  };
+  const lightBannerColors = {
+    info:   { bg:'rgba(30,85,204,0.08)',  border:'rgba(30,85,204,0.30)',  text:'#1E55CC' },
+    promo:  { bg:'rgba(0,138,56,0.08)',   border:'rgba(0,138,56,0.30)',   text:'#008A38' },
+    urgent: { bg:'rgba(204,0,0,0.08)',    border:'rgba(204,0,0,0.30)',    text:'#CC0000' },
+  };
+  const topBanners    = banners.filter(b => b.position === 'top'    && !dismissed.has(b.id));
+  const bottomBanners = banners.filter(b => b.position === 'bottom' && !dismissed.has(b.id));
+  const BannerStrip = ({ list }) => list.length === 0 ? null : (
+    <div>
+      {list.map(b => {
+        const col = (mode === 'dark' ? BANNER_COLORS : lightBannerColors)[b.type] || BANNER_COLORS.info;
+        return (
+          <div key={b.id} style={{ background:col.bg, borderBottom:`1px solid ${col.border}`, padding:'9px 1.5rem', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'0.75rem' }}>
+            <p style={{ fontFamily:gs, fontSize:'0.82rem', color:col.text, flex:1, textAlign:'center' }}>{b.text}</p>
+            <button onClick={() => setDismissed(prev => new Set([...prev, b.id]))}
+              style={{ background:'none', border:'none', cursor:'pointer', color:col.text, opacity:0.6, fontSize:'0.9rem', flexShrink:0, padding:'0 4px' }}>✕</button>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return()=>o.disconnect();
   },[]);
   return[ref,v];
 }
@@ -187,7 +216,9 @@ export default function Clarinvest(){
   const[tab,           setTab]          =useState("overview");
   const[hovPlan,       setHovPlan]      =useState(null);
   const[solid,         setSolid]        =useState(false);
-  const[checkoutLoading,setCheckoutLoading]=useState(null); // tracks which plan is loading
+  const[checkoutLoading,setCheckoutLoading]=useState(null);
+  const[banners,       setBanners]      =useState([]);
+  const[dismissed,     setDismissed]    =useState(new Set());
 
   const c=C[mode], curr=CURR[cur];
   const gs="'Google Sans Flex','DM Sans',sans-serif";
@@ -197,6 +228,10 @@ export default function Clarinvest(){
   const go=r=>r.current?.scrollIntoView({behavior:"smooth"});
 
   useEffect(()=>{fetch("https://ipapi.co/json/").then(r=>r.json()).then(d=>{const k=GEO[d.country_code];if(k)setCur(k);}).catch(()=>{});},[]);
+  useEffect(()=>{
+    fetch("/api/banners?target=all")
+      .then(r=>r.json()).then(d=>setBanners(d.banners||[])).catch(()=>{});
+  },[]);
 
   useEffect(()=>{
     let ticking=false;
@@ -255,6 +290,7 @@ export default function Clarinvest(){
 
   return(
     <div style={{fontFamily:gs,background:c.bg,color:c.text,minHeight:"100vh",overflowX:"hidden",transition:"background 0.4s,color 0.4s"}}>
+      <BannerStrip list={topBanners}/>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=Google+Sans+Flex:ital,opsz,wght@0,8..144,300..700;1,8..144,300..700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
@@ -860,6 +896,7 @@ export default function Clarinvest(){
           ))}
         </div>
       </footer>
-    </div>
+    <BannerStrip list={bottomBanners}/>
+  </div>
   );
 }

@@ -28,6 +28,8 @@ function DashboardShell({ children }) {
   const supabase = createClient();
 
   const [user, setUser]     = useState(null);
+  const [banners,   setBanners]   = useState([]);
+  const [dismissed, setDismissed] = useState(new Set());
   const [plan, setPlan]     = useState(null);
   const [solid, setSolid]   = useState(false);
 
@@ -131,6 +133,17 @@ function DashboardShell({ children }) {
           </div>
         </div>
       </nav>
+
+      {/* ── Top banners ── */}
+      {banners.filter(b=>b.position==='top'&&!dismissed.has(b.id)).map(b=>{
+        const COLS={info:{bg:'rgba(68,136,255,0.12)',brd:'rgba(68,136,255,0.35)',txt:'#4488FF'},promo:{bg:'rgba(0,230,118,0.10)',brd:'rgba(0,230,118,0.35)',txt:'#00E676'},urgent:{bg:'rgba(255,24,0,0.10)',brd:'rgba(255,24,0,0.35)',txt:'#FF1800'}};
+        const lCOLS={info:{bg:'rgba(30,85,204,0.08)',brd:'rgba(30,85,204,0.30)',txt:'#1E55CC'},promo:{bg:'rgba(0,138,56,0.08)',brd:'rgba(0,138,56,0.30)',txt:'#008A38'},urgent:{bg:'rgba(204,0,0,0.08)',brd:'rgba(204,0,0,0.30)',txt:'#CC0000'}};
+        const col=(mode==='dark'?COLS:lCOLS)[b.type]||COLS.info;
+        return(<div key={b.id} style={{background:col.bg,borderBottom:,padding:'8px 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'0.75rem',zIndex:99,position:'relative'}}>
+          <p style={{fontFamily:"'Google Sans Flex',sans-serif",fontSize:'0.8rem',color:col.txt,flex:1,textAlign:'center'}}>{b.text}</p>
+          <button onClick={()=>setDismissed(p=>new Set([...p,b.id]))} style={{background:'none',border:'none',cursor:'pointer',color:col.txt,opacity:0.6,fontSize:'0.85rem'}}>✕</button>
+        </div>);
+      })}
 
       {/* ── Page content ── */}
       <div className="page-content" style={{ paddingTop:"58px" }}>
