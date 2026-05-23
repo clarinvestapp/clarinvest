@@ -184,11 +184,11 @@ export default function StockPage({ params }) {
       await fetch("/api/watchlist", {
         method:"POST",
         headers:{ "Content-Type":"application/json", Authorization:`Bearer ${wlToken}` },
-        body: JSON.stringify({ ticker, name:p?.companyName||ticker, sector:p?.sector||"Other", market:"US" }),
+        body: JSON.stringify({ ticker, name:data?.profile?.companyName||ticker, sector:data?.profile?.sector||"Other", market:"US" }),
       });
     }
     setWlLoading(false);
-  }, [inWatchlist, wlToken, ticker, p]);
+  }, [inWatchlist, wlToken, ticker, data]);
   const supabase = createClient();
 
   const generateAnalysis = useCallback(async (type = "summary") => {
