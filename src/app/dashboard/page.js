@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/lib/theme";
+import { createClient } from "@/lib/supabase";
 
 const C = {
   dark:  { bg:"#090909", card:"#111113", surface:"#141416", border:"#232325", borderHi:"#333336", text:"#F0F0F0", muted:"#7A7A80", green:"#00E676", greenDim:"rgba(0,230,118,0.10)", blue:"#4488FF", blueDim:"rgba(68,136,255,0.12)", red:"#FF1800", amber:"#F59E0B", cg:"linear-gradient(145deg,#131316,#0F0F12)", cgh:"linear-gradient(145deg,#1C1C20,#141418)" },
@@ -78,15 +79,23 @@ function ScoreBadge({ score, c, size = 48 }) {
 }
 
 // ─── Stock card ────────────────────────────────────────────────────────────────
-function StockCard({ s, c, isActive, onClick }) {
+function StockCard({ s, c, isActive, isWatchlisted, onWatchlistToggle, onClick }) {
   const [hov, setHov] = useState(false);
   const pos = (s.chg ?? 0) >= 0;
   return (
     <div onClick={() => onClick(s)}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ background:hov||isActive?c.cgh:c.cg, border:`1px solid ${isActive?c.text:hov?c.borderHi:c.border}`, borderRadius:"16px", padding:"1.5rem 1.4rem", cursor:"pointer", transition:"all 0.22s", transform:hov&&!isActive?"translateY(-4px)":"none", boxShadow:hov?"0 10px 32px rgba(0,0,0,0.25)":"0 1px 8px rgba(0,0,0,0.08)" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"1rem" }}>
-        <div style={{ flex:1, minWidth:0, paddingRight:"0.75rem" }}>
+      style={{ background:hov||isActive?c.cgh:c.cg, border:`1px solid ${isActive?c.text:hov?c.borderHi:c.border}`, borderRadius:"16px", padding:"1.5rem 1.4rem", cursor:"pointer", transition:"all 0.22s", transform:hov&&!isActive?"translateY(-4px)":"none", boxShadow:hov?"0 10px 32px rgba(0,0,0,0.25)":"0 1px 8px rgba(0,0,0,0.08)", position:"relative" }}>
+
+      {/* Heart / watchlist button */}
+      <button onClick={(e) => onWatchlistToggle(e, s)}
+        title={isWatchlisted ? "Remove from watchlist" : "Add to watchlist"}
+        style={{ position:"absolute", top:"0.9rem", right:"0.9rem", background:"none", border:"none", cursor:"pointer", fontSize:"1rem", color:isWatchlisted?c.green:c.muted, transition:"color 0.18s, transform 0.18s", transform:isWatchlisted?"scale(1.1)":"scale(1)", padding:"2px" }}>
+        {isWatchlisted ? "♥" : "♡"}
+      </button>
+
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"1rem", paddingRight:"1.75rem" }}>
+        <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:"0.45rem", marginBottom:"0.3rem" }}>
             <FlagImg market={s.market} height={16}/>
             <span style={{ fontFamily:gs, fontSize:"1.1rem", fontWeight:700, color:c.text }}>{s.ticker}</span>
@@ -290,6 +299,9 @@ export default function DiscoveryPage() {
   const [search,    setSearch]   = useState("");
   const [sfoc,      setSfoc]     = useState(false);
   const [debounced, setDebounced]= useState("");
+  const [watchlist, setWatchlist]= useState(new Set());
+  const [wlToken,   setWlToken]  = useState(null);
+  const supabase = createClient();
 
   // Active stock from URL query param
   const activeTickerParam = searchParams.get("stock");
@@ -318,6 +330,39 @@ export default function DiscoveryPage() {
   }, [view, market, debounced]);
 
   useEffect(() => { fetchStocks(); }, [fetchStocks]);
+
+  // Load watchlist on mount
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data:{ session } }) => {
+      if (!session) return;
+      setWlToken(session.access_token);
+      fetch("/api/watchlist", { headers:{ Authorization:`Bearer ${session.access_token}` } })
+        .then(r => r.json())
+        .then(d => setWatchlist(new Set((d.stocks||[]).map(s => s.ticker))))
+        .catch(() => {});
+    });
+  }, []);
+
+  const toggleWatchlist = useCallback(async (e, s) => {
+    e.stopPropagation();
+    if (!wlToken) return;
+    const inList = watchlist.has(s.ticker);
+    // Optimistic update
+    setWatchlist(prev => {
+      const next = new Set(prev);
+      inList ? next.delete(s.ticker) : next.add(s.ticker);
+      return next;
+    });
+    if (inList) {
+      await fetch(`/api/watchlist?ticker=${s.ticker}`, { method:"DELETE", headers:{ Authorization:`Bearer ${wlToken}` } });
+    } else {
+      await fetch("/api/watchlist", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", Authorization:`Bearer ${wlToken}` },
+        body: JSON.stringify({ ticker:s.ticker, name:s.name, sector:s.sector, market:s.market }),
+      });
+    }
+  }, [watchlist, wlToken]);
 
   const filtered = useMemo(() => {
     if (sector === "All") return stocks;
@@ -495,6 +540,8 @@ export default function DiscoveryPage() {
             {filtered.map(s=>(
               <StockCard key={s.ticker} s={s} c={c}
                 isActive={s.ticker === activeTickerParam}
+                isWatchlisted={watchlist.has(s.ticker)}
+                onWatchlistToggle={toggleWatchlist}
                 onClick={openStock}
               />
             ))}

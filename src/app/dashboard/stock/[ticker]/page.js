@@ -155,7 +155,40 @@ export default function StockPage({ params }) {
   const [analysis,    setAnalysis]    = useState(null);
   const [aiLoading,   setAiLoading]   = useState(false);
   const [aiError,     setAiError]     = useState(null);
-  const [aiType,      setAiType]      = useState("summary"); // 'summary' | 'full'
+  const [aiType,      setAiType]      = useState("summary");
+
+  // Watchlist state
+  const [inWatchlist, setInWatchlist] = useState(false);
+  const [wlToken,     setWlToken]     = useState(null);
+  const [wlLoading,   setWlLoading]   = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data:{ session } }) => {
+      if (!session) return;
+      setWlToken(session.access_token);
+      fetch("/api/watchlist", { headers:{ Authorization:`Bearer ${session.access_token}` } })
+        .then(r => r.json())
+        .then(d => setInWatchlist((d.stocks||[]).some(s => s.ticker === ticker)))
+        .catch(() => {});
+    });
+  }, [ticker]);
+
+  const toggleWatchlist = useCallback(async () => {
+    if (!wlToken) return;
+    setWlLoading(true);
+    const wasIn = inWatchlist;
+    setInWatchlist(!wasIn);
+    if (wasIn) {
+      await fetch(`/api/watchlist?ticker=${ticker}`, { method:"DELETE", headers:{ Authorization:`Bearer ${wlToken}` } });
+    } else {
+      await fetch("/api/watchlist", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", Authorization:`Bearer ${wlToken}` },
+        body: JSON.stringify({ ticker, name:p?.companyName||ticker, sector:p?.sector||"Other", market:"US" }),
+      });
+    }
+    setWlLoading(false);
+  }, [inWatchlist, wlToken, ticker, p]);
   const supabase = createClient();
 
   const generateAnalysis = useCallback(async (type = "summary") => {
@@ -278,6 +311,13 @@ export default function StockPage({ params }) {
         <span style={{ fontFamily:gs, fontSize:"0.62rem", fontWeight:700, color:stColor, background:`${stColor}18`, border:`1px solid ${stColor}40`, borderRadius:"4px", padding:"2px 7px", letterSpacing:"0.05em", textTransform:"uppercase" }}>
           {status.label}
         </span>
+        {/* Watchlist toggle */}
+        <button onClick={toggleWatchlist} disabled={wlLoading}
+          title={inWatchlist?"Remove from watchlist":"Add to watchlist"}
+          style={{ background:inWatchlist?c.greenDim:"transparent", border:`1px solid ${inWatchlist?c.green+"50":c.border}`, borderRadius:"6px", padding:"5px 12px", cursor:"pointer", color:inWatchlist?c.green:c.muted, fontFamily:gs, fontSize:"0.8rem", display:"flex", alignItems:"center", gap:"5px", transition:"all 0.2s", marginLeft:"auto" }}>
+          <span style={{ fontSize:"0.9rem" }}>{inWatchlist?"♥":"♡"}</span>
+          <span>{inWatchlist?"Watching":"Watch"}</span>
+        </button>
       </div>
 
       {/* ── Page content ── */}
