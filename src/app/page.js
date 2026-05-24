@@ -205,15 +205,26 @@ const POWERED_BY = [
 ];
 
 // ─── Marquee carousel ─────────────────────────────────────────────────────────
-// All logos are rendered monochrome (filter: brightness→white/black) so any SVG
-// at any original size/colour looks consistent. Height is normalised via CSS.
-function Marquee({ items, speed = 45, logoH = 30, c, mode, label, sublabel, reverse = false }) {
-  // Use 4 copies for short lists so the track always fills any screen width
+// pxPerSec drives both carousels at identical visual speed regardless of track
+// length. Duration is computed after first render by measuring scrollWidth,
+// so it works correctly no matter how many logos each carousel contains.
+function Marquee({ items, pxPerSec = 55, logoH = 30, c, mode, label, sublabel, reverse = false }) {
   const base    = items.length < 8 ? [...items, ...items] : items;
   const doubled = [...base, ...base];
-  const animName = "mq" + speed + (reverse ? "r" : "");
+  const trackRef  = useRef(null);
+  const [duration, setDuration] = useState(null);
+
+  useEffect(() => {
+    if (!trackRef.current) return;
+    // scrollWidth covers all doubled items; half of it = one full loop cycle
+    const trackW = trackRef.current.scrollWidth / 2;
+    setDuration(trackW / pxPerSec);
+  }, [pxPerSec, items.length]);
+
+  const animName = "mqpps" + (reverse ? "r" : "f");
   const fromX   = reverse ? "translateX(-50%)" : "translateX(0)";
   const toX     = reverse ? "translateX(0)"    : "translateX(-50%)";
+
   return (
     <div style={{ padding:"5rem 0", borderTop:`1px solid ${c.border}` }}>
       {/* Section label */}
@@ -229,15 +240,25 @@ function Marquee({ items, speed = 45, logoH = 30, c, mode, label, sublabel, reve
         WebkitMaskImage:"linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
         maskImage:"linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
       }}>
-        <div style={{
-          display:"flex", alignItems:"center", width:"max-content",
-          animation:`${animName} ${speed}s linear infinite`,
-        }}>
+        <div
+          ref={trackRef}
+          style={{
+            display:"flex", alignItems:"center", width:"max-content",
+            // Animation starts only after duration is measured — no wrong-speed flash
+            animation: duration ? `${animName} ${duration}s linear infinite` : "none",
+          }}
+        >
           <style>{`@keyframes ${animName}{from{transform:${fromX}}to{transform:${toX}}}`}</style>
           {doubled.map((item, i) => (
             <div key={i} style={{ flexShrink:0, padding:"0 3.5rem", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              {/* Fixed bounding box — all logos fill the same area regardless of SVG dimensions */}
-              <div style={{ height:`${logoH}px`, width:`${Math.round(logoH * 4.2)}px`, display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+              {/*
+                Hard height forces every logo to exactly logoH px tall regardless
+                of its SVG aspect ratio. Wide logos (Dow Jones) stay wide,
+                compact logos stay compact — all share the exact same height.
+                maxHeight/maxWidth was the bug: it scaled DOWN but never forced
+                the height UP, so wide-aspect logos rendered shorter than others.
+              */}
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
                 <img
                   src={item.logo}
                   alt={item.name}
@@ -246,11 +267,8 @@ function Marquee({ items, speed = 45, logoH = 30, c, mode, label, sublabel, reve
                     if (e.target.nextSibling) e.target.nextSibling.style.display = "flex";
                   }}
                   style={{
-                    maxHeight:"100%",
-                    maxWidth:"100%",
+                    height:`${logoH}px`,
                     width:"auto",
-                    height:"auto",
-                    objectFit:"contain",
                     display:"block",
                     filter:mode==="dark"
                       ? "brightness(0) invert(1) opacity(0.55)"
@@ -259,7 +277,6 @@ function Marquee({ items, speed = 45, logoH = 30, c, mode, label, sublabel, reve
                 />
                 <span style={{
                   display:"none", alignItems:"center", justifyContent:"center",
-                  position:"absolute", inset:0,
                   fontFamily:"'Google Sans Flex','DM Sans',sans-serif",
                   fontSize:"0.72rem", fontWeight:700,
                   color:c.muted, whiteSpace:"nowrap",
@@ -796,11 +813,10 @@ export default function Clarinvest(){
         </div>
       </section>
 
-
       {/* ══ EXCHANGES CAROUSEL ════════════════════════════════════════════════ */}
       <Marquee
         items={EXCHANGES}
-        speed={60}
+        pxPerSec={55}
         logoH={30}
         reverse={true}
         c={c}
@@ -899,11 +915,9 @@ export default function Clarinvest(){
                     </div>
                   )}
 
-                  {/* All tier names green */}
                   <p style={{fontFamily:gs,color:c.green,fontSize:"0.67rem",letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:"0.3rem"}}>{plan.name}</p>
                   <p style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",marginBottom:"1.5rem"}}>{plan.tag}</p>
 
-                  {/* Price in Noto Serif */}
                   <div style={{display:"flex",alignItems:"flex-end",gap:"0.25rem",marginBottom:billing==="yearly"?"0.3rem":"1.8rem"}}>
                     <span style={{fontFamily:ns,fontSize:"3rem",fontWeight:700,lineHeight:1,color:c.text}}>{curr.sym}{price}</span>
                     <span style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",paddingBottom:"0.45rem"}}>{billing==="monthly"?"/month":"/year"}</span>
@@ -931,7 +945,6 @@ export default function Clarinvest(){
                     {isLoading ? "Redirecting..." : `Start ${plan.name}`}
                   </button>
 
-                  {/* "Everything in X plus:" label */}
                   {plan.plusLabel&&(
                     <div style={{marginBottom:"0.85rem"}}>
                       <p style={{fontFamily:gs,fontSize:"0.74rem",color:c.muted,fontStyle:"italic",marginBottom:"0.6rem"}}>{plan.plusLabel}</p>
@@ -939,7 +952,6 @@ export default function Clarinvest(){
                     </div>
                   )}
 
-                  {/* All ✓ green for every tier */}
                   {plan.feats.map((f,j)=>(
                     <div key={j} style={{display:"flex",gap:"0.7rem",alignItems:"flex-start",marginBottom:"0.85rem"}}>
                       <span style={{fontFamily:gs,color:c.green,fontSize:"0.75rem",marginTop:"0.12rem",flexShrink:0,fontWeight:700}}>✓</span>
@@ -973,11 +985,10 @@ export default function Clarinvest(){
         </Reveal>
       </section>
 
-
       {/* ══ POWERED BY CAROUSEL ══════════════════════════════════════════════ */}
       <Marquee
         items={POWERED_BY}
-        speed={60}
+        pxPerSec={55}
         logoH={24}
         c={c}
         mode={mode}
