@@ -180,6 +180,94 @@ const RefLabel=({viewBox,value,color})=>{
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
+
+// ─── Exchange & powered-by data ───────────────────────────────────────────────
+const EXCHANGES = [
+  { name:"NYSE",      logo:"/logos/nyse.svg"      },
+  { name:"NASDAQ",    logo:"/logos/nasdaq.svg"    },
+  { name:"S&P 500",   logo:"/logos/sp500.svg"     },
+  { name:"FTSE 100",  logo:"/logos/ftse100.svg"   },
+  { name:"LSE",       logo:"/logos/lse.svg"       },
+  { name:"EURONEXT",  logo:"/logos/euronext.svg"  },
+  { name:"DAX",       logo:"/logos/dax.svg"       },
+  { name:"CAC 40",    logo:"/logos/cac40.svg"     },
+  { name:"Nasdaq 100",logo:"/logos/nasdaq100.svg" },
+  { name:"XETRA",     logo:"/logos/xetra.svg"     },
+];
+
+const POWERED_BY = [
+  { name:"Anthropic",           logo:"/logos/anthropic.svg" },
+  { name:"Stripe",              logo:"/logos/stripe.svg"    },
+  { name:"Supabase",            logo:"/logos/supabase.svg"  },
+  { name:"Vercel",              logo:"/logos/vercel.svg"    },
+  { name:"Financial Modeling Prep", logo:"/logos/fmp.svg"   },
+  { name:"Next.js",             logo:"/logos/nextjs.svg"    },
+];
+
+// ─── Marquee carousel ─────────────────────────────────────────────────────────
+// All logos are rendered monochrome (filter: brightness→white/black) so any SVG
+// at any original size/colour looks consistent. Height is normalised via CSS.
+function Marquee({ items, speed = 45, logoH = 30, c, mode, label, sublabel }) {
+  const doubled = [...items, ...items];
+  const animName = "mq" + speed;
+  return (
+    <div style={{ padding:"5rem 0", borderTop:`1px solid ${c.border}` }}>
+      {/* Section label */}
+      {label && (
+        <div style={{ textAlign:"center", marginBottom:"2.5rem" }}>
+          <p style={{ fontFamily:"'Google Sans Flex','DM Sans',sans-serif", fontSize:"0.65rem", color:c.muted, letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:600, marginBottom:"0.4rem" }}>{label}</p>
+          {sublabel && <p style={{ fontFamily:"'Google Sans Flex','DM Sans',sans-serif", fontSize:"0.85rem", color:c.muted }}>{sublabel}</p>}
+        </div>
+      )}
+      {/* Scrolling strip */}
+      <div style={{
+        overflow:"hidden",
+        WebkitMaskImage:"linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
+        maskImage:"linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
+      }}>
+        <div style={{
+          display:"flex", alignItems:"center", width:"max-content",
+          animation:`${animName} ${speed}s linear infinite`,
+        }}>
+          <style>{`@keyframes ${animName}{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
+          {doubled.map((item, i) => (
+            <div key={i} style={{ flexShrink:0, padding:"0 3.5rem", display:"flex", flexDirection:"column", alignItems:"center", gap:"0.6rem" }}>
+              <img
+                src={item.logo}
+                alt={item.name}
+                onError={e => {
+                  e.target.style.display = "none";
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = "flex";
+                }}
+                style={{
+                  height:`${logoH}px`,
+                  width:"auto",
+                  maxWidth:"140px",
+                  objectFit:"contain",
+                  display:"block",
+                  // Monochrome normalisation: makes any logo white (dark) or black (light)
+                  filter:mode==="dark"
+                    ? "brightness(0) invert(1) opacity(0.55)"
+                    : "brightness(0) opacity(0.45)",
+                  transition:"opacity 0.2s",
+                }}
+              />
+              {/* Text fallback shown if logo fails to load */}
+              <span style={{
+                display:"none", alignItems:"center",
+                fontFamily:"'Google Sans Flex','DM Sans',sans-serif",
+                fontSize:"0.75rem", fontWeight:700,
+                color:c.muted, whiteSpace:"nowrap",
+                letterSpacing:"0.04em", height:`${logoH}px`,
+              }}>{item.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Banner strip (shown above nav on landing page) ─────────────────────────
 const BCOLS = {
   dark:  { info:{bg:"rgba(68,136,255,0.12)",brd:"rgba(68,136,255,0.35)",txt:"#4488FF"}, promo:{bg:"rgba(0,230,118,0.10)",brd:"rgba(0,230,118,0.35)",txt:"#00E676"}, urgent:{bg:"rgba(255,24,0,0.10)",brd:"rgba(255,24,0,0.35)",txt:"#FF1800"} },
@@ -702,6 +790,18 @@ export default function Clarinvest(){
         </div>
       </section>
 
+
+      {/* ══ EXCHANGES CAROUSEL ════════════════════════════════════════════════ */}
+      <Marquee
+        items={EXCHANGES}
+        speed={50}
+        logoH={30}
+        c={c}
+        mode={mode}
+        label="Instruments available on"
+        sublabel="Major US, European and UK exchanges — more coming soon"
+      />
+
       {/* ══ PRICING ══════════════════════════════════════════════════════════ */}
       <section ref={priceRef} style={{padding:"8rem 2rem",maxWidth:"1100px",margin:"0 auto"}}>
         <Reveal>
@@ -865,6 +965,18 @@ export default function Clarinvest(){
           </div>
         </Reveal>
       </section>
+
+
+      {/* ══ POWERED BY CAROUSEL ══════════════════════════════════════════════ */}
+      <Marquee
+        items={POWERED_BY}
+        speed={35}
+        logoH={24}
+        c={c}
+        mode={mode}
+        label="Built with"
+        sublabel="World-class infrastructure powering every analysis"
+      />
 
       {/* ══ ABOUT ════════════════════════════════════════════════════════════ */}
       <section ref={aboutRef} style={{
