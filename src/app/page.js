@@ -286,7 +286,6 @@ export default function Clarinvest(){
 
   return(
     <div style={{fontFamily:gs,background:c.bg,color:c.text,minHeight:"100vh",overflowX:"hidden",transition:"background 0.4s,color 0.4s"}}>
-      <BannerStrip list={banners.filter(b=>b.position==="top"&&!dismissed.has(b.id))} mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=Google+Sans+Flex:ital,opsz,wght@0,8..144,300..700;1,8..144,300..700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
@@ -344,17 +343,19 @@ export default function Clarinvest(){
       `}</style>
 
       {/* ══ NAV ══════════════════════════════════════════════════════════════ */}
-      <nav style={{
-        position:"fixed",top:0,left:0,right:0,zIndex:200,height:"62px",
-        backdropFilter:"blur(12px)",
-        background:solid
-          ?mode==="dark"?"rgba(9,9,9,0.97)":"rgba(247,247,245,0.97)"
-          :mode==="dark"?"rgba(9,9,9,0.60)":"rgba(247,247,245,0.60)",
-        borderBottom:`1px solid ${solid?c.border:"transparent"}`,
-        display:"flex",alignItems:"center",justifyContent:"space-between",
-        padding:"0 2.5rem",gap:"1rem",
-        transition:"background 0.35s,border-color 0.35s",
-      }}>
+      <div style={{position:"sticky",top:0,zIndex:200}}>
+        <BannerStrip list={banners.filter(b=>b.position==="top"&&!dismissed.has(b.id))} mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
+        <nav style={{
+          position:"relative",height:"62px",
+          backdropFilter:"blur(12px)",
+          background:solid
+            ?mode==="dark"?"rgba(9,9,9,0.97)":"rgba(247,247,245,0.97)"
+            :mode==="dark"?"rgba(9,9,9,0.60)":"rgba(247,247,245,0.60)",
+          borderBottom:`1px solid ${solid?c.border:"transparent"}`,
+          display:"flex",alignItems:"center",justifyContent:"space-between",
+          padding:"0 2.5rem",gap:"1rem",
+          transition:"background 0.35s,border-color 0.35s",
+        }}>
         <button onClick={()=>go(heroRef)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.65rem",flexShrink:0}}>
           <svg width="22" height="22" viewBox="0 0 200 200">
             <rect x="8"   y="8"   width="84" height="84" rx="10" fill={c.text}/>
@@ -384,9 +385,10 @@ export default function Clarinvest(){
           </button>
         </div>
       </nav>
+      </div>
 
       {/* ══ HERO ═════════════════════════════════════════════════════════════ */}
-      <section ref={heroRef} style={{minHeight:"100vh",paddingTop:"62px",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+      <section ref={heroRef} style={{minHeight:"100vh",paddingTop:"0",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
           <div style={{position:"absolute",inset:0,
             backgroundImage:`radial-gradient(${c.borderHi} 1px,transparent 1px)`,
