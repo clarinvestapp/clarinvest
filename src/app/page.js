@@ -208,7 +208,7 @@ const POWERED_BY = [
 // pxPerSec drives both carousels at identical visual speed regardless of track
 // length. Duration is computed after first render by measuring scrollWidth,
 // so it works correctly no matter how many logos each carousel contains.
-function Marquee({ items, pxPerSec = 55, logoH = 30, c, mode, label, sublabel, reverse = false }) {
+function Marquee({ items, pxPerSec = 40, logoH = 30, c, mode, label, sublabel, reverse = false }) {
   const base    = items.length < 8 ? [...items, ...items] : items;
   const doubled = [...base, ...base];
   const trackRef  = useRef(null);
@@ -816,7 +816,7 @@ export default function Clarinvest(){
       {/* ══ EXCHANGES CAROUSEL ════════════════════════════════════════════════ */}
       <Marquee
         items={EXCHANGES}
-        pxPerSec={55}
+        pxPerSec={20}
         logoH={30}
         reverse={true}
         c={c}
@@ -988,7 +988,7 @@ export default function Clarinvest(){
       {/* ══ POWERED BY CAROUSEL ══════════════════════════════════════════════ */}
       <Marquee
         items={POWERED_BY}
-        pxPerSec={55}
+        pxPerSec={20}
         logoH={24}
         c={c}
         mode={mode}

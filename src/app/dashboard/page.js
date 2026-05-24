@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/lib/theme";
 import { createClient } from "@/lib/supabase";
@@ -156,13 +156,11 @@ function StockPanel({ stock, c, mode, onClose, onFullAnalysis }) {
   const status = stock ? marketStatus(stock.market) : null;
   const stCol = status ? (c[status.col] || c.muted) : c.muted;
 
-  // Animate in
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 10);
     return () => clearTimeout(t);
   }, []);
 
-  // Close on Escape key
   useEffect(() => {
     const h = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", h);
@@ -180,11 +178,9 @@ function StockPanel({ stock, c, mode, onClose, onFullAnalysis }) {
 
   return (
     <>
-      {/* Backdrop — clicking closes panel */}
       <div onClick={onClose}
         style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:300, backdropFilter:"blur(3px)", transition:"opacity 0.28s", opacity:visible?1:0 }}/>
 
-      {/* Panel — centered floating on desktop, bottom sheet on mobile */}
       <div ref={panelRef}
         className={`stock-panel${visible?" open":""}`}
         style={{
@@ -195,7 +191,6 @@ function StockPanel({ stock, c, mode, onClose, onFullAnalysis }) {
           overflowY:"auto",
         }}>
 
-        {/* Panel header */}
         <div style={{ padding:"1.25rem 1.5rem", borderBottom:`1px solid ${c.border}`, display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexShrink:0, position:"sticky", top:0, background:mode==="dark"?"#0E0E10":"#FFFFFF", zIndex:1 }}>
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:"0.55rem", marginBottom:"0.25rem" }}>
@@ -211,10 +206,8 @@ function StockPanel({ stock, c, mode, onClose, onFullAnalysis }) {
           </button>
         </div>
 
-        {/* Scrollable content */}
         <div style={{ padding:"1.5rem", flex:1 }}>
 
-          {/* Price */}
           <div style={{ marginBottom:"1.5rem" }}>
             {stock.price != null ? (
               <>
@@ -228,7 +221,6 @@ function StockPanel({ stock, c, mode, onClose, onFullAnalysis }) {
             )}
           </div>
 
-          {/* AI Score + Verdict + Sector */}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"0.6rem", marginBottom:"1.25rem" }}>
             {[
               { label:"AI Score", node:<ScoreBadge score={stock.score} c={c} size={36}/> },
@@ -242,7 +234,6 @@ function StockPanel({ stock, c, mode, onClose, onFullAnalysis }) {
             ))}
           </div>
 
-          {/* Market details */}
           <div style={{ background:c.surface, border:`1px solid ${c.border}`, borderRadius:"10px", padding:"1rem", marginBottom:"1.25rem" }}>
             <p style={{ fontFamily:gs, fontSize:"0.6rem", color:c.muted, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:"0.75rem", fontWeight:600 }}>Market Details</p>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.6rem" }}>
@@ -260,14 +251,12 @@ function StockPanel({ stock, c, mode, onClose, onFullAnalysis }) {
             </div>
           </div>
 
-          {/* AI Summary */}
           <div style={{ background:c.blueDim, border:`1px solid ${c.blue}30`, borderRadius:"10px", padding:"1rem", marginBottom:"1.5rem" }}>
             <p style={{ fontFamily:gs, fontSize:"0.6rem", color:c.blue, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:"6px", fontWeight:600 }}>AI Summary</p>
             <p style={{ fontFamily:gs, fontSize:"0.82rem", color:c.text, lineHeight:1.68 }}>{summary}</p>
             <p style={{ fontFamily:gs, fontSize:"0.68rem", color:c.muted, marginTop:"8px", fontStyle:"italic" }}>Live AI analysis available with Clarinvest subscription</p>
           </div>
 
-          {/* CTA — full analysis */}
           <button onClick={() => onFullAnalysis(stock.ticker)}
             style={{ width:"100%", background:c.text, color:c.bg, border:"none", borderRadius:"8px", padding:"14px", fontFamily:gs, fontSize:"0.88rem", fontWeight:600, cursor:"pointer", letterSpacing:"0.03em", marginBottom:"0.75rem" }}>
             View Full Analysis →
@@ -282,8 +271,8 @@ function StockPanel({ stock, c, mode, onClose, onFullAnalysis }) {
   );
 }
 
-// ─── Main page ─────────────────────────────────────────────────────────────────
-export default function DiscoveryPage() {
+// ─── Inner page — uses useSearchParams so must live inside <Suspense> ──────────
+function DiscoveryInner() {
   const { mode } = useTheme();
   const c = C[mode];
   const router = useRouter();
@@ -303,7 +292,6 @@ export default function DiscoveryPage() {
   const [wlToken,   setWlToken]  = useState(null);
   const supabase = createClient();
 
-  // Active stock from URL query param
   const activeTickerParam = searchParams.get("stock");
   const activeStock = stocks.find(s => s.ticker === activeTickerParam) || null;
 
@@ -331,7 +319,6 @@ export default function DiscoveryPage() {
 
   useEffect(() => { fetchStocks(); }, [fetchStocks]);
 
-  // Load watchlist on mount
   useEffect(() => {
     supabase.auth.getSession().then(({ data:{ session } }) => {
       if (!session) return;
@@ -347,7 +334,6 @@ export default function DiscoveryPage() {
     e.stopPropagation();
     if (!wlToken) return;
     const inList = watchlist.has(s.ticker);
-    // Optimistic update
     setWatchlist(prev => {
       const next = new Set(prev);
       inList ? next.delete(s.ticker) : next.add(s.ticker);
@@ -369,14 +355,12 @@ export default function DiscoveryPage() {
     return stocks.filter(s => s.sector === sector);
   }, [stocks, sector]);
 
-  // Open panel: update URL with ?stock=TICKER
   const openStock = useCallback((s) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("stock", s.ticker);
     router.push(`/dashboard?${params}`, { scroll: false });
   }, [router, searchParams]);
 
-  // Close panel: remove ?stock from URL
   const closePanel = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("stock");
@@ -384,7 +368,6 @@ export default function DiscoveryPage() {
     router.push(qs ? `/dashboard?${qs}` : "/dashboard", { scroll: false });
   }, [router, searchParams]);
 
-  // Navigate to full analysis page
   const goFullAnalysis = useCallback((ticker) => {
     router.push(`/dashboard/stock/${ticker}`);
   }, [router]);
@@ -414,7 +397,6 @@ export default function DiscoveryPage() {
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
         .sk>div{animation:pulse 1.4s ease infinite;}
 
-        /* ── Floating stock panel ── */
         .stock-panel{
           position:fixed;
           top:50%; left:50%;
@@ -447,13 +429,11 @@ export default function DiscoveryPage() {
 
       <div className="ppd" style={{ maxWidth:"1200px", margin:"0 auto", padding:"2.5rem 3.5rem" }}>
 
-        {/* Header */}
         <div style={{ marginBottom:"1.75rem" }}>
           <p style={{ fontFamily:gs, color:c.muted, fontSize:"0.65rem", letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"0.4rem", fontWeight:600 }}>Discovery</p>
           <h1 style={{ fontFamily:gs, fontSize:"clamp(1.5rem,3vw,2.2rem)", fontWeight:700, color:c.text }}>Markets Overview</h1>
         </div>
 
-        {/* Demo data banner */}
         {isMock && (
           <div style={{ background:mode==="dark"?"rgba(244,162,0,0.08)":"rgba(180,83,9,0.07)", border:`1px solid ${c.amber}40`, borderRadius:"8px", padding:"9px 14px", marginBottom:"1.25rem", display:"flex", alignItems:"center", gap:"0.6rem" }}>
             <span style={{ color:c.amber, fontSize:"0.8rem" }}>⚠</span>
@@ -463,7 +443,6 @@ export default function DiscoveryPage() {
           </div>
         )}
 
-        {/* Search */}
         <div style={{ position:"relative", marginBottom:"1.25rem" }}>
           <span style={{ position:"absolute", left:"14px", top:"50%", transform:"translateY(-50%)", color:c.muted, fontSize:"0.9rem", pointerEvents:"none" }}>⌕</span>
           <input value={search} onChange={e=>setSearch(e.target.value)}
@@ -475,7 +454,6 @@ export default function DiscoveryPage() {
           {search && <button onClick={()=>setSearch("")} style={{ position:"absolute", right:"12px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:c.muted, cursor:"pointer", fontSize:"0.85rem" }}>✕</button>}
         </div>
 
-        {/* View selector */}
         {!search && (
           <div style={{ display:"flex", gap:"0.4rem", marginBottom:"1rem" }}>
             {VIEWS.map(v=>(
@@ -487,7 +465,6 @@ export default function DiscoveryPage() {
           </div>
         )}
 
-        {/* Market filter */}
         <div className="sr" style={{ marginBottom:"0.6rem" }}>
           {MARKETS.map(m=>(
             <button key={m.id} onClick={()=>m.on&&setMarket(m.id)}
@@ -498,14 +475,12 @@ export default function DiscoveryPage() {
           ))}
         </div>
 
-        {/* Sector filter */}
         <div className="sw" style={{ marginBottom:"1.5rem" }}>
           {SECTORS.map(s=>(
             <button key={s} onClick={()=>setSector(s)} style={pill(sector===s)}>{s}</button>
           ))}
         </div>
 
-        {/* Results bar */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.25rem" }}>
           <span style={{ fontFamily:gs, fontSize:"0.74rem", color:c.muted }}>
             {loading?"Loading…":`${filtered.length} stock${filtered.length!==1?"s":""}`}
@@ -520,7 +495,6 @@ export default function DiscoveryPage() {
           )}
         </div>
 
-        {/* Grid */}
         {loading ? (
           <div className="sk" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:"1.1rem" }}>
             {Array.from({length:12}).map((_,i)=><SkeletonCard key={i} c={c}/>)}
@@ -555,7 +529,6 @@ export default function DiscoveryPage() {
         )}
       </div>
 
-      {/* Slide-over panel */}
       {activeTickerParam && (
         <StockPanel
           stock={activeStock || { ticker:activeTickerParam, name:activeTickerParam, market:"US", chg:null, price:null, score:null, sector:"—", exchange:"—" }}
@@ -565,5 +538,19 @@ export default function DiscoveryPage() {
         />
       )}
     </div>
+  );
+}
+
+// ─── Default export — wraps DiscoveryInner in Suspense ────────────────────────
+// Required by Next.js because useSearchParams() can only run client-side.
+// The fallback is a minimal skeleton that matches the page background so there
+// is no flash of white during hydration.
+export default function DiscoveryPage() {
+  const { mode } = useTheme();
+  const bg = mode === "dark" ? "#090909" : "#F7F7F5";
+  return (
+    <Suspense fallback={<div style={{ background:bg, minHeight:"100vh" }} />}>
+      <DiscoveryInner />
+    </Suspense>
   );
 }
