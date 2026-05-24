@@ -77,19 +77,7 @@ function useReveal(){
     if(ref.current)o.observe(ref.current);
   
   // ── Banner strip colours ──
-  const BANNER_COLORS = {
-    info:   { bg:'rgba(68,136,255,0.12)', border:'rgba(68,136,255,0.35)', text:'#4488FF'  },
-    promo:  { bg:'rgba(0,230,118,0.10)', border:'rgba(0,230,118,0.35)', text:'#00E676'  },
-    urgent: { bg:'rgba(255,24,0,0.10)',  border:'rgba(255,24,0,0.35)',  text:'#FF1800'  },
-  };
-  const lightBannerColors = {
-    info:   { bg:'rgba(30,85,204,0.08)',  border:'rgba(30,85,204,0.30)',  text:'#1E55CC' },
-    promo:  { bg:'rgba(0,138,56,0.08)',   border:'rgba(0,138,56,0.30)',   text:'#008A38' },
-    urgent: { bg:'rgba(204,0,0,0.08)',    border:'rgba(204,0,0,0.30)',    text:'#CC0000' },
-  };
-  const topBanners    = banners.filter(b => b.position === 'top'    && !dismissed.has(b.id));
-  const bottomBanners = banners.filter(b => b.position === 'bottom' && !dismissed.has(b.id));
-  const BannerStrip = ({ list }) => list.length === 0 ? null : (
+  
     <div>
       {list.map(b => {
         const col = (mode === 'dark' ? BANNER_COLORS : lightBannerColors)[b.type] || BANNER_COLORS.info;
@@ -903,7 +891,6 @@ export default function Clarinvest(){
           ))}
         </div>
       </footer>
-    <BannerStrip list={banners.filter(b=>b.position==="bottom"&&!dismissed.has(b.id))} mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
   </div>
   );
 }
