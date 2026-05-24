@@ -186,14 +186,15 @@ const BCOLS = {
   light: { info:{bg:"rgba(30,85,204,0.08)", brd:"rgba(30,85,204,0.30)", txt:"#1E55CC"}, promo:{bg:"rgba(0,138,56,0.08)", brd:"rgba(0,138,56,0.30)", txt:"#008A38"}, urgent:{bg:"rgba(204,0,0,0.08)", brd:"rgba(204,0,0,0.30)", txt:"#CC0000"} },
 };
 
-function BannerStrip({ list, mode, onDismiss }) {
+function BannerStrip({ list, mode, onDismiss, side = "top" }) {
   if (!list || list.length === 0) return null;
+  const isTop = side === "top";
   return (
-    <div>
+    <div style={{ position:"fixed", [side]:0, left:0, right:0, zIndex:300 }}>
       {list.map(b => {
         const col = (BCOLS[mode]||BCOLS.dark)[b.type] || BCOLS.dark.info;
         return (
-          <div key={b.id} style={{ background:col.bg, borderBottom:"1px solid "+col.brd, padding:"9px 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"0.75rem" }}>
+          <div key={b.id} style={{ background:col.bg, borderBottom:isTop?"1px solid "+col.brd:undefined, borderTop:!isTop?"1px solid "+col.brd:undefined, padding:"9px 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"0.75rem" }}>
             <p style={{ fontFamily:"'Google Sans Flex','DM Sans',sans-serif", fontSize:"0.82rem", color:col.txt, flex:1, textAlign:"center" }}>{b.text}</p>
             <button onClick={() => onDismiss(b.id)}
               style={{ background:"none", border:"none", cursor:"pointer", color:col.txt, opacity:0.6, fontSize:"0.9rem", flexShrink:0, padding:"0 4px" }}>✕</button>
@@ -284,8 +285,16 @@ export default function Clarinvest(){
     );
   };
 
+  const BANNER_H = 44;
+  const topBannerList = banners.filter(b=>b.position==="top"&&!dismissed.has(b.id));
+  const botBannerList = banners.filter(b=>b.position==="bottom"&&!dismissed.has(b.id));
+  const topH = topBannerList.length * BANNER_H;
+  const botH = botBannerList.length * BANNER_H;
+
   return(
     <div style={{fontFamily:gs,background:c.bg,color:c.text,minHeight:"100vh",overflowX:"hidden",transition:"background 0.4s,color 0.4s"}}>
+      <BannerStrip list={topBannerList} side="top" mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
+      <BannerStrip list={botBannerList} side="bottom" mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=Google+Sans+Flex:ital,opsz,wght@0,8..144,300..700;1,8..144,300..700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
@@ -343,8 +352,8 @@ export default function Clarinvest(){
       `}</style>
 
       {/* ══ NAV ══════════════════════════════════════════════════════════════ */}
-      <div style={{position:"sticky",top:0,zIndex:200}}>
-        <BannerStrip list={banners.filter(b=>b.position==="top"&&!dismissed.has(b.id))} mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
+      <div style={{height:topH}}/>
+      <div style={{position:"sticky",top:topH,zIndex:200}}>
         <nav style={{
           position:"relative",height:"62px",
           backdropFilter:"blur(12px)",
@@ -894,7 +903,7 @@ export default function Clarinvest(){
           ))}
         </div>
       </footer>
-    <BannerStrip list={banners.filter(b=>b.position==="bottom"&&!dismissed.has(b.id))} mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
+    <div style={{height:botH}}/>
   </div>
   );
 }

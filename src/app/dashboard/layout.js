@@ -32,14 +32,16 @@ const BCOLS = {
   },
 };
 
-function BannerStrip({ banners, mode, dismissed, onDismiss }) {
-  if (!banners.length) return null;
+function BannerStrip({ banners, mode, dismissed, onDismiss, side="top" }) {
+  const visible = banners.filter(b => !dismissed.has(b.id));
+  if (!visible.length) return null;
+  const isTop = side === "top";
   return (
-    <div>
-      {banners.map(b => {
+    <div style={{ position:"fixed", [side]:0, left:0, right:0, zIndex:201 }}>
+      {visible.map(b => {
         const col = (BCOLS[mode] || BCOLS.dark)[b.type] || BCOLS.dark.info;
         return (
-          <div key={b.id} style={{ background:col.bg, borderBottom:"1px solid "+col.brd, padding:"8px 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"0.75rem" }}>
+          <div key={b.id} style={{ background:col.bg, borderBottom:isTop?"1px solid "+col.brd:undefined, borderTop:!isTop?"1px solid "+col.brd:undefined, padding:"8px 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"0.75rem" }}>
             <p style={{ fontFamily:gs, fontSize:"0.8rem", color:col.txt, flex:1, textAlign:"center" }}>{b.text}</p>
             <button onClick={() => onDismiss(b.id)}
               style={{ background:"none", border:"none", cursor:"pointer", color:col.txt, opacity:0.6, fontSize:"0.85rem", flexShrink:0, padding:"2px 6px" }}>✕</button>
