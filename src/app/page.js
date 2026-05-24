@@ -183,33 +183,37 @@ const RefLabel=({viewBox,value,color})=>{
 
 // ─── Exchange & powered-by data ───────────────────────────────────────────────
 const EXCHANGES = [
-  { name:"NYSE",      logo:"/logos/nyse.svg"      },
-  { name:"NASDAQ",    logo:"/logos/nasdaq.svg"    },
-  { name:"S&P 500",   logo:"/logos/sp500.svg"     },
-  { name:"FTSE 100",  logo:"/logos/ftse100.svg"   },
-  { name:"LSE",       logo:"/logos/lse.svg"       },
-  { name:"EURONEXT",  logo:"/logos/euronext.svg"  },
-  { name:"DAX",       logo:"/logos/dax.svg"       },
-  { name:"CAC 40",    logo:"/logos/cac40.svg"     },
-  { name:"Nasdaq 100",logo:"/logos/nasdaq100.svg" },
-  { name:"XETRA",     logo:"/logos/xetra.svg"     },
+  { name:"NYSE",       logo:"/logos/nyse.svg"      },
+  { name:"NASDAQ",     logo:"/logos/nasdaq.svg"    },
+  { name:"S&P 500",    logo:"/logos/sp500.svg"     },
+  { name:"Dow Jones",  logo:"/logos/dowjones.svg"  },
+  { name:"FTSE 100",   logo:"/logos/ftse100.svg"   },
+  { name:"LSE",        logo:"/logos/lse.svg"       },
+  { name:"EURONEXT",   logo:"/logos/euronext.svg"  },
+  { name:"DAX",        logo:"/logos/dax.svg"       },
+  { name:"XETRA",      logo:"/logos/xetra.svg"     },
 ];
 
 const POWERED_BY = [
-  { name:"Anthropic",           logo:"/logos/anthropic.svg" },
-  { name:"Stripe",              logo:"/logos/stripe.svg"    },
-  { name:"Supabase",            logo:"/logos/supabase.svg"  },
-  { name:"Vercel",              logo:"/logos/vercel.svg"    },
-  { name:"Financial Modeling Prep", logo:"/logos/fmp.svg"   },
-  { name:"Next.js",             logo:"/logos/nextjs.svg"    },
+  { name:"Anthropic",  logo:"/logos/anthropic.svg" },
+  { name:"Stripe",     logo:"/logos/stripe.svg"    },
+  { name:"Circle",     logo:"/logos/circle.svg"    },
+  { name:"Supabase",   logo:"/logos/supabase.svg"  },
+  { name:"Vercel",     logo:"/logos/vercel.svg"    },
+  { name:"Financial Modeling Prep", logo:"/logos/fmp.svg" },
+  { name:"Next.js",    logo:"/logos/nextjs.svg"    },
 ];
 
 // ─── Marquee carousel ─────────────────────────────────────────────────────────
 // All logos are rendered monochrome (filter: brightness→white/black) so any SVG
 // at any original size/colour looks consistent. Height is normalised via CSS.
-function Marquee({ items, speed = 45, logoH = 30, c, mode, label, sublabel }) {
-  const doubled = [...items, ...items];
-  const animName = "mq" + speed;
+function Marquee({ items, speed = 45, logoH = 30, c, mode, label, sublabel, reverse = false }) {
+  // Use 4 copies for short lists so the track always fills any screen width
+  const base    = items.length < 8 ? [...items, ...items] : items;
+  const doubled = [...base, ...base];
+  const animName = "mq" + speed + (reverse ? "r" : "");
+  const fromX   = reverse ? "translateX(-50%)" : "translateX(0)";
+  const toX     = reverse ? "translateX(0)"    : "translateX(-50%)";
   return (
     <div style={{ padding:"5rem 0", borderTop:`1px solid ${c.border}` }}>
       {/* Section label */}
@@ -229,37 +233,39 @@ function Marquee({ items, speed = 45, logoH = 30, c, mode, label, sublabel }) {
           display:"flex", alignItems:"center", width:"max-content",
           animation:`${animName} ${speed}s linear infinite`,
         }}>
-          <style>{`@keyframes ${animName}{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
+          <style>{`@keyframes ${animName}{from{transform:${fromX}}to{transform:${toX}}}`}</style>
           {doubled.map((item, i) => (
-            <div key={i} style={{ flexShrink:0, padding:"0 3.5rem", display:"flex", flexDirection:"column", alignItems:"center", gap:"0.6rem" }}>
-              <img
-                src={item.logo}
-                alt={item.name}
-                onError={e => {
-                  e.target.style.display = "none";
-                  if (e.target.nextSibling) e.target.nextSibling.style.display = "flex";
-                }}
-                style={{
-                  height:`${logoH}px`,
-                  width:"auto",
-                  maxWidth:"140px",
-                  objectFit:"contain",
-                  display:"block",
-                  // Monochrome normalisation: makes any logo white (dark) or black (light)
-                  filter:mode==="dark"
-                    ? "brightness(0) invert(1) opacity(0.55)"
-                    : "brightness(0) opacity(0.45)",
-                  transition:"opacity 0.2s",
-                }}
-              />
-              {/* Text fallback shown if logo fails to load */}
-              <span style={{
-                display:"none", alignItems:"center",
-                fontFamily:"'Google Sans Flex','DM Sans',sans-serif",
-                fontSize:"0.75rem", fontWeight:700,
-                color:c.muted, whiteSpace:"nowrap",
-                letterSpacing:"0.04em", height:`${logoH}px`,
-              }}>{item.name}</span>
+            <div key={i} style={{ flexShrink:0, padding:"0 3.5rem", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              {/* Fixed bounding box — all logos fill the same area regardless of SVG dimensions */}
+              <div style={{ height:`${logoH}px`, width:`${Math.round(logoH * 4.2)}px`, display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+                <img
+                  src={item.logo}
+                  alt={item.name}
+                  onError={e => {
+                    e.target.style.display = "none";
+                    if (e.target.nextSibling) e.target.nextSibling.style.display = "flex";
+                  }}
+                  style={{
+                    maxHeight:"100%",
+                    maxWidth:"100%",
+                    width:"auto",
+                    height:"auto",
+                    objectFit:"contain",
+                    display:"block",
+                    filter:mode==="dark"
+                      ? "brightness(0) invert(1) opacity(0.55)"
+                      : "brightness(0) opacity(0.45)",
+                  }}
+                />
+                <span style={{
+                  display:"none", alignItems:"center", justifyContent:"center",
+                  position:"absolute", inset:0,
+                  fontFamily:"'Google Sans Flex','DM Sans',sans-serif",
+                  fontSize:"0.72rem", fontWeight:700,
+                  color:c.muted, whiteSpace:"nowrap",
+                  letterSpacing:"0.04em",
+                }}>{item.name}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -794,8 +800,9 @@ export default function Clarinvest(){
       {/* ══ EXCHANGES CAROUSEL ════════════════════════════════════════════════ */}
       <Marquee
         items={EXCHANGES}
-        speed={50}
+        speed={60}
         logoH={30}
+        reverse={true}
         c={c}
         mode={mode}
         label="Instruments available on"
@@ -807,7 +814,7 @@ export default function Clarinvest(){
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Pricing</p>
-            <h2 style={{fontFamily:gs,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
+            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
             <p style={{fontFamily:gs,color:c.muted,maxWidth:"400px",margin:"0 auto 0.5rem",lineHeight:1.72,fontSize:"0.94rem"}}>
               No hidden fees. No lock-in. Prices shown in your local currency.
             </p>
@@ -970,7 +977,7 @@ export default function Clarinvest(){
       {/* ══ POWERED BY CAROUSEL ══════════════════════════════════════════════ */}
       <Marquee
         items={POWERED_BY}
-        speed={35}
+        speed={60}
         logoH={24}
         c={c}
         mode={mode}
