@@ -76,22 +76,6 @@ function useReveal(){
     const o=new IntersectionObserver(([e])=>{if(e.isIntersecting){setV(true);o.disconnect();}},{threshold:0.08});
     if(ref.current)o.observe(ref.current);
   
-  // ── Banner strip colours ──
-  
-    <div>
-      {list.map(b => {
-        const col = (mode === 'dark' ? BANNER_COLORS : lightBannerColors)[b.type] || BANNER_COLORS.info;
-        return (
-          <div key={b.id} style={{ background:col.bg, borderBottom:`1px solid ${col.border}`, padding:'9px 1.5rem', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'0.75rem' }}>
-            <p style={{ fontFamily:gs, fontSize:'0.82rem', color:col.text, flex:1, textAlign:'center' }}>{b.text}</p>
-            <button onClick={() => setDismissed(prev => new Set([...prev, b.id]))}
-              style={{ background:'none', border:'none', cursor:'pointer', color:col.text, opacity:0.6, fontSize:'0.9rem', flexShrink:0, padding:'0 4px' }}>✕</button>
-          </div>
-        );
-      })}
-    </div>
-  );
-
   return()=>o.disconnect();
   },[]);
   return[ref,v];
@@ -196,11 +180,28 @@ const RefLabel=({viewBox,value,color})=>{
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-function BannerStrip({list,mode,onDismiss}){
-  const dk={info:{bg:"rgba(68,136,255,0.12)",brd:"rgba(68,136,255,0.35)",txt:"#4488FF"},promo:{bg:"rgba(0,230,118,0.10)",brd:"rgba(0,230,118,0.35)",txt:"#00E676"},urgent:{bg:"rgba(255,24,0,0.10)",brd:"rgba(255,24,0,0.35)",txt:"#FF1800"}};
-  const lk={info:{bg:"rgba(30,85,204,0.08)",brd:"rgba(30,85,204,0.30)",txt:"#1E55CC"},promo:{bg:"rgba(0,138,56,0.08)",brd:"rgba(0,138,56,0.30)",txt:"#008A38"},urgent:{bg:"rgba(204,0,0,0.08)",brd:"rgba(204,0,0,0.30)",txt:"#CC0000"}};
-  if(!list||!list.length)return null;
-  return(<div>{list.map(b=>{const col=(mode==="dark"?dk:lk)[b.type]||dk.info;return(<div key={b.id} style={{background:col.bg,borderBottom:"1px solid "+col.brd,padding:"9px 1.5rem",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"0.75rem"}}><p style={{fontFamily:"'Google Sans Flex',sans-serif",fontSize:"0.82rem",color:col.txt,flex:1,textAlign:"center"}}>{b.text}</p><button onClick={()=>onDismiss(b.id)} style={{background:"none",border:"none",cursor:"pointer",color:col.txt,opacity:0.6,fontSize:"0.9rem",padding:"0 4px"}}>✕</button></div>);})}</div>);
+// ─── Banner strip (shown above nav on landing page) ─────────────────────────
+const BCOLS = {
+  dark:  { info:{bg:"rgba(68,136,255,0.12)",brd:"rgba(68,136,255,0.35)",txt:"#4488FF"}, promo:{bg:"rgba(0,230,118,0.10)",brd:"rgba(0,230,118,0.35)",txt:"#00E676"}, urgent:{bg:"rgba(255,24,0,0.10)",brd:"rgba(255,24,0,0.35)",txt:"#FF1800"} },
+  light: { info:{bg:"rgba(30,85,204,0.08)", brd:"rgba(30,85,204,0.30)", txt:"#1E55CC"}, promo:{bg:"rgba(0,138,56,0.08)", brd:"rgba(0,138,56,0.30)", txt:"#008A38"}, urgent:{bg:"rgba(204,0,0,0.08)", brd:"rgba(204,0,0,0.30)", txt:"#CC0000"} },
+};
+
+function BannerStrip({ list, mode, onDismiss }) {
+  if (!list || list.length === 0) return null;
+  return (
+    <div>
+      {list.map(b => {
+        const col = (BCOLS[mode]||BCOLS.dark)[b.type] || BCOLS.dark.info;
+        return (
+          <div key={b.id} style={{ background:col.bg, borderBottom:"1px solid "+col.brd, padding:"9px 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"0.75rem" }}>
+            <p style={{ fontFamily:"'Google Sans Flex','DM Sans',sans-serif", fontSize:"0.82rem", color:col.txt, flex:1, textAlign:"center" }}>{b.text}</p>
+            <button onClick={() => onDismiss(b.id)}
+              style={{ background:"none", border:"none", cursor:"pointer", color:col.txt, opacity:0.6, fontSize:"0.9rem", flexShrink:0, padding:"0 4px" }}>✕</button>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function Clarinvest(){
@@ -891,6 +892,7 @@ export default function Clarinvest(){
           ))}
         </div>
       </footer>
+    <BannerStrip list={banners.filter(b=>b.position==="bottom"&&!dismissed.has(b.id))} mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
   </div>
   );
 }
