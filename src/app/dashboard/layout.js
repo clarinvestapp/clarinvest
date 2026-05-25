@@ -12,10 +12,11 @@ const gs = "'Google Sans Flex','DM Sans',sans-serif";
 const pf = "'Playfair Display',Georgia,serif";
 
 const NAV_ITEMS = [
-  { label:"Discovery",  href:"/dashboard",           icon:"◈", ready:true  },
-  { label:"Watchlist",  href:"/dashboard/watchlist", icon:"♡", ready:true  },
-  { label:"Portfolio",  href:"/dashboard/portfolio", icon:"▲", ready:false },
-  { label:"Account",    href:"/dashboard/account",   icon:"○", ready:true  },
+  { label:"Discovery",  href:"/dashboard",            icon:"◈", ready:true  },
+  { label:"Watchlist",  href:"/dashboard/watchlist",  icon:"♡", ready:true  },
+  { label:"Dividends",  href:"/dashboard/dividends",  icon:"💰", ready:true  },
+  { label:"Portfolio",  href:"/dashboard/portfolio",  icon:"▲", ready:false },
+  { label:"Account",    href:"/dashboard/account",    icon:"○", ready:true  },
 ];
 
 // ─── Banner colours ──────────────────────────────────────────────────────────
@@ -71,7 +72,6 @@ function DashboardShell({ children }) {
       setUser(user);
       const p = user.user_metadata?.plan || "essential";
       setPlan(p);
-      // Fetch banners for this plan
       fetch("/api/banners?target=" + p)
         .then(r => r.json())
         .then(d => setBanners(d.banners || []))
