@@ -377,7 +377,7 @@ function Builder({c,mode,initial,onSave,onCancel}){
 
         <div style={{padding:"0 1.5rem 1.5rem",display:"flex",gap:"0.75rem",justifyContent:"flex-end"}}>
           <button onClick={onCancel} style={{background:"transparent",color:c.muted,border:`1px solid ${c.border}`,borderRadius:"7px",padding:"10px 24px",fontFamily:gs,fontSize:"0.84rem",cursor:"pointer"}}>Cancel</button>
-          <button onClick={()=>canSave&&onSave({id:initial?.id||`p${Date.now()}`,name:name.trim(),capital,holdings})} disabled={!canSave}
+          <button onClick={()=>canSave&&onSave({id:initial?.id||null,name:name.trim(),capital,holdings})} disabled={!canSave}
             style={{background:c.text,color:c.bg,border:"none",borderRadius:"7px",padding:"10px 28px",fontFamily:gs,fontSize:"0.84rem",fontWeight:700,cursor:canSave?"pointer":"not-allowed",opacity:canSave?1:0.45}}>
             {initial?"Save Changes":"Create Portfolio"}
           </button>
@@ -501,8 +501,9 @@ export default function PortfolioPage(){
     });
   },[]);
 
-  const [portfolios,setPortfolios]=useState(INITIAL);
-  const [selectedId,setSelectedId]=useState("p1");
+  const [portfolios,setPortfolios]=useState([]);
+  const [selectedId,setSelectedId]=useState(null);
+  const [portfoliosLoading,setPortfoliosLoading]=useState(true);
   const [showBuilder,setShowBuilder]=useState(false);
   const [editingPortfolio,setEditingPortfolio]=useState(null);
   const [sectorViz,setSectorViz]=useState("bar");   // "bar"|"donut"
@@ -514,36 +515,85 @@ export default function PortfolioPage(){
   const [extraGrowth,setExtraGrowth]=useState(0);
   const [monthlyAdd,setMonthlyAdd]=useState(200);
   const [addEnabled,setAddEnabled]=useState(false);
-  const [cmpIds,setCmpIds]=useState(["p1","p2","p3"]);
+  const [cmpIds,setCmpIds]=useState([]);
   const [cmpRange,setCmpRange]=useState(10);
   const [cardActiveSlice,setCardActiveSlice]=useState({});  // FIX #4: per-card active slice
   const isUltimate = userPlan === "ultimate";
 
+  // Load portfolios from Supabase once auth is confirmed
+  useEffect(()=>{
+    if(userPlan===null) return;
+    const load=async()=>{
+      setPortfoliosLoading(true);
+      const {data,error}=await supabase
+        .from("user_portfolios")
+        .select("*")
+        .order("created_at",{ascending:true});
+      if(!error&&data){
+        const rows=data.map(r=>({id:r.id,name:r.name,capital:r.capital,holdings:r.holdings||[]}));
+        setPortfolios(rows);
+        if(rows.length>0){
+          setSelectedId(rows[0].id);
+          setCmpIds(rows.map(p=>p.id));
+        }
+      }
+      setPortfoliosLoading(false);
+    };
+    load();
+  },[userPlan]);
+
   const selected=portfolios.find(p=>p.id===selectedId)||portfolios[0];
 
-  const handleSave=useCallback(p=>{
-    setPortfolios(prev=>{
-      const isNew=!prev.find(x=>x.id===p.id);
-      if(isNew) setCmpIds(cids=>[...cids,p.id]); // auto-add to comparison
-      return isNew?[...prev,p]:prev.map(x=>x.id===p.id?p:x);
-    });
-    setSelectedId(p.id);
+  const handleSave=useCallback(async p=>{
+    if(!p.id){
+      // New portfolio — insert and get Supabase-generated UUID
+      const{data,error}=await supabase
+        .from("user_portfolios")
+        .insert({name:p.name,capital:p.capital,holdings:p.holdings})
+        .select()
+        .single();
+      if(error){console.error("Portfolio save error:",error.message);return;}
+      const saved={id:data.id,name:data.name,capital:data.capital,holdings:data.holdings||[]};
+      setPortfolios(prev=>[...prev,saved]);
+      setCmpIds(prev=>[...prev,saved.id]);
+      setSelectedId(saved.id);
+    }else{
+      // Existing portfolio — update in place
+      const{error}=await supabase
+        .from("user_portfolios")
+        .update({name:p.name,capital:p.capital,holdings:p.holdings,updated_at:new Date().toISOString()})
+        .eq("id",p.id);
+      if(error){console.error("Portfolio update error:",error.message);return;}
+      setPortfolios(prev=>prev.map(x=>x.id===p.id?{...x,...p}:x));
+    }
     setShowBuilder(false);
     setEditingPortfolio(null);
-  },[]);
+  },[supabase]);
 
-  const handleDelete=id=>{
-    const remaining=portfolios.filter(p=>p.id!==id);
-    setPortfolios(remaining);
-    if(selectedId===id&&remaining.length>0)setSelectedId(remaining[0].id);
+  const handleDelete=useCallback(async id=>{
+    const{error}=await supabase.from("user_portfolios").delete().eq("id",id);
+    if(error){console.error("Portfolio delete error:",error.message);return;}
+    setPortfolios(prev=>{
+      const remaining=prev.filter(p=>p.id!==id);
+      if(selectedId===id) setSelectedId(remaining.length>0?remaining[0].id:null);
+      return remaining;
+    });
     setCmpIds(prev=>prev.filter(x=>x!==id));
-  };
+  },[supabase,selectedId]);
 
-  const handleDuplicate=p=>{
-    const dup={...p,id:`p${Date.now()}`,name:`${p.name} (copy)`};
-    setPortfolios(prev=>prev.length<5?[...prev,dup]:prev);
+  const handleDuplicate=useCallback(async p=>{
+    if(portfolios.length>=5) return;
+    const{data,error}=await supabase
+      .from("user_portfolios")
+      .insert({name:`${p.name} (copy)`,capital:p.capital,holdings:p.holdings})
+      .select()
+      .single();
+    if(error){console.error("Portfolio duplicate error:",error.message);return;}
+    const dup={id:data.id,name:data.name,capital:data.capital,holdings:data.holdings||[]};
+    setPortfolios(prev=>[...prev,dup]);
+    setCmpIds(prev=>[...prev,dup.id]);
     setSelectedId(dup.id);
-  };
+  },[supabase,portfolios.length]);
 
   const Toggle=({on,set,label,locked})=>(
     <button onClick={()=>!locked&&set(!on)}
@@ -592,6 +642,7 @@ export default function PortfolioPage(){
     <div style={{fontFamily:gs,background:c.bg,minHeight:"100vh",color:c.text}}>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0;}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.45}}
         ::-webkit-scrollbar{width:4px;height:4px;}
         ::-webkit-scrollbar-thumb{background:#303032;border-radius:2px;}
         input[type=range]{-webkit-appearance:none;height:5px;background:${c.borderHi};border-radius:3px;outline:none;}
@@ -622,6 +673,16 @@ export default function PortfolioPage(){
 
         {/* ── Portfolio card strip ── */}
         <section style={{marginBottom:"2rem"}}>
+          {portfoliosLoading?(
+            /* Loading skeleton */
+            <div style={{display:"flex",gap:"0.85rem",paddingTop:28,paddingBottom:28}}>
+              {[1,2,3].map(i=>(
+                <div key={i} style={{width:210,height:168,borderRadius:14,
+                  background:c.surface,flexShrink:0,
+                  animation:"pulse 1.4s ease infinite"}}/>
+              ))}
+            </div>
+          ):(
           <div className="card-strip">
             {portfolios.map(p=>{
               const isSelected=p.id===selectedId;
@@ -689,6 +750,23 @@ export default function PortfolioPage(){
               </div>
             )}
           </div>
+          )}
+          {/* Empty state — shown after loading if user has no portfolios */}
+          {!portfoliosLoading&&portfolios.length===0&&(
+            <div style={{textAlign:"center",padding:"3rem 0 1rem"}}>
+              <p style={{fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.text,marginBottom:"0.5rem"}}>
+                No portfolios yet
+              </p>
+              <p style={{fontFamily:gs,fontSize:"0.84rem",color:c.muted,marginBottom:"1.5rem",lineHeight:1.6}}>
+                Create your first portfolio to start tracking and analysing your investments.
+              </p>
+              <button onClick={()=>{setEditingPortfolio(null);setShowBuilder(true);}}
+                style={{background:c.text,color:c.bg,border:"none",borderRadius:"7px",
+                  padding:"11px 24px",fontFamily:gs,fontSize:"0.84rem",fontWeight:700,cursor:"pointer"}}>
+                + Create Portfolio
+              </button>
+            </div>
+          )}
         </section>
 
         {/* ── Portfolio Breakdown ── */}
