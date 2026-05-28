@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { label:"Discovery",  href:"/dashboard",            icon:"◈", ready:true  },
   { label:"Watchlist",  href:"/dashboard/watchlist",  icon:"♡", ready:true  },
   { label:"Dividends",  href:"/dashboard/dividends",  icon:"💰", ready:true  },
-  { label:"Portfolio",  href:"/dashboard/portfolio",  icon:"▲", ready:false },
+  { label:"Portfolio",  href:"/dashboard/portfolio",  icon:"▲", ready:true },
   { label:"Account",    href:"/dashboard/account",    icon:"○", ready:true  },
 ];
 

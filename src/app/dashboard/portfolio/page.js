@@ -591,7 +591,6 @@ export default function PortfolioPage(){
   return(
     <div style={{fontFamily:gs,background:c.bg,minHeight:"100vh",color:c.text}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@8..144,300..700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
         ::-webkit-scrollbar{width:4px;height:4px;}
         ::-webkit-scrollbar-thumb{background:#303032;border-radius:2px;}
@@ -603,24 +602,6 @@ export default function PortfolioPage(){
         .card-strip{display:flex;gap:0.85rem;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;padding-top:28px;padding-bottom:28px;padding-left:4px;padding-right:4px;}
         .card-strip::-webkit-scrollbar{display:none;}
       `}</style>
-
-      {/* Nav */}
-      <div style={{height:"58px",background:mode==="dark"?"rgba(9,9,9,0.97)":"rgba(247,247,245,0.97)",borderBottom:`1px solid ${c.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 2rem",position:"sticky",top:0,zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",gap:"0.6rem"}}>
-          <svg width="18" height="18" viewBox="0 0 200 200"><rect x="8" y="8" width="84" height="84" rx="10" fill={c.text}/><rect x="108" y="8" width="84" height="84" rx="10" fill={c.text} opacity="0.22"/><rect x="8" y="108" width="84" height="84" rx="10" fill={c.text} opacity="0.22"/><rect x="108" y="108" width="84" height="84" rx="10" fill={c.text}/></svg>
-          <span style={{fontFamily:gs,fontSize:"0.9rem",fontWeight:600,letterSpacing:"0.04em",textTransform:"uppercase",color:c.text}}>Clarinvest</span>
-        </div>
-        <div style={{display:"flex",gap:"0.2rem"}}>
-          {["Discovery","Watchlist","Dividends","Portfolio","Account"].map(l=>(
-            <span key={l}
-              onClick={()=>router.push(`/dashboard${l==="Discovery"?"":"/"+l.toLowerCase()}`)}
-              style={{fontFamily:gs,fontSize:"0.82rem",color:l==="Portfolio"?c.text:c.muted,padding:"5px 12px",borderRadius:"5px",background:l==="Portfolio"?c.surface:"transparent",fontWeight:l==="Portfolio"?600:400,cursor:l==="Portfolio"?"default":"pointer"}}>
-              {l}
-            </span>
-          ))}
-        </div>
-        <div/>{/* spacer: theme toggle lives in global nav */}
-      </div>
 
       <div style={{maxWidth:"1100px",margin:"0 auto",padding:"2rem 1.5rem 4rem"}}>
 
