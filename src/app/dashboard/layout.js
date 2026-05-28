@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { ThemeProvider, useTheme } from "@/lib/theme";
+import { Compass, Bookmark, TrendingUp, PieChart, User } from "lucide-react";
 
 const C = {
   dark:  { bg:"#090909", card:"#111113", surface:"#141416", border:"#232325", borderHi:"#333336", text:"#F0F0F0", muted:"#7A7A80", green:"#00E676" },
@@ -12,14 +13,14 @@ const gs = "'Google Sans Flex','DM Sans',sans-serif";
 const pf = "'Playfair Display',Georgia,serif";
 
 const NAV_ITEMS = [
-  { label:"Discovery",  href:"/dashboard",            icon:"◈", ready:true  },
-  { label:"Watchlist",  href:"/dashboard/watchlist",  icon:"♡", ready:true  },
-  { label:"Dividends",  href:"/dashboard/dividends",  icon:"💰", ready:true  },
-  { label:"Portfolio",  href:"/dashboard/portfolio",  icon:"▲", ready:true },
-  { label:"Account",    href:"/dashboard/account",    icon:"○", ready:true  },
+  { label:"Discovery",  href:"/dashboard",            Icon:Compass,    ready:true  },
+  { label:"Watchlist",  href:"/dashboard/watchlist",  Icon:Bookmark,   ready:true  },
+  { label:"Dividends",  href:"/dashboard/dividends",  Icon:TrendingUp, ready:true  },
+  { label:"Portfolio",  href:"/dashboard/portfolio",  Icon:PieChart,   ready:true  },
+  { label:"Account",    href:"/dashboard/account",    Icon:User,       ready:true  },
 ];
 
-// ─── Banner colours ──────────────────────────────────────────────────────────
+// ─── Banner colours ───────────────────────────────────────────────────────────
 const BCOLS = {
   dark: {
     info:   { bg:"rgba(68,136,255,0.12)",  brd:"rgba(68,136,255,0.35)",  txt:"#4488FF" },
@@ -117,10 +118,10 @@ function DashboardShell({ children }) {
         }
       `}</style>
 
-      {/* ── Top banners ── */}
+      {/* Top banners */}
       <BannerStrip banners={topBanners} mode={mode} dismissed={dismissed} onDismiss={dismissBanner}/>
 
-      {/* ── Top nav ── */}
+      {/* Desktop top nav */}
       <nav className="desktop-nav" style={{
         position:"sticky", top:0, zIndex:200, height:"58px",
         background: solid
@@ -144,7 +145,7 @@ function DashboardShell({ children }) {
           <span style={{ fontFamily:pf, fontSize:"1rem", fontWeight:600, letterSpacing:"0.03em", textTransform:"uppercase", color:c.text }}>Clarinvest</span>
         </button>
 
-        {/* Nav links */}
+        {/* Nav links — text only on desktop */}
         <div style={{ display:"flex", gap:"0.2rem", flex:1, justifyContent:"center" }}>
           {NAV_ITEMS.map(n => {
             const active = pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(n.href));
@@ -179,27 +180,47 @@ function DashboardShell({ children }) {
         </div>
       </nav>
 
-      {/* ── Page content ── */}
+      {/* Page content */}
       <div className="page-content" style={{ paddingTop:"58px" }}>
         {children}
       </div>
 
-      {/* ── Mobile bottom tabs ── */}
+      {/* Mobile bottom tabs — lucide-react icons */}
       <div className="bottom-tabs" style={{
         position:"fixed", bottom:0, left:0, right:0, zIndex:200,
         background: mode==="dark" ? "rgba(9,9,9,0.97)" : "rgba(247,247,245,0.97)",
         backdropFilter:"blur(12px)",
         borderTop:"1px solid "+c.border,
         height:"64px", alignItems:"center", justifyContent:"space-around",
-        padding:"0 0.5rem",
+        padding:"0 0.25rem",
       }}>
         {NAV_ITEMS.map(n => {
           const active = pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(n.href));
+          const { Icon } = n;
           return (
             <button key={n.href} onClick={() => n.ready && router.push(n.href)}
-              style={{ background:"none", border:"none", cursor:n.ready?"pointer":"default", display:"flex", flexDirection:"column", alignItems:"center", gap:"3px", padding:"6px 12px", flex:1, opacity:n.ready?1:0.4 }}>
-              <span style={{ fontSize:"1.1rem", color:active?c.green:c.muted }}>{n.icon}</span>
-              <span style={{ fontFamily:gs, fontSize:"0.62rem", fontWeight:active?600:400, color:active?c.text:c.muted, letterSpacing:"0.04em" }}>{n.label}</span>
+              style={{
+                background:"none", border:"none",
+                cursor:n.ready?"pointer":"default",
+                display:"flex", flexDirection:"column", alignItems:"center", gap:"4px",
+                padding:"8px 4px", flex:1,
+                opacity:n.ready?1:0.38,
+                WebkitTapHighlightColor:"transparent",
+              }}>
+              <Icon
+                size={22}
+                strokeWidth={active ? 2.2 : 1.6}
+                color={active ? c.green : c.muted}
+              />
+              <span style={{
+                fontFamily:gs, fontSize:"0.58rem",
+                fontWeight:active?600:400,
+                color:active?c.text:c.muted,
+                letterSpacing:"0.03em",
+                lineHeight:1,
+              }}>
+                {n.label}
+              </span>
             </button>
           );
         })}
