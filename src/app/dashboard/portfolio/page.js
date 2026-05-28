@@ -232,6 +232,14 @@ function SectorDonut({holdings,c,size=130}){
 
 // ── Portfolio Builder modal ────────────────────────────────────────────────────
 function Builder({c,mode,initial,onSave,onCancel}){
+  // Mobile detection: stack layout vertically on narrow screens
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(()=>{
+    const check=()=>setIsMobile(window.innerWidth<640);
+    check();
+    window.addEventListener("resize",check);
+    return()=>window.removeEventListener("resize",check);
+  },[]);
   // ESC to close
   useEffect(()=>{
     const h=e=>{if(e.key==="Escape")onCancel();};
@@ -286,8 +294,8 @@ function Builder({c,mode,initial,onSave,onCancel}){
           <button onClick={onCancel} style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"6px 10px",cursor:"pointer",color:c.muted,fontFamily:gs,fontSize:"0.78rem"}}>✕</button>
         </div>
 
-        <div style={{padding:"1.5rem",display:"grid",gridTemplateColumns:holdings.length>0?"1fr 260px":"1fr",gap:"1.5rem"}}>
-          <div>
+        <div style={{padding:"1.5rem",display:"flex",flexDirection:isMobile?"column":"row",gap:"1.5rem",flexWrap:"nowrap"}}>
+          <div style={{flex:1,minWidth:0}}>
             {/* Step 1 - Name + Capital */}
             <div style={{marginBottom:"1.25rem"}}>
               <label style={{fontFamily:gs,fontSize:"0.72rem",color:c.muted,display:"block",marginBottom:"5px"}}>Portfolio name</label>
@@ -324,7 +332,7 @@ function Builder({c,mode,initial,onSave,onCancel}){
             {/* Holdings sliders */}
             {holdings.length>0&&(
               <div>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.6rem"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",rowGap:"3px",marginBottom:"0.6rem"}}>
                   <p style={{fontFamily:gs,fontSize:"0.72rem",fontWeight:600,color:c.text}}>Allocation</p>
                   <span style={{fontFamily:gs,fontSize:"0.72rem",
                     color:Math.abs(remaining)<1?c.green:remaining>0?c.blue:c.red,
@@ -357,12 +365,20 @@ function Builder({c,mode,initial,onSave,onCancel}){
             )}
           </div>
 
-          {/* Live pie chart */}
+          {/* Live pie chart: responsive: below form on mobile */}
           {holdings.length>0&&(
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"0.75rem"}}>
+            <div style={{
+              display:"flex",flexDirection:"column",alignItems:"center",gap:"0.75rem",
+              flexShrink:0,
+              width:isMobile?"100%":"260px",
+              borderTop:isMobile?`1px solid ${c.border}`:"none",
+              paddingTop:isMobile?"1.25rem":"0",
+            }}>
               <p style={{fontFamily:gs,fontSize:"0.7rem",color:c.muted,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:600}}>Portfolio Preview</p>
-              <PieChart width={240} height={240}>
-                <Pie data={holdings} dataKey="weight" nameKey="ticker" cx="50%" cy="50%" outerRadius={100} innerRadius={54} paddingAngle={2} strokeWidth={0}>
+              <PieChart width={isMobile?180:240} height={isMobile?180:240}>
+                <Pie data={holdings} dataKey="weight" nameKey="ticker" cx="50%" cy="50%"
+                  outerRadius={isMobile?76:100} innerRadius={isMobile?40:54}
+                  paddingAngle={2} strokeWidth={0}>
                   {holdings.map((h,i)=><Cell key={i} fill={sCol(h.ticker,i)}/>)}
                 </Pie>
                 <Tooltip formatter={(v,n)=>[`${v}% · $${((v/100)*capital).toLocaleString()}`,n]} contentStyle={{background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"6px",fontFamily:gs,fontSize:"0.78rem",color:c.text}} itemStyle={{color:c.text}} labelStyle={{color:c.muted,display:"none"}}/>
@@ -494,10 +510,12 @@ export default function PortfolioPage(){
 
   // Auth + plan
   const [userPlan, setUserPlan] = useState(null);
+  const [userId,   setUserId]   = useState(null);
   useEffect(()=>{
     supabase.auth.getUser().then(({data:{user}})=>{
       if(!user){ router.push("/login"); return; }
       setUserPlan(user.user_metadata?.plan || "essential");
+      setUserId(user.id);
     });
   },[]);
 
@@ -546,10 +564,10 @@ export default function PortfolioPage(){
 
   const handleSave=useCallback(async p=>{
     if(!p.id){
-      // New portfolio — insert and get Supabase-generated UUID
+      // New portfolio: insert and get Supabase-generated UUID
       const{data,error}=await supabase
         .from("user_portfolios")
-        .insert({name:p.name,capital:p.capital,holdings:p.holdings})
+        .insert({user_id:userId,name:p.name,capital:p.capital,holdings:p.holdings})
         .select()
         .single();
       if(error){console.error("Portfolio save error:",error.message);return;}
@@ -558,7 +576,7 @@ export default function PortfolioPage(){
       setCmpIds(prev=>[...prev,saved.id]);
       setSelectedId(saved.id);
     }else{
-      // Existing portfolio — update in place
+      // Existing portfolio: update in place
       const{error}=await supabase
         .from("user_portfolios")
         .update({name:p.name,capital:p.capital,holdings:p.holdings,updated_at:new Date().toISOString()})
@@ -568,7 +586,7 @@ export default function PortfolioPage(){
     }
     setShowBuilder(false);
     setEditingPortfolio(null);
-  },[supabase]);
+  },[supabase,userId]);
 
   const handleDelete=useCallback(async id=>{
     const{error}=await supabase.from("user_portfolios").delete().eq("id",id);
@@ -585,7 +603,7 @@ export default function PortfolioPage(){
     if(portfolios.length>=5) return;
     const{data,error}=await supabase
       .from("user_portfolios")
-      .insert({name:`${p.name} (copy)`,capital:p.capital,holdings:p.holdings})
+      .insert({user_id:userId,name:`${p.name} (copy)`,capital:p.capital,holdings:p.holdings})
       .select()
       .single();
     if(error){console.error("Portfolio duplicate error:",error.message);return;}
@@ -593,7 +611,7 @@ export default function PortfolioPage(){
     setPortfolios(prev=>[...prev,dup]);
     setCmpIds(prev=>[...prev,dup.id]);
     setSelectedId(dup.id);
-  },[supabase,portfolios.length]);
+  },[supabase,portfolios.length,userId]);
 
   const Toggle=({on,set,label,locked})=>(
     <button onClick={()=>!locked&&set(!on)}
@@ -722,6 +740,7 @@ export default function PortfolioPage(){
                       onMouseLeave={()=>setCardActiveSlice(prev=>({...prev,[p.id]:null}))}>
                       {p.holdings.map((h,i)=><Cell key={i} fill={sCol(h.ticker,i)}/>)}
                     </Pie>
+                    <Tooltip content={()=>null}/>
                   </PieChart>
 
                   <p style={{fontFamily:gs,fontSize:"0.92rem",fontWeight:700,color:c.text,marginBottom:"2px"}}>{p.name}</p>
@@ -751,7 +770,7 @@ export default function PortfolioPage(){
             )}
           </div>
           )}
-          {/* Empty state — shown after loading if user has no portfolios */}
+          {/* Empty state: shown after loading if user has no portfolios */}
           {!portfoliosLoading&&portfolios.length===0&&(
             <div style={{textAlign:"center",padding:"3rem 0 1rem"}}>
               <p style={{fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.text,marginBottom:"0.5rem"}}>
