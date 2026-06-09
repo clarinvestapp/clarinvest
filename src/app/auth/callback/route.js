@@ -26,9 +26,40 @@ export async function GET(request) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Write OAuth provider name to user_profiles.display_name if not already set.
+      // Non-blocking — redirect proceeds regardless of outcome.
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const oauthName =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            null;
+          if (oauthName) {
+            await supabase
+              .from("user_profiles")
+              .update({ display_name: oauthName })
+              .eq("id", user.id)
+              .is("display_name", null);
+          }
+        }
+      } catch { /* non-blocking */ }
+
+      // Fire welcome email for new users — non-blocking
+      try {
+        const { data: { user: welcomeUser } } = await supabase.auth.getUser();
+        if (welcomeUser) {
+          fetch(`${origin}/api/welcome`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: welcomeUser.id }),
+          }).catch(() => {});
+        }
+      } catch { /* non-blocking */ }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/forgot-password`);
+  return NextResponse.redirect(`${origin}/login?error=auth`);
 }

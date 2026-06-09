@@ -1,0 +1,299 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="supported-color-schemes" content="light dark" />
+  <title>Welcome to Clarinvest</title>
+  <!-- Playfair Display: progressive enhancement — loads in Apple Mail, iOS Mail, Gmail web -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap" rel="stylesheet" />
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <style>
+    /* Reset */
+    body, table, td, p, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
+    body { margin:0 !important; padding:0 !important; width:100% !important; }
+
+    /* Dark mode overrides — clients that support prefers-color-scheme */
+    @media (prefers-color-scheme: dark) {
+      body, .em-body-bg          { background-color:#090909 !important; }
+      .em-card-bg                { background-color:#111113 !important; }
+      .em-surf-bg                { background-color:#141416 !important; }
+      .em-outer-brd              { border-color:#232325 !important; }
+      .em-hi-brd                 { border-color:#333336 !important; }
+      .em-text-pri               { color:#F0F0F0 !important; }
+      .em-text-mut               { color:#7A7A80 !important; }
+      .em-text-dim               { color:#555558 !important; }
+      .em-divider                { background-color:#232325 !important; }
+      .em-btn-bg                 { background-color:#F0F0F0 !important; }
+      .em-btn-txt                { color:#090909 !important; }
+      .em-green                  { color:#00E676 !important; }
+      .em-green-bg               { background-color:rgba(0,230,118,0.10) !important; border-color:rgba(0,230,118,0.35) !important; }
+      .em-blue                   { color:#4488FF !important; }
+      .em-accent-brd             { border-left-color:#333336 !important; }
+      .em-mock-bg                { background-color:#111113 !important; border-color:#333336 !important; }
+      .em-metric-bg              { background-color:#141416 !important; border-color:#232325 !important; }
+      .em-feat-bg                { background-color:#141416 !important; border-color:#232325 !important; }
+      .em-upgrade-bg             { background-color:#111113 !important; border-color:#232325 !important; }
+      .em-full-access-bg         { background-color:rgba(0,230,118,0.10) !important; border-color:rgba(0,230,118,0.35) !important; }
+      .score-arc                 { stroke:#00E676 !important; }
+      .score-track               { stroke:#232325 !important; }
+    }
+
+    /* Mobile */
+    @media only screen and (max-width:600px) {
+      .em-wrapper                { width:100% !important; }
+      .em-pad                    { padding-left:24px !important; padding-right:24px !important; }
+      .em-feat-cell              { display:block !important; width:100% !important; padding-bottom:8px !important; }
+      .em-feat-gap               { display:none !important; }
+      .em-upgrade-cell           { display:block !important; width:100% !important; padding-bottom:8px !important; }
+      .em-upgrade-gap            { display:none !important; }
+      .em-mock-score-cell        { display:block !important; width:100% !important; text-align:center !important; padding-bottom:12px !important; }
+      .em-mock-text-cell         { display:block !important; width:100% !important; }
+      .em-metric-cell            { width:33% !important; }
+      .em-headline               { font-size:22px !important; line-height:30px !important; }
+    }
+  </style>
+</head>
+
+<!--
+  ════════════════════════════════════════════════════════════════════
+  CLARINVEST — WELCOME EMAIL TEMPLATE
+  File: src/app/emails/welcome.html
+
+  VARIABLES (replaced at send time by src/app/api/welcome/route.js):
+    {{display_name}}        First name or "there" fallback
+    {{plan_label}}          "Essential Plan" | "Pro Plan" | "Ultimate Plan"
+    {{plan_features_html}}  Pre-built 2-col table rows for the current plan
+    {{upgrade_section_html}} Upgrade teaser or full-access panel HTML
+    {{cta_sub}}             Plan-specific CTA sub-text
+    {{unsubscribe_url}}     Per-user unsubscribe link
+    {{footer_plan_sub}}     Footer plan description sentence
+  ════════════════════════════════════════════════════════════════════
+-->
+
+<body class="em-body-bg" style="margin:0;padding:0;background-color:#F7F7F5;font-family:Arial,sans-serif;">
+
+  <!-- Preheader (hidden preview text in inbox) -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Your Clarinvest account is active. Here is everything you have access to, and what is waiting as you grow.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+
+  <!-- Outer wrapper -->
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="em-body-bg" style="background-color:#F7F7F5;">
+    <tr>
+      <td align="center" style="padding:32px 16px 48px;">
+
+        <!-- Email card -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="em-wrapper em-card-bg em-outer-brd" style="background-color:#FFFFFF;border:1px solid #DEDEDD;border-radius:16px;overflow:hidden;">
+
+          <!-- ── HEADER ────────────────────────────────────── -->
+          <tr>
+            <td class="em-pad em-outer-brd" style="padding:36px 40px 28px;border-bottom:1px solid #DEDEDD;text-align:center;">
+
+              <!-- Logomark SVG (inline — works in all clients) -->
+              <!--[if !mso]><!-->
+              <div style="margin-bottom:14px;">
+                <svg width="22" height="22" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;margin-right:8px;">
+                  <rect x="8"   y="8"   width="84" height="84" rx="10" fill="#0A0A0A"/>
+                  <rect x="108" y="8"   width="84" height="84" rx="10" fill="#0A0A0A" opacity="0.22"/>
+                  <rect x="8"   y="108" width="84" height="84" rx="10" fill="#0A0A0A" opacity="0.22"/>
+                  <rect x="108" y="108" width="84" height="84" rx="10" fill="#0A0A0A"/>
+                </svg>
+                <span class="em-text-pri" style="font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:15px;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;color:#0A0A0A;vertical-align:middle;">Clarinvest</span>
+              </div>
+              <!--<![endif]-->
+              <!--[if mso]><div style="margin-bottom:14px;font-family:Georgia,serif;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0A0A0A;">CLARINVEST</div><![endif]-->
+
+              <!-- Plan badge + welcome label on same row -->
+              <div style="margin-bottom:20px;">
+                <span class="em-text-mut" style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#606065;">Welcome</span>
+                &nbsp;&nbsp;
+                <span class="em-green em-green-bg" style="font-family:Arial,sans-serif;font-size:8px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1px solid rgba(0,138,56,0.30);background-color:rgba(0,138,56,0.09);color:#008A38;">{{plan_label}}</span>
+              </div>
+
+              <!-- Headline -->
+              <h1 class="em-headline em-text-pri" style="font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;line-height:1.28;letter-spacing:-0.01em;color:#0A0A0A;margin:0 0 10px;">Invest with absolute clarity, starting today.</h1>
+
+              <!-- Subline -->
+              <p class="em-text-mut" style="font-family:Arial,sans-serif;font-size:14px;line-height:1.65;color:#606065;margin:0;">Your account is active. Here is everything you have access to, and what is waiting for you as you grow with Clarinvest.</p>
+            </td>
+          </tr>
+
+          <!-- ── GREETING ───────────────────────────────────── -->
+          <tr>
+            <td class="em-pad" style="padding:36px 40px 0;">
+              <p class="em-text-pri" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.72;color:#0A0A0A;margin:0 0 10px;">Hi {{display_name}},</p>
+              <p class="em-text-pri" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.72;color:#0A0A0A;margin:0;">Welcome to Clarinvest. Your account is live. Below you will find what is included in your plan, a live example of the AI analysis you can run on any stock, and a look at what unlocks as you grow.</p>
+            </td>
+          </tr>
+
+          <!-- ── AI ANALYSIS MOCK VISUAL ────────────────────── -->
+          <tr>
+            <td class="em-pad" style="padding:52px 40px 0;">
+              <p class="em-text-mut em-outer-brd" style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#606065;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #DEDEDD;">Your AI analysis, in action</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="em-pad" style="padding:0 40px;">
+              <!-- Mock analysis card -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="em-mock-bg em-outer-brd" style="background-color:#F8F8F8;border:1px solid #BABAB8;border-radius:10px;overflow:hidden;">
+                <!-- Mock header: ticker + price -->
+                <tr>
+                  <td class="em-outer-brd" style="padding:14px 18px;border-bottom:1px solid #DEDEDD;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td>
+                          <span class="em-text-pri" style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#0A0A0A;">NVDA</span>
+                          <span class="em-text-mut" style="font-family:Arial,sans-serif;font-size:11px;color:#606065;margin-left:8px;">NVIDIA Corp &middot; NASDAQ</span>
+                        </td>
+                        <td align="right">
+                          <span class="em-text-pri" style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#0A0A0A;">$220.67</span>
+                          <span class="em-green" style="font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#008A38;margin-left:6px;">+4.48% today</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!-- Mock body: AI score + summary -->
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <!-- AI Score ring -->
+                        <td class="em-mock-score-cell" width="80" style="vertical-align:top;padding-right:16px;">
+                          <!--[if !mso]><!-->
+                          <div style="position:relative;width:64px;height:64px;margin:0 auto;">
+                            <svg width="64" height="64" viewBox="0 0 64 64" style="position:absolute;top:0;left:0;transform:rotate(-90deg);">
+                              <circle class="score-track" cx="32" cy="32" r="26" fill="none" stroke="#DEDEDD" stroke-width="4"/>
+                              <circle class="score-arc" cx="32" cy="32" r="26" fill="none" stroke="#008A38" stroke-width="4" stroke-dasharray="163.36" stroke-dashoffset="16.34" stroke-linecap="round"/>
+                            </svg>
+                            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+                              <span class="em-green" style="font-family:Arial,sans-serif;font-size:16px;font-weight:800;line-height:1;color:#008A38;">93</span>
+                              <span class="em-text-mut" style="font-family:Arial,sans-serif;font-size:7px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#606065;margin-top:2px;">AI Score</span>
+                            </div>
+                          </div>
+                          <!--<![endif]-->
+                          <!--[if mso]><table><tr><td width="64" height="64" style="background:#F0F0F0;border-radius:32px;text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-size:18px;font-weight:700;color:#008A38;">93</td></tr></table><![endif]-->
+                        </td>
+                        <!-- Summary text -->
+                        <td class="em-mock-text-cell" style="vertical-align:top;">
+                          <span class="em-green em-green-bg" style="display:inline-block;font-family:Arial,sans-serif;font-size:11px;font-weight:700;padding:3px 10px;border-radius:4px;border:1px solid rgba(0,138,56,0.30);background-color:rgba(0,138,56,0.09);color:#008A38;margin-bottom:8px;">Strong Buy</span>
+                          <p class="em-text-pri" style="font-family:Arial,sans-serif;font-size:12px;line-height:1.65;color:#0A0A0A;margin:0;">NVDA's data centre dominance is structural. CUDA lock-in makes switching costly for hyperscalers, and Blackwell GPU demand remains ahead of supply through FY2027. Valuation is elevated but earnings trajectory justifies a premium.</p>
+                        </td>
+                      </tr>
+                    </table>
+                    <!-- Key metrics row -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:12px;">
+                      <tr>
+                        <td class="em-metric-cell em-metric-bg em-outer-brd" width="31%" style="background-color:#F0F0EE;border:1px solid #DEDEDD;border-radius:6px;padding:8px 10px;text-align:center;">
+                          <div class="em-text-pri" style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#0A0A0A;line-height:1;margin-bottom:3px;">37.75</div>
+                          <div class="em-text-mut" style="font-family:Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#606065;">P/E</div>
+                        </td>
+                        <td width="3%"></td>
+                        <td class="em-metric-cell em-metric-bg em-outer-brd" width="31%" style="background-color:#F0F0EE;border:1px solid #DEDEDD;border-radius:6px;padding:8px 10px;text-align:center;">
+                          <div class="em-text-pri" style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#0A0A0A;line-height:1;margin-bottom:3px;">65.47%</div>
+                          <div class="em-text-mut" style="font-family:Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#606065;">Rev. Growth</div>
+                        </td>
+                        <td width="3%"></td>
+                        <td class="em-metric-cell em-metric-bg em-outer-brd" width="31%" style="background-color:#F0F0EE;border:1px solid #DEDEDD;border-radius:6px;padding:8px 10px;text-align:center;">
+                          <div class="em-text-pri" style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#0A0A0A;line-height:1;margin-bottom:3px;">55.60%</div>
+                          <div class="em-text-mut" style="font-family:Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#606065;">Net Margin</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ── PLAN FEATURES ──────────────────────────────── -->
+          <tr>
+            <td class="em-pad" style="padding:52px 40px 0;">
+              <p class="em-text-mut em-outer-brd" style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#606065;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #DEDEDD;">Included in your plan</p>
+              <!-- 2-column feature grid — rows injected by route -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                {{plan_features_html}}
+              </table>
+            </td>
+          </tr>
+
+          <!-- ── UPGRADE SECTION ────────────────────────────── -->
+          {{upgrade_section_html}}
+
+          <!-- ── CTA ───────────────────────────────────────── -->
+          <tr>
+            <td class="em-pad" style="padding:52px 40px 0;text-align:center;">
+              <a href="https://clarinvest.app/dashboard" class="em-btn-bg em-btn-txt" style="display:inline-block;padding:13px 44px;border-radius:4px;background-color:#0A0A0A;color:#FFFFFF;font-family:Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;text-decoration:none;">Open your dashboard</a>
+              <p class="em-text-mut" style="font-family:Arial,sans-serif;font-size:12px;color:#606065;margin:12px 0 0;">{{cta_sub}}</p>
+            </td>
+          </tr>
+
+          <!-- ── CLOSING NOTE ──────────────────────────────── -->
+          <tr>
+            <td class="em-pad" style="padding:52px 40px 0;">
+              <p class="em-text-mut em-outer-brd" style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#606065;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #DEDEDD;">A note from us</p>
+              <!-- Left-border accent on body only, not on label -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td class="em-accent-brd" width="2" style="border-left:2px solid #BABAB8;padding:0;"></td>
+                  <td style="padding-left:18px;">
+                    <p class="em-text-pri" style="font-family:Arial,sans-serif;font-size:14px;line-height:1.80;color:#0A0A0A;margin:0 0 12px;">Markets move fast. The investors who stay ahead are not the ones with the most time, they are the ones with the clearest picture. That is what Clarinvest is built to give you: sharp, honest, AI-powered analysis so that every decision you make is an informed one.</p>
+                    <p class="em-text-pri" style="font-family:Arial,sans-serif;font-size:14px;line-height:1.80;color:#0A0A0A;margin:0 0 12px;">We built Clarinvest because we believed institutional-quality intelligence should not be locked behind a Bloomberg terminal. It should be in your pocket, available any time, speaking plain English. We are glad you agree.</p>
+                    <p class="em-text-pri" style="font-family:Arial,sans-serif;font-size:14px;line-height:1.80;color:#0A0A0A;margin:0 0 16px;">This is where our journey together begins. We will be with you every step of the way.</p>
+                    <p class="em-text-mut" style="font-family:Arial,sans-serif;font-size:13px;font-style:italic;color:#606065;margin:0;">The Clarinvest team</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ── DIVIDER ────────────────────────────────────── -->
+          <tr>
+            <td class="em-pad" style="padding:32px 40px 0;">
+              <div class="em-divider" style="height:1px;background-color:#DEDEDD;"></div>
+            </td>
+          </tr>
+
+          <!-- ── FOOTER ─────────────────────────────────────── -->
+          <tr>
+            <td class="em-pad" style="padding:24px 40px 36px;text-align:center;">
+              <!-- Footer logo -->
+              <!--[if !mso]><!-->
+              <div style="margin-bottom:16px;">
+                <svg width="14" height="14" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;margin-right:6px;">
+                  <rect x="8"   y="8"   width="84" height="84" rx="10" fill="#0A0A0A"/>
+                  <rect x="108" y="8"   width="84" height="84" rx="10" fill="#0A0A0A" opacity="0.22"/>
+                  <rect x="8"   y="108" width="84" height="84" rx="10" fill="#0A0A0A" opacity="0.22"/>
+                  <rect x="108" y="108" width="84" height="84" rx="10" fill="#0A0A0A"/>
+                </svg>
+                <span class="em-text-pri" style="font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:13px;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;color:#0A0A0A;vertical-align:middle;">Clarinvest</span>
+              </div>
+              <!--<![endif]-->
+              <!-- Full disclaimer — required per branding guidelines -->
+              <p class="em-text-dim" style="font-family:Arial,sans-serif;font-size:11px;line-height:1.72;color:#BABAB8;margin:0 0 14px;text-align:left;">Clarinvest provides AI-generated analysis for informational purposes only. Nothing in this email constitutes financial advice, investment advice, or a recommendation to buy or sell any security. Always conduct your own due diligence and consult a qualified financial adviser before making investment decisions.</p>
+              <!-- Links -->
+              <p class="em-text-mut" style="font-family:Arial,sans-serif;font-size:11px;color:#606065;margin:0 0 10px;">
+                <a href="https://clarinvest.app/dashboard/account" style="color:#606065;text-decoration:underline;">Account settings</a>
+                &nbsp;&middot;&nbsp;
+                <a href="{{unsubscribe_url}}" style="color:#606065;text-decoration:underline;">Unsubscribe</a>
+                &nbsp;&middot;&nbsp;
+                <a href="https://clarinvest.app/privacy" style="color:#606065;text-decoration:underline;">Privacy policy</a>
+                &nbsp;&middot;&nbsp;
+                <a href="https://clarinvest.app/terms" style="color:#606065;text-decoration:underline;">Terms of service</a>
+              </p>
+              <p class="em-text-dim" style="font-family:Arial,sans-serif;font-size:11px;color:#BABAB8;margin:0;">&copy; 2026 Clarinvest &middot; clarinvest.app &middot; {{footer_plan_sub}}</p>
+            </td>
+          </tr>
+
+        </table><!-- /email card -->
+      </td>
+    </tr>
+  </table><!-- /outer wrapper -->
+
+</body>
+</html>

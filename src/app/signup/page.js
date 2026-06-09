@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(null);
+  const [firstName, setFirstName] = useState("");
   const router = useRouter();
   const supabase = createClient();
 
@@ -38,6 +39,9 @@ export default function SignupPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: {
+          display_name: firstName.trim() || undefined,
+        },
       },
     });
 
@@ -111,6 +115,17 @@ export default function SignupPage() {
           </div>
 
           <form onSubmit={handleSignup}>
+            <div style={{ marginBottom:"1.25rem" }}>
+              <label style={{ display:"block", color:c.muted, fontSize:"0.78rem", fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"0.5rem" }}>First Name <span style={{ fontWeight:400, textTransform:"none", letterSpacing:0 }}>· optional</span></label>
+              <input
+                type="text" value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+                placeholder="e.g. James"
+                maxLength={30}
+                style={{ width:"100%", background:"#0A0A0A", border:`1px solid ${c.border}`, borderRadius:"5px", padding:"11px 14px", color:c.text, fontSize:"0.95rem", fontFamily:"inherit", outline:"none", boxSizing:"border-box" }}
+              />
+              <p style={{ color:c.muted, fontSize:"0.72rem", marginTop:"5px" }}>Used to personalise your experience and emails.</p>
+            </div>
             <div style={{ marginBottom:"1.25rem" }}>
               <label style={{ display:"block", color:c.muted, fontSize:"0.78rem", fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"0.5rem" }}>Email</label>
               <input

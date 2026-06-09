@@ -259,8 +259,7 @@ export default function AccountPage() {
       setUser(user);
       // Default billing toggle to the user's actual billing cycle
       if (user.user_metadata?.billing) setBilling(user.user_metadata.billing);
-      // Pre-fill display name
-      if (user.user_metadata?.display_name) setNameForm(user.user_metadata.display_name);
+      // Display name is pre-filled from user_profiles below, after the profile query
 
       const { data:{ session } } = await supabase.auth.getSession();
       if (session) {
@@ -269,13 +268,22 @@ export default function AccountPage() {
         });
         if (res.ok) { const d = await res.json(); setUsage(d); }
 
-        // Load digest preference from user_profiles
+        // Load profile data from user_profiles
         const { data: profile } = await supabase
           .from("user_profiles")
-          .select("digest_emails")
+          .select("digest_emails, display_name")
           .eq("id", user.id)
           .single();
-        if (profile) setDigestEmails(profile.digest_emails ?? true);
+        if (profile) {
+          setDigestEmails(profile.digest_emails ?? true);
+          // Priority chain: user_profiles.display_name → OAuth full_name → OAuth name → ""
+          const resolvedName =
+            profile.display_name ||
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            "";
+          if (resolvedName) setNameForm(resolvedName);
+        }
       }
       setLoading(false);
     }
