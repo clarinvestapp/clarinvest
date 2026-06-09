@@ -1,0 +1,256 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="supported-color-schemes" content="light dark" />
+  <title>{{subject}}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    /* Reset */
+    body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+
+    /* Dark mode overrides */
+    @media (prefers-color-scheme: dark) {
+      body, .em-body-bg   { background-color: #090909 !important; }
+      .em-card-bg         { background-color: #111113 !important; }
+      .em-surface-bg      { background-color: #141416 !important; }
+      .em-outer-border    { border-color: #232325 !important; }
+      .em-inner-border    { border-color: #232325 !important; }
+      .em-hi-border       { border-color: #333336 !important; }
+      .em-text-primary    { color: #F0F0F0 !important; }
+      .em-text-muted      { color: #7A7A80 !important; }
+      .em-text-dimmed     { color: #555558 !important; }
+      .em-divider-line    { background-color: #232325 !important; }
+      .em-btn-bg          { background-color: #F0F0F0 !important; }
+      .em-btn-text        { color: #090909 !important; }
+      .em-snap-cell-bg    { background-color: #111113 !important; }
+      .em-accent-border   { border-left-color: #333336 !important; }
+    }
+
+    /* Mobile */
+    @media only screen and (max-width: 600px) {
+      .em-wrapper         { width: 100% !important; }
+      .em-snap-cell       { display: block !important; width: 100% !important; }
+      .em-snap-divider    { display: none !important; }
+      .em-sector-cell     { display: block !important; width: 100% !important; padding-bottom: 12px !important; }
+      .em-cal-type-cell   { display: block !important; padding-left: 0 !important; padding-top: 4px !important; }
+      .em-pad             { padding-left: 24px !important; padding-right: 24px !important; }
+      .em-headline        { font-size: 22px !important; line-height: 30px !important; }
+      .em-hide-mobile     { display: none !important; }
+    }
+  </style>
+</head>
+
+<body class="em-body-bg" style="margin:0;padding:0;background-color:#F7F7F5;font-family:Arial,sans-serif;">
+
+  <!-- Preheader (hidden preview text) -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">{{preheader}}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+
+  <!-- Outer wrapper -->
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#F7F7F5;" class="em-body-bg">
+    <tr>
+      <td align="center" style="padding:32px 16px 48px;">
+
+        <!-- Email card -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="em-wrapper em-card-bg em-outer-border" style="background-color:#FFFFFF;border:1px solid #DEDEDD;border-radius:16px;overflow:hidden;">
+
+          <!-- ── HEADER ─────────────────────────────────────── -->
+          <tr>
+            <td class="em-pad em-outer-border" style="padding:36px 40px 28px;border-bottom:1px solid #DEDEDD;text-align:center;">
+
+              <!-- Logomark (inline SVG fallback to text for Outlook) -->
+              <!--[if !mso]><!-->
+              <div style="margin-bottom:14px;">
+                <svg width="22" height="22" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;margin-right:8px;">
+                  <rect x="8"   y="8"   width="84" height="84" rx="10" fill="#0A0A0A"/>
+                  <rect x="108" y="8"   width="84" height="84" rx="10" fill="#0A0A0A" opacity="0.22"/>
+                  <rect x="8"   y="108" width="84" height="84" rx="10" fill="#0A0A0A" opacity="0.22"/>
+                  <rect x="108" y="108" width="84" height="84" rx="10" fill="#0A0A0A"/>
+                </svg>
+                <span style="font-family:Georgia,'Times New Roman',serif;font-size:15px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0A0A0A;vertical-align:middle;" class="em-text-primary">Clarinvest</span>
+              </div>
+              <!--<![endif]-->
+              <!--[if mso]>
+              <div style="margin-bottom:14px;font-family:Georgia,serif;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#0A0A0A;">CLARINVEST</div>
+              <![endif]-->
+
+              <!-- Date label + plan badge on same row -->
+              <div style="margin-bottom:20px;">
+                <span style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#606065;" class="em-text-muted">{{period_label}}</span>
+                &nbsp;&nbsp;
+                <span style="font-family:Arial,sans-serif;font-size:8px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1px solid rgba(0,138,56,0.30);background-color:rgba(0,138,56,0.09);color:#008A38;">{{plan_label}}</span>
+              </div>
+
+              <!-- Headline -->
+              <h1 class="em-headline em-text-primary" style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;line-height:1.28;letter-spacing:-0.01em;color:#0A0A0A;margin:0 0 10px;">{{headline}}</h1>
+
+              <!-- Subline -->
+              <p style="font-family:Arial,sans-serif;font-size:14px;line-height:1.65;color:#606065;margin:0;" class="em-text-muted">{{subline}}</p>
+            </td>
+          </tr>
+
+          <!-- ── GREETING ──────────────────────────────────── -->
+          <tr>
+            <td class="em-pad" style="padding:28px 40px 0;">
+              <p style="font-family:Arial,sans-serif;font-size:15px;line-height:1.72;color:#0A0A0A;margin:0 0 10px;" class="em-text-primary">Hi {{display_name}},</p>
+              <p style="font-family:Arial,sans-serif;font-size:15px;line-height:1.72;color:#0A0A0A;margin:0;" class="em-text-primary">{{greeting_body}}</p>
+            </td>
+          </tr>
+
+          <!-- ── SECTION DIVIDER MACRO (repeated) ─────────── -->
+          <!-- Each section starts with a top-padding row + label row -->
+
+          <!-- ── 01 MARKET SNAPSHOT ────────────────────────── -->
+          <tr><td style="padding:44px 40px 0;" class="em-pad">
+            <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#606065;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #DEDEDD;" class="em-text-muted em-outer-border">01 &middot; Market snapshot</p>
+          </td></tr>
+          <tr>
+            <td class="em-pad" style="padding:0 40px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #DEDEDD;border-radius:10px;overflow:hidden;" class="em-outer-border">
+                <tr>
+                  <!-- Index 1 -->
+                  <td class="em-snap-cell em-snap-cell-bg em-inner-border" width="33%" style="background-color:#FFFFFF;border-right:1px solid #DEDEDD;padding:16px 18px;vertical-align:top;">
+                    <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#606065;margin:0 0 5px;" class="em-text-muted">{{snap1_index}}</p>
+                    <p style="font-family:Arial,sans-serif;font-size:18px;font-weight:700;line-height:1;color:#0A0A0A;margin:0 0 4px;" class="em-text-primary">{{snap1_value}}</p>
+                    <p style="font-family:Arial,sans-serif;font-size:12px;font-weight:700;margin:0 0 6px;color:{{snap1_chg_color}};">{{snap1_chg}}</p>
+                    <p style="font-family:Arial,sans-serif;font-size:11px;line-height:1.55;color:#606065;margin:0;" class="em-text-muted">{{snap1_note}}</p>
+                  </td>
+                  <!-- Index 2 -->
+                  <td class="em-snap-cell em-snap-cell-bg em-inner-border" width="33%" style="background-color:#FFFFFF;border-right:1px solid #DEDEDD;padding:16px 18px;vertical-align:top;">
+                    <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#606065;margin:0 0 5px;" class="em-text-muted">{{snap2_index}}</p>
+                    <p style="font-family:Arial,sans-serif;font-size:18px;font-weight:700;line-height:1;color:#0A0A0A;margin:0 0 4px;" class="em-text-primary">{{snap2_value}}</p>
+                    <p style="font-family:Arial,sans-serif;font-size:12px;font-weight:700;margin:0 0 6px;color:{{snap2_chg_color}};">{{snap2_chg}}</p>
+                    <p style="font-family:Arial,sans-serif;font-size:11px;line-height:1.55;color:#606065;margin:0;" class="em-text-muted">{{snap2_note}}</p>
+                  </td>
+                  <!-- Index 3 -->
+                  <td class="em-snap-cell em-snap-cell-bg" width="34%" style="background-color:#FFFFFF;padding:16px 18px;vertical-align:top;">
+                    <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#606065;margin:0 0 5px;" class="em-text-muted">{{snap3_index}}</p>
+                    <p style="font-family:Arial,sans-serif;font-size:18px;font-weight:700;line-height:1;color:#0A0A0A;margin:0 0 4px;" class="em-text-primary">{{snap3_value}}</p>
+                    <p style="font-family:Arial,sans-serif;font-size:12px;font-weight:700;margin:0 0 6px;color:{{snap3_chg_color}};">{{snap3_chg}}</p>
+                    <p style="font-family:Arial,sans-serif;font-size:11px;line-height:1.55;color:#606065;margin:0;" class="em-text-muted">{{snap3_note}}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ── 02 TOP MOVERS ─────────────────────────────── -->
+          <tr><td class="em-pad" style="padding:44px 40px 0;">
+            <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#606065;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #DEDEDD;" class="em-text-muted em-outer-border">02 &middot; Top movers</p>
+            <!-- Gainers label -->
+            <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#BABAB8;margin:0 0 10px;" class="em-text-dimmed">Gainers</p>
+            {{gainers_rows}}
+            <!-- Losers label -->
+            <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#BABAB8;margin:20px 0 10px;" class="em-text-dimmed">Losers</p>
+            {{losers_rows}}
+          </td></tr>
+
+          <!-- ── 03 SECTOR IN FOCUS ─────────────────────────── -->
+          <tr><td class="em-pad" style="padding:44px 40px 0;">
+            <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#606065;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #DEDEDD;" class="em-text-muted em-outer-border">03 &middot; Sector in focus</p>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td class="em-sector-cell em-snap-cell-bg em-inner-border" width="48%" style="background-color:#FFFFFF;border:1px solid #DEDEDD;border-radius:10px;padding:18px 20px;vertical-align:top;">
+                  <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:#008A38;margin:0 0 6px;">Best performing</p>
+                  <p style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#0A0A0A;margin:0 0 4px;" class="em-text-primary">{{sector_best_name}}</p>
+                  <p style="font-family:Arial,sans-serif;font-size:20px;font-weight:700;color:#008A38;margin:0 0 8px;">{{sector_best_chg}}</p>
+                  <p style="font-family:Arial,sans-serif;font-size:12px;line-height:1.65;color:#606065;margin:0;" class="em-text-muted">{{sector_best_note}}</p>
+                </td>
+                <td class="em-hide-mobile" width="4%" style="padding:0;"></td>
+                <td class="em-sector-cell em-snap-cell-bg em-inner-border" width="48%" style="background-color:#FFFFFF;border:1px solid #DEDEDD;border-radius:10px;padding:18px 20px;vertical-align:top;">
+                  <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:#CC0000;margin:0 0 6px;">Worst performing</p>
+                  <p style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#0A0A0A;margin:0 0 4px;" class="em-text-primary">{{sector_worst_name}}</p>
+                  <p style="font-family:Arial,sans-serif;font-size:20px;font-weight:700;color:#CC0000;margin:0 0 8px;">{{sector_worst_chg}}</p>
+                  <p style="font-family:Arial,sans-serif;font-size:12px;line-height:1.65;color:#606065;margin:0;" class="em-text-muted">{{sector_worst_note}}</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+
+          <!-- ── 04 CALENDAR ───────────────────────────────── -->
+          <tr><td class="em-pad" style="padding:44px 40px 0;">
+            <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#606065;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #DEDEDD;" class="em-text-muted em-outer-border">04 &middot; {{calendar_label}}</p>
+            <!-- Header row -->
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td width="68" style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#606065;padding-bottom:8px;border-bottom:1px solid #DEDEDD;" class="em-text-muted em-outer-border">Date</td>
+                <td style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#606065;padding-bottom:8px;border-bottom:1px solid #DEDEDD;" class="em-text-muted em-outer-border">Company / Event</td>
+                <td width="180" style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#606065;padding-bottom:8px;padding-left:16px;border-bottom:1px solid #DEDEDD;" class="em-text-muted em-outer-border">Type</td>
+              </tr>
+            </table>
+            {{calendar_rows}}
+          </td></tr>
+
+          <!-- ── 05 WHAT TO WATCH ──────────────────────────── -->
+          <tr><td class="em-pad" style="padding:44px 40px 0;">
+            <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#606065;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #DEDEDD;" class="em-text-muted em-outer-border">05 &middot; {{outlook_label}}</p>
+            <!-- Left-border accent wraps body only -->
+            <div style="padding-left:20px;border-left:2px solid #BABAB8;" class="em-accent-border">
+              <p style="font-family:Arial,sans-serif;font-size:14px;line-height:1.80;color:#0A0A0A;margin:0 0 12px;" class="em-text-primary">{{outlook_p1}}</p>
+              <p style="font-family:Arial,sans-serif;font-size:14px;line-height:1.80;color:#0A0A0A;margin:0 0 12px;" class="em-text-primary">{{outlook_p2}}</p>
+              <p style="font-family:Arial,sans-serif;font-size:14px;line-height:1.80;color:#0A0A0A;margin:0 0 16px;" class="em-text-primary">{{outlook_p3}}</p>
+              <p style="font-family:Arial,sans-serif;font-size:13px;line-height:1.60;color:#606065;font-style:italic;margin:0;" class="em-text-muted">The Clarinvest team</p>
+            </div>
+          </td></tr>
+
+          <!-- ── CTA ───────────────────────────────────────── -->
+          <tr><td class="em-pad" style="padding:36px 40px 0;text-align:center;">
+            <a href="https://clarinvest.app/dashboard" class="em-btn-bg em-btn-text" style="display:inline-block;padding:13px 44px;border-radius:4px;background-color:#0A0A0A;color:#FFFFFF;font-family:Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;text-decoration:none;">Open Clarinvest</a>
+            <p style="font-family:Arial,sans-serif;font-size:12px;color:#606065;margin:10px 0 0;" class="em-text-muted">{{cta_sub}}</p>
+          </td></tr>
+
+          <!-- ── DIVIDER ────────────────────────────────────── -->
+          <tr><td class="em-pad" style="padding:32px 40px 0;">
+            <div class="em-divider-line" style="height:1px;background-color:#DEDEDD;"></div>
+          </td></tr>
+
+          <!-- ── FOOTER ─────────────────────────────────────── -->
+          <tr>
+            <td class="em-pad" style="padding:24px 40px 36px;text-align:center;">
+              <!-- Footer logo -->
+              <!--[if !mso]><!-->
+              <div style="margin-bottom:16px;">
+                <svg width="14" height="14" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;margin-right:6px;">
+                  <rect x="8"   y="8"   width="84" height="84" rx="10" fill="#0A0A0A"/>
+                  <rect x="108" y="8"   width="84" height="84" rx="10" fill="#0A0A0A" opacity="0.22"/>
+                  <rect x="8"   y="108" width="84" height="84" rx="10" fill="#0A0A0A" opacity="0.22"/>
+                  <rect x="108" y="108" width="84" height="84" rx="10" fill="#0A0A0A"/>
+                </svg>
+                <span style="font-family:Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0A0A0A;vertical-align:middle;" class="em-text-primary">Clarinvest</span>
+              </div>
+              <!--<![endif]-->
+              <!-- Disclaimer (full form required per branding guidelines) -->
+              <p style="font-family:Arial,sans-serif;font-size:11px;line-height:1.72;color:#BABAB8;margin:0 0 14px;text-align:left;" class="em-text-dimmed">Clarinvest provides AI-generated analysis for informational purposes only. Nothing in this email constitutes financial advice, investment advice, or a recommendation to buy or sell any security. Market data is sourced from Financial Modeling Prep and refreshed daily. Always conduct your own due diligence and consult a qualified financial adviser before making investment decisions.</p>
+              <!-- Links -->
+              <p style="font-family:Arial,sans-serif;font-size:11px;color:#606065;margin:0 0 10px;" class="em-text-muted">
+                <a href="https://clarinvest.app/dashboard/account" style="color:#606065;text-decoration:underline;">Manage preferences</a>
+                &nbsp;&middot;&nbsp;
+                <a href="{{unsubscribe_url}}" style="color:#606065;text-decoration:underline;">Unsubscribe</a>
+                &nbsp;&middot;&nbsp;
+                <a href="https://clarinvest.app/privacy" style="color:#606065;text-decoration:underline;">Privacy policy</a>
+                &nbsp;&middot;&nbsp;
+                <a href="https://clarinvest.app/terms" style="color:#606065;text-decoration:underline;">Terms of service</a>
+              </p>
+              <p style="font-family:Arial,sans-serif;font-size:11px;color:#BABAB8;margin:0;" class="em-text-dimmed">&copy; 2026 Clarinvest &middot; clarinvest.app &middot; {{footer_sub}}</p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Email card -->
+
+      </td>
+    </tr>
+  </table>
+  <!-- /Outer wrapper -->
+
+</body>
+</html>

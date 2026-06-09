@@ -887,7 +887,7 @@ export default function DividendsPage(){
         input[type=number]::-webkit-inner-spin-button{opacity:0.35;}
       `}</style>
 
-      <div style={{maxWidth:"1100px",margin:"0 auto",padding:"2.5rem 2rem 4rem"}}>
+      <div style={{maxWidth:"1200px",margin:"0 auto",padding:"2.5rem 3.5rem"}}>
 
         {/* Page header */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:"1.75rem",flexWrap:"wrap",gap:"0.75rem"}}>
@@ -964,7 +964,7 @@ export default function DividendsPage(){
           divLoading={divLoading[activeStock.ticker]}
           c={c} mode={mode}
           onClose={()=>setActiveStock(null)}
-          onFullAnalysis={t=>router.push(`/dashboard/stock/${t}`)}
+          onFullAnalysis={t=>router.push(`/dashboard/analysis/${t}`)}
         />
       )}
       {showCompare&&compareStocks.length>=2&&(

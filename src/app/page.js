@@ -1,4 +1,6 @@
 "use client";
+import ToolsCarousel from "@/app/components/ToolsCarousel";
+import FullReportPopup, { NVDA_SAMPLE_REPORT } from "@/app/components/FullReportPopup";
 import { useState, useEffect, useRef } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from "recharts";
 
@@ -61,13 +63,48 @@ const FEATS=[
 ];
 
 const CHIPS=[
-  {ticker:"NVDA",name:"NVIDIA Corp.",        price:"$875", chg:"+5.4%",score:93,label:"Strong Buy",top:"22%",right:"7%", mul:18, delay:"0s"  },
-  {ticker:"AAPL",name:"Apple Inc.",          price:"$184", chg:"+2.1%",score:78,label:"Buy",        top:"62%",right:"4%", mul:12, delay:"1.5s"},
-  {ticker:"TSLA",name:"Tesla Inc.",          price:"$171", chg:"-1.2%",score:61,label:"Hold",       top:"26%",left:"4%",  mul:-14,delay:"0.8s"},
-  {ticker:"TSM", name:"Taiwan Semiconductor",price:"$138", chg:"+3.1%",score:82,label:"Buy",        top:"65%",left:"5%",  mul:-10,delay:"2.1s"},
+  {ticker:"NVDA",name:"NVIDIA Corp.",        price:"$875", chg:"+5.4%",score:93,label:"Strong Buy",top:"22%",right:"12%", mul:18, delay:"0s"  },
+  {ticker:"AAPL",name:"Apple Inc.",          price:"$184", chg:"+2.1%",score:78,label:"Buy",        top:"62%",right:"12%", mul:12, delay:"1.5s"},
+  {ticker:"TSLA",name:"Tesla Inc.",          price:"$171", chg:"-1.2%",score:61,label:"Hold",       top:"26%",left:"12%",  mul:-14,delay:"0.8s"},
+  {ticker:"TSM", name:"Taiwan Semiconductor",price:"$138", chg:"+3.1%",score:82,label:"Buy",        top:"65%",left:"12%",  mul:-10,delay:"2.1s"},
 ];
 
 const TICKERS=["AAPL +2.1%","MSFT +0.8%","NVDA +5.4%","TSLA -1.2%","AMZN +1.9%","GOOGL +0.3%","META +3.1%","TSM +3.1%","ASML.AS +1.8%","AZN.L +2.0%","VOD.L -0.5%","SIE.DE +1.1%","MC.PA +0.9%","BP.L -0.9%","SHEL.L +0.7%","BARC.L -0.3%"];
+
+const FAQ_ITEMS = [
+  {
+    q: "What is Clarinvest?",
+    a: "Clarinvest is an AI-powered investment intelligence platform. It translates raw financial data into sharp, actionable analysis across stocks, indexes, ETFs, and commodities, covering US, UK, and European markets. Think of it as having a world-class analyst available at any time, in plain English.",
+  },
+  {
+    q: "Is this financial advice?",
+    a: "No. Clarinvest provides AI-generated analysis for informational purposes only. Nothing on this platform constitutes financial advice, investment advice, or a recommendation to buy, sell, or hold any asset. Always conduct your own due diligence and consult a qualified financial adviser before making investment decisions.",
+  },
+  {
+    q: "What markets and instruments does Clarinvest cover?",
+    a: "US stocks and indexes are live now. UK and European markets, ETFs, and commodities are in active development. Essential and Pro plan subscribers will be notified when they launch. Ultimate plan subscribers get early access.",
+  },
+  {
+    q: "What is the difference between an AI Summary and a Full AI Report?",
+    a: "A Summary gives you a concise 3-4 sentence assessment with an AI Score, a verdict, and key risk flags, useful for quick screening. A Full Report adds a structured deep-dive across overview, valuation, growth, profitability, risks, and outlook. Full Reports are available on Pro and Ultimate plans.",
+  },
+  {
+    q: "How is the AI Score calculated?",
+    a: "The AI Score (0-100) reflects the overall investment quality of an instrument based on current fundamentals: valuation, growth trajectory, profitability, balance sheet strength, and momentum signals. It is not a price prediction. An 80+ score indicates a strong fundamental profile; below 50 signals material concerns.",
+  },
+  {
+    q: "How current is the market data?",
+    a: "Market data is sourced from Financial Modelling Prep (FMP) and refreshed daily. AI analyses are cached for 24 hours and shared across users, so the first person to request a ticker generates the analysis and subsequent users receive the same cached result until it expires.",
+  },
+  {
+    q: "Can I cancel my subscription at any time?",
+    a: "Yes. Cancel anytime from your Account page. You keep access until the end of your current billing period. No setup fees, no cancellation fees.",
+  },
+  {
+    q: "What payment methods are accepted?",
+    a: "All major credit and debit cards via Stripe. USDC stablecoin payments are also accepted for annual plans.",
+  },
+];
 
 // ─── Scroll Reveal ─────────────────────────────────────────────────────────────
 function useReveal(){
@@ -319,7 +356,7 @@ function BannerStrip({ list, mode, onDismiss, side = "top" }) {
 export default function Clarinvest(){
   const[mode,          setMode]         =useState("dark");
   const[billing,       setBilling]      =useState("yearly");
-  const[cur,           setCur]          =useState("GBP");
+  const[cur,           setCur]          =useState("USD");
   const[mouse,         setMouse]        =useState({x:0,y:0});
   const[tab,           setTab]          =useState("overview");
   const[hovPlan,       setHovPlan]      =useState(null);
@@ -327,6 +364,9 @@ export default function Clarinvest(){
   const[checkoutLoading,setCheckoutLoading]=useState(null);
   const[banners,       setBanners]      =useState([]);
   const[dismissed,     setDismissed]    =useState(new Set());
+  const[faqOpen,       setFaqOpen]      =useState(null);
+  const[showSample,    setShowSample]   =useState(false);
+  const[faqShellOpen,  setFaqShellOpen] =useState(false);
 
   const c=C[mode], curr=CURR[cur];
   const gs="'Google Sans Flex','DM Sans',sans-serif";
@@ -462,7 +502,7 @@ export default function Clarinvest(){
         @media(max-width:900px){.chip:nth-child(even){display:none;}}
       `}</style>
 
-      {/* ══ NAV ══════════════════════════════════════════════════════════════ */}
+      {/* == NAV ============================================================== */}
       <div style={{height:topH}}/>
       <div style={{position:"sticky",top:topH,zIndex:200}}>
         <nav style={{
@@ -488,7 +528,7 @@ export default function Clarinvest(){
           </span>
         </button>
 
-        <div className="nav-links" style={{flex:1,justifyContent:"center"}}>
+        <div style={{position:"absolute",left:"50%",transform:"translateX(-50%)",display:"flex",gap:"2rem",alignItems:"center"}}>
           {NAV.map(n=>(
             <button key={n.label} className="nb" style={{color:c.muted}} onClick={()=>go(n.ref)}>{n.label}</button>
           ))}
@@ -500,6 +540,10 @@ export default function Clarinvest(){
             <span>{mode==="dark"?"☀":"☾"}</span>
             <span>{mode==="dark"?"Light":"Dark"}</span>
           </button>
+          <button className="cbtn" onClick={()=>{window.location.href="/login";}}
+            style={{background:"transparent",border:`1px solid ${c.borderHi}`,color:c.text,padding:"8px 20px",borderRadius:"4px"}}>
+            Sign in
+          </button>
           <button className="cbtn" onClick={()=>go(priceRef)} style={{background:c.text,color:c.bg,padding:"8px 20px",borderRadius:"4px"}}>
             Get started
           </button>
@@ -507,7 +551,7 @@ export default function Clarinvest(){
       </nav>
       </div>
 
-      {/* ══ HERO ═════════════════════════════════════════════════════════════ */}
+      {/* == HERO ============================================================= */}
       <section ref={heroRef} style={{minHeight:"100vh",paddingTop:"0",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
           <div style={{position:"absolute",inset:0,
@@ -576,7 +620,7 @@ export default function Clarinvest(){
 
           <div style={{display:"flex",gap:"1rem",justifyContent:"center",flexWrap:"wrap",animation:"fadeUp 0.8s ease 0.38s both"}}>
             <button className="cbtn" onClick={()=>go(priceRef)} style={{background:c.text,color:c.bg,padding:"14px 38px",borderRadius:"4px"}}>View plans →</button>
-            <button className="cbtn" style={{background:"transparent",border:`1px solid ${c.borderHi}`,color:c.text,padding:"14px 38px",borderRadius:"4px"}}>See a sample report</button>
+            <button className="cbtn" onClick={()=>setShowSample(true)} style={{background:"transparent",border:`1px solid ${c.borderHi}`,color:c.text,padding:"14px 38px",borderRadius:"4px"}}>See a sample report</button>
           </div>
 
           <div className="hero-trust" style={{marginTop:"2.5rem",display:"flex",gap:"2rem",justifyContent:"center",animation:"fadeUp 0.8s ease 0.46s both"}}>
@@ -593,7 +637,7 @@ export default function Clarinvest(){
         </div>
       </section>
 
-      {/* ══ TICKER ═══════════════════════════════════════════════════════════ */}
+      {/* == TICKER =========================================================== */}
       <div className="twrap" style={{borderTop:`1px solid ${c.border}`,borderBottom:`1px solid ${c.border}`,background:c.surface,padding:"11px 0"}}>
         <div className="tinner">
           {[...TICKERS,...TICKERS].map((t,i)=>(
@@ -602,7 +646,7 @@ export default function Clarinvest(){
         </div>
       </div>
 
-      {/* ══ FEATURES ═════════════════════════════════════════════════════════ */}
+      {/* == FEATURES ========================================================= */}
       <section ref={featRef} style={{padding:"8rem 2rem",maxWidth:"1100px",margin:"0 auto"}}>
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"4rem"}}>
@@ -631,145 +675,24 @@ export default function Clarinvest(){
         </div>
       </section>
 
-      {/* ══ SAMPLE ANALYSIS ══════════════════════════════════════════════════ */}
-      <section style={{padding:"0 2rem 8rem",maxWidth:"1100px",margin:"0 auto"}}>
-        <Reveal>
-          <div style={{textAlign:"center",marginBottom:"3rem"}}>
-            <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Live Example</p>
-            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,lineHeight:1.2,marginBottom:"0.7rem"}}>The smart way to invest</h2>
-            <p style={{fontFamily:gs,color:c.muted,fontSize:"0.95rem"}}>NVIDIA Corp. (NVDA) — 6-month AI analysis sample</p>
-          </div>
-        </Reveal>
+{/* ── Platform Preview ─────────────────────── */}
+<section style={{ padding:"80px 0", maxWidth:1100, margin:"0 auto", padding:"80px 40px" }}>
+  <p style={{ fontFamily:"'Google Sans Flex','DM Sans',sans-serif", fontSize:"0.68rem", letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:500, color:c.muted, marginBottom:"1rem", textAlign:"center" }}>
+    Platform preview
+  </p>
+  <h2 style={{ fontFamily:"'Noto Serif',Georgia,serif", fontSize:"clamp(2rem,4vw,2.8rem)", fontWeight:700, lineHeight:1.2, textAlign:"center", marginBottom:"0.8rem", color:c.text }}>
+    The smart way to invest
+  </h2>
+  <p style={{ fontFamily:"'Google Sans Flex','DM Sans',sans-serif", fontSize:"1rem", color:c.muted, textAlign:"center", marginBottom:"2.5rem", lineHeight:1.7 }}>
+    Explore Discovery, Dividends, and Portfolio. All controls are interactive (data is illustrative).
+  </p>
+  <ToolsCarousel c={c} isDark={mode === "dark"} />
+  <p style={{ fontFamily:"'Google Sans Flex','DM Sans',sans-serif", fontSize:"0.75rem", color:c.muted, textAlign:"center", marginTop:"1.25rem" }}>
+    For informational purposes only. Not financial advice.
+  </p>
+</section>
 
-        <Reveal delay={0.1}>
-          <div style={{border:`1px solid ${c.borderHi}`,borderRadius:"16px",overflow:"hidden",background:c.card,
-            boxShadow:mode==="dark"?"0 0 60px rgba(0,0,0,0.5)":"0 12px 50px rgba(0,0,0,0.07)"}}>
-
-            <div style={{padding:"1.4rem 2rem",borderBottom:`1px solid ${c.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"1rem",
-              background:mode==="dark"?"linear-gradient(90deg,#111113,#141418)":"linear-gradient(90deg,#FFFFFF,#F5F5F8)"}}>
-              <div style={{display:"flex",alignItems:"center",gap:"2rem",flexWrap:"wrap"}}>
-                <div>
-                  <div style={{fontFamily:gs,fontSize:"1.6rem",fontWeight:700,color:c.text}}>NVDA</div>
-                  <div style={{fontFamily:gs,color:c.muted,fontSize:"0.78rem",marginTop:"2px"}}>NVIDIA Corporation · NASDAQ</div>
-                </div>
-                <div>
-                  <div style={{fontFamily:gs,fontSize:"1.55rem",fontWeight:700,color:c.text}}>$1,208.00</div>
-                  <div style={{fontFamily:gs,color:c.green,fontSize:"0.83rem",fontWeight:700}}>+$144.00 (+13.5%) · 6-month</div>
-                </div>
-              </div>
-              <div style={{display:"flex",gap:"0.55rem",flexWrap:"wrap"}}>
-                {[
-                  {label:"AI Score",value:"93",        bg:c.greenDim,  bd:`${c.green}40`,vc:c.green},
-                  {label:"Verdict", value:"Strong Buy", bg:c.greenDim,  bd:`${c.green}35`,vc:c.green},
-                  {label:"Sector",  value:"Technology", bg:c.surface,   bd:c.border,      vc:c.muted},
-                ].map((b,i)=>(
-                  <div key={i} style={{background:b.bg,border:`1px solid ${b.bd}`,borderRadius:"6px",padding:"7px 13px"}}>
-                    <div style={{fontFamily:gs,color:c.muted,fontSize:"0.59rem",letterSpacing:"0.1em",textTransform:"uppercase"}}>{b.label}</div>
-                    <div style={{fontFamily:gs,color:b.vc,fontSize:"0.83rem",fontWeight:700,marginTop:"2px"}}>{b.value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="ag" style={{display:"grid",gridTemplateColumns:"1fr 360px",alignItems:"start"}}>
-              <div style={{padding:"1.6rem 1.4rem 1.4rem",borderRight:`1px solid ${c.border}`}}>
-                <div style={{fontFamily:gs,fontSize:"0.66rem",color:c.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"1.2rem",fontWeight:500}}>
-                  Price History — January to June 2024
-                </div>
-                <ResponsiveContainer width="100%" height={270}>
-                  <AreaChart data={CHART_DATA} margin={{top:42,right:28,bottom:4,left:4}}>
-                    <defs>
-                      <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor={c.blue} stopOpacity={0.28}/>
-                        <stop offset="95%" stopColor={c.blue} stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={c.border} vertical={false}/>
-                    <XAxis dataKey="w" tick={{fill:c.muted,fontSize:9,fontFamily:"'Google Sans Flex',sans-serif"}} axisLine={false} tickLine={false}/>
-                    <YAxis tick={{fill:c.muted,fontSize:9,fontFamily:"'Google Sans Flex',sans-serif"}} axisLine={false} tickLine={false} tickFormatter={v=>`$${v}`} domain={["auto","auto"]}/>
-                    <Tooltip content={<ChartTip/>}/>
-                    <ReferenceLine x="Feb W3" stroke={c.green} strokeDasharray="4 3" label={<RefLabel value="Earnings ↑" color={c.green}/>}/>
-                    <ReferenceLine x="May W1" stroke={c.blue}  strokeDasharray="4 3" label={<RefLabel value="AI Rally"   color={c.blue}/>}/>
-                    <Area type="monotone" dataKey="p" stroke={c.blue} strokeWidth={2.5} fill="url(#blueGrad)" dot={false}/>
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div style={{padding:"1.5rem"}}>
-                <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.4rem",borderBottom:`1px solid ${c.border}`,paddingBottom:0}}>
-                  {["overview","valuation","risk"].map(t=>(
-                    <button key={t} className="atab" onClick={()=>setTab(t)}
-                      style={{color:tab===t?c.text:c.muted,borderBottom:tab===t?`2px solid ${c.text}`:"2px solid transparent",paddingBottom:"8px",paddingRight:"4px",marginBottom:"-1px"}}>
-                      {t[0].toUpperCase()+t.slice(1)}
-                    </button>
-                  ))}
-                </div>
-
-                {tab==="overview"&&(
-                  <div style={{display:"flex",flexDirection:"column",gap:"0.85rem"}}>
-                    <div style={{background:mode==="dark"?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)",borderRadius:"8px",padding:"13px",borderLeft:`2.5px solid ${c.borderHi}`}}>
-                      <div style={{fontFamily:gs,color:c.muted,fontSize:"0.6rem",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"6px",fontWeight:700}}>AI Summary</div>
-                      <p style={{fontFamily:gs,color:c.text,fontSize:"0.81rem",lineHeight:1.68}}>NVIDIA's dominance in AI accelerators is structural, not cyclical. CUDA lock-in and data centre demand confirmed by Feb earnings. Momentum likely continues through H2.</p>
-                    </div>
-                    {[
-                      {label:"Revenue Growth (YoY)",value:"+122%", flag:"positive"},
-                      {label:"Gross Margin",         value:"78.4%", flag:"positive"},
-                      {label:"P/E Ratio",            value:"68×",   flag:"neutral"},
-                      {label:"Insider Activity",     value:"Neutral",flag:"neutral"},
-                    ].map((row,i)=>(
-                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${c.border}`}}>
-                        <span style={{fontFamily:gs,color:c.text,fontSize:"0.81rem"}}>{row.label}</span>
-                        <span style={{fontFamily:gs,fontWeight:700,fontSize:"0.84rem",color:row.flag==="positive"?c.green:row.flag==="negative"?c.red:c.text}}>{row.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {tab==="valuation"&&(
-                  <div style={{display:"flex",flexDirection:"column",gap:"0.85rem"}}>
-                    <div style={{background:mode==="dark"?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)",borderRadius:"8px",padding:"13px",borderLeft:`2.5px solid ${c.borderHi}`}}>
-                      <div style={{fontFamily:gs,color:c.muted,fontSize:"0.6rem",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"6px",fontWeight:700}}>Valuation Note</div>
-                      <p style={{fontFamily:gs,color:c.text,fontSize:"0.81rem",lineHeight:1.68}}>Premium to peers, but a PEG of 0.9 signals growth is not fully priced in. The AI infrastructure cycle justifies the multiple for patient investors.</p>
-                    </div>
-                    {[
-                      {label:"EV/EBITDA",        value:"42×",   flag:"negative"},
-                      {label:"Price/Sales",       value:"28×",   flag:"negative"},
-                      {label:"PEG Ratio",         value:"0.9",   flag:"positive"},
-                      {label:"vs Sector Avg P/E", value:"+185%", flag:"neutral"},
-                    ].map((row,i)=>(
-                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${c.border}`}}>
-                        <span style={{fontFamily:gs,color:c.text,fontSize:"0.81rem"}}>{row.label}</span>
-                        <span style={{fontFamily:gs,fontWeight:700,fontSize:"0.84rem",color:row.flag==="positive"?c.green:row.flag==="negative"?c.red:c.text}}>{row.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {tab==="risk"&&(
-                  <div style={{display:"flex",flexDirection:"column",gap:"0.7rem"}}>
-                    {[
-                      {flag:"⚠",label:"China export restrictions",       level:"High",  col:c.red  },
-                      {flag:"⚠",label:"Customer concentration risk",     level:"Medium",col:c.text },
-                      {flag:"◈",label:"AMD MI300X competitive pressure", level:"Low",   col:c.green},
-                      {flag:"⚠",label:"Supply chain TSMC dependency",    level:"Medium",col:c.text },
-                    ].map((r,i)=>(
-                      <div key={i} style={{display:"flex",alignItems:"center",gap:"0.7rem",padding:"10px 12px",
-                        background:mode==="dark"?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.03)",
-                        borderRadius:"8px",border:`1px solid ${c.border}`}}>
-                        <span style={{color:r.col,fontSize:"0.85rem"}}>{r.flag}</span>
-                        <span style={{fontFamily:gs,color:r.col,fontSize:"0.8rem",flex:1}}>{r.label}</span>
-                        <span style={{fontFamily:gs,color:r.col,fontSize:"0.66rem",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase"}}>{r.level}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </Reveal>
-      </section>
-
-      {/* ══ MARKETS ══════════════════════════════════════════════════════════ */}
+      {/* == MARKETS ========================================================== */}
       <section ref={markRef} style={{
         padding:"7rem 2rem",
         background:mode==="dark"?"linear-gradient(180deg,#111113 0%,#0F0F11 100%)":"linear-gradient(180deg,#EEEEEC 0%,#E8E8E6 100%)",
@@ -813,7 +736,7 @@ export default function Clarinvest(){
         </div>
       </section>
 
-      {/* ══ EXCHANGES CAROUSEL ════════════════════════════════════════════════ */}
+      {/* == EXCHANGES CAROUSEL ================================================ */}
       <Marquee
         items={EXCHANGES}
         pxPerSec={20}
@@ -825,7 +748,7 @@ export default function Clarinvest(){
         sublabel="Major US, European and UK exchanges — more coming soon"
       />
 
-      {/* ══ PRICING ══════════════════════════════════════════════════════════ */}
+      {/* == PRICING ========================================================== */}
       <section ref={priceRef} style={{padding:"8rem 2rem",maxWidth:"1100px",margin:"0 auto"}}>
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
@@ -873,10 +796,10 @@ export default function Clarinvest(){
           {[
             {name:"Essential", tag:"For curious investors",           badge:null,           hi:false, monthly:curr.em[0], yearly:curr.em[1],
              plusLabel: null,
-             feats:["5 AI summaries per month","Basic AI summary per stock","US stocks (EU and UK coming soon)","Commodities","Key financial ratios","Watchlist","Monthly market digest"]},
+             feats:["20 AI summaries per month","US stocks (EU and UK coming soon)","Discovery screener","Price charts","Key financial ratios","Watchlist","Monthly market digest"]},
             {name:"Pro",       tag:"For serious investors",           badge:"Most Popular",  hi:true,  monthly:curr.pr[0], yearly:curr.pr[1],
              plusLabel: "Everything in Essential, plus:",
-             feats:["Unlimited AI summaries","15 AI full reports per month","Indexes","Valuation, liquidity and leverage stats","Per Share and growth metrics","Income Statement","Virtual Portfolio","Weekly market digest"]},
+             feats:["Unlimited AI summaries","20 full AI reports per month","Indexes","Virtual Portfolio (up to 5 portfolios)","What-if & growth projection charts","Sector diversification analysis","Full statistics & financial statements","Weekly market digest"]},
             {name:"Ultimate",  tag:"For the most demanding investors",badge:"Full Access",   hi:false, monthly:curr.ul[0], yearly:curr.ul[1],
              plusLabel: "Everything in Pro, plus:",
              feats:["Unlimited AI full reports","ETFs","Full financial statements","Balance Sheet and Cash Flow","Sankey flow diagrams","Dividend intelligence and forecasting","Advanced analytics","Priority data refresh","Early access to new features"]},
@@ -985,7 +908,7 @@ export default function Clarinvest(){
         </Reveal>
       </section>
 
-      {/* ══ POWERED BY CAROUSEL ══════════════════════════════════════════════ */}
+      {/* == POWERED BY CAROUSEL ============================================== */}
       <Marquee
         items={POWERED_BY}
         pxPerSec={20}
@@ -996,7 +919,7 @@ export default function Clarinvest(){
         sublabel="World-class infrastructure powering every analysis"
       />
 
-      {/* ══ ABOUT ════════════════════════════════════════════════════════════ */}
+      {/* == ABOUT ============================================================ */}
       <section ref={aboutRef} style={{
         padding:"7rem 2rem",
         background:mode==="dark"?"linear-gradient(180deg,#111113 0%,#0F0F11 100%)":"linear-gradient(180deg,#EEEEED 0%,#E8E8E6 100%)",
@@ -1014,8 +937,198 @@ export default function Clarinvest(){
           </Reveal>
         </div>
       </section>
+      
+{/* == FAQ ============================================================ */}
+      <section style={{ padding:"7rem 2rem" }}>
+        <div style={{ maxWidth:"1100px", margin:"0 auto" }}>
+          <Reveal>
+            <div style={{ textAlign:"center", marginBottom:"3.5rem" }}>
+              <p style={{ fontFamily:gs, color:c.muted, fontSize:"0.68rem", letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"1rem", fontWeight:600 }}>FAQ</p>
+              <h2 style={{ fontFamily:ns, fontSize:"clamp(1.9rem,4vw,3rem)", fontWeight:700, marginBottom:"0.9rem" }}>Common questions</h2>
+              <p style={{ fontFamily:gs, color:c.muted, maxWidth:"420px", margin:"0 auto", lineHeight:1.72, fontSize:"0.94rem" }}>
+                Everything you need to know before getting started.
+              </p>
+            </div>
+          </Reveal>
 
-      {/* ══ FOOTER ═══════════════════════════════════════════════════════════ */}
+          <div style={{ maxWidth:"720px", margin:"0 auto" }}>
+            <div style={{
+              border:`1px solid ${c.borderHi}`,
+              borderRadius:"14px",
+              overflow:"hidden",
+              background:mode==="dark"?"linear-gradient(150deg,#1A1A1E 0%,#0D0D10 100%)":"linear-gradient(150deg,#FFFFFF 0%,#F0F0EE 100%)",
+              boxShadow:mode==="dark"?"0 4px 28px rgba(0,0,0,0.4)":"0 4px 20px rgba(0,0,0,0.07)",
+            }}>
+              {/* Outer shell toggle */}
+              <button
+                onClick={() => setFaqShellOpen(o => !o)}
+                style={{
+                  width:"100%", background:"transparent", border:"none",
+                  padding:"1.4rem 1.75rem", cursor:"pointer",
+                  display:"flex", alignItems:"center", justifyContent:"space-between", gap:"1rem",
+                  textAlign:"left",
+                  borderBottom: faqShellOpen ? `1px solid ${c.border}` : "none",
+                  transition:"border-color 0.22s",
+                }}>
+                <span style={{ fontFamily:gs, fontSize:"0.6rem", color:c.green, letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:700, flex:1, textAlign:"center" }}>Questions and answers</span>
+                <span style={{
+                  flexShrink:0, width:24, height:24, borderRadius:"50%",
+                  border:`1px solid ${c.borderHi}`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontFamily:gs, fontSize:"1rem", color:c.muted, lineHeight:1,
+                  transition:"transform 0.22s ease",
+                  transform: faqShellOpen ? "rotate(45deg)" : "none",
+                }}>
+                  +
+                </span>
+              </button>
+
+              {/* Inner Q&A list */}
+              {faqShellOpen && (
+                <div style={{ padding:"0 1.75rem" }}>
+                  {[
+                    FAQ_ITEMS[0],
+                    FAQ_ITEMS[1],
+                    FAQ_ITEMS[2],
+                    {
+                      q: "What data does the AI analyze to produce a full report?",
+                      a: null,
+                      isMetrics: true,
+                    },
+                    ...FAQ_ITEMS.slice(3),
+                  ].map((item, i, arr) => (
+                    <div key={i} style={{ borderBottom: i < arr.length - 1 ? `1px solid ${c.border}` : "none" }}>
+                      <button
+                        onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+                        style={{
+                          width:"100%", background:"transparent", border:"none",
+                          padding:"1.1rem 0", cursor:"pointer",
+                          display:"flex", alignItems:"center", justifyContent:"space-between", gap:"1rem",
+                          textAlign:"left",
+                        }}>
+                        <span style={{ fontFamily:gs, fontSize:"0.95rem", fontWeight:500, color:c.text, lineHeight:1.5 }}>
+                          {item.q}
+                        </span>
+                        <span style={{
+                          flexShrink:0, width:20, height:20, borderRadius:"50%",
+                          border:`1px solid ${c.border}`,
+                          display:"flex", alignItems:"center", justifyContent:"center",
+                          fontFamily:gs, fontSize:"0.9rem", color:c.muted, lineHeight:1,
+                          transition:"transform 0.22s ease",
+                          transform: faqOpen === i ? "rotate(45deg)" : "none",
+                        }}>
+                          +
+                        </span>
+                      </button>
+
+                      {faqOpen === i && (
+                        <div style={{ paddingBottom:"1.1rem" }}>
+                          {item.isMetrics ? (
+                            <div>
+                              <p style={{ fontFamily:gs, fontSize:"0.88rem", color:c.muted, lineHeight:1.72, marginBottom:"1.25rem" }}>
+                                Each full report is built from the actual financial data Clarinvest pulls for that instrument type. Here is precisely what the AI analyzes for each.
+                              </p>
+                              {[
+                                {
+                                  type:"Stocks",
+                                  icon:"◈",
+                                  color:c.blue,
+                                  groups:[
+                                    { label:"General", items:["Market capitalization","Enterprise value","Beta","EPS","Average volume","P/E ratio","Dividend yield"] },
+                                    { label:"Valuation", items:["P/E ratio","P/S ratio","P/B ratio","Price to free cash flow","Price to operating cash flow","PEG ratio","EV/EBITDA multiple"] },
+                                    { label:"Profitability", items:["Gross margin","Net margin","Operating margin","Return on equity (ROE)","Return on assets (ROA)","Return on invested capital (ROIC)"] },
+                                    { label:"Liquidity", items:["Current ratio","Quick ratio","Cash ratio"] },
+                                    { label:"Leverage", items:["Debt ratio","Debt to equity","Equity multiplier","LT debt to capitalization","Interest coverage","Cash flow to debt"] },
+                                    { label:"Per Share", items:["Revenue per share","Net income per share","Operating CF per share","Free cash flow per share","Cash per share","Book value per share"] },
+                                    { label:"Cash Flow Ratios", items:["Operating CF to sales","FCF to operating CF","Cash flow coverage","Short-term coverage","Capex coverage","Payout ratio"] },
+                                    { label:"Growth", items:["Revenue growth YoY","EPS growth YoY","DPS growth YoY","Gross profit growth","EBIT growth","Operating income growth","Net income growth"] },
+                                    { label:"Income Statement", items:["Revenue","Cost of revenue","Gross profit","Operating expenses","Operating income","Net income","EPS (basic and diluted)"] },
+                                    { label:"Balance Sheet", items:["Total assets","Current and non-current assets","Total liabilities","Current and non-current liabilities","Total equity"] },
+                                    { label:"Cash Flow Statement", items:["Operating, investing, and financing activities","Capital expenditure","Free cash flow","Change in cash"] },
+                                  ]
+                                },
+                                {
+                                  type:"ETFs",
+                                  icon:"▣",
+                                  color:c.green,
+                                  groups:[
+                                    { label:"Fund Overview", items:["Fund name and AUM","Expense ratio","NAV and daily change","Number of holdings","Index tracked","Fund category and inception"] },
+                                    { label:"Performance", items:["YTD, 1Y, 3Y, 5Y, 10Y returns","Sharpe ratio (3Y)","Beta vs. market","Maximum drawdown","Standard deviation","Tracking error"] },
+                                    { label:"Holdings and Allocation", items:["Top 10 holdings with weights","Sector allocation breakdown","Country allocation breakdown"] },
+                                    { label:"Dividends", items:["Dividend yield","Annual DPS","Distribution frequency","Ex-dividend and payment dates"] },
+                                  ]
+                                },
+                                {
+                                  type:"Indexes",
+                                  icon:"▲",
+                                  color:c.muted,
+                                  groups:[
+                                    { label:"Index Overview", items:["Full name and provider","Exchange and currency","Number of constituents","Weighting methodology","Rebalancing frequency"] },
+                                    { label:"Valuation and Performance", items:["P/E ratio (trailing and forward)","P/B ratio","Index EPS","Dividend yield","YTD, 1Y, 3Y, 5Y, 10Y returns"] },
+                                    { label:"Composition", items:["Top 10 constituents with weights","Sector weights across all constituents"] },
+                                  ]
+                                },
+                                {
+                                  type:"Commodities",
+                                  icon:"◇",
+                                  color:c.muted,
+                                  groups:[
+                                    { label:"Market Data", items:["Spot price and daily change","52-week high and low","Average 30-day volume","YTD, 1Y, 3Y, 5Y, 10Y performance","30-day volatility","Maximum drawdown"] },
+                                    { label:"Technicals", items:["RSI (14)","50-day and 200-day moving averages","MACD and signal line","Bollinger Bands (upper and lower)","Average True Range (ATR 14)"] },
+                                    { label:"Supply, Demand and Macro", items:["USD index correlation","Inflation correlation","Real yield correlation","Central bank demand","Mine and recycled supply","Demand split by use (jewelry, investment, industrial)"] },
+                                  ]
+                                },
+                              ].map((inst, ii) => (
+                                <div key={ii} style={{ marginBottom:"1.25rem" }}>
+                                  <div style={{ display:"flex", alignItems:"center", gap:"0.6rem", marginBottom:"0.75rem" }}>
+                                    <span style={{ fontFamily:gs, fontSize:"0.72rem", fontWeight:700, color:c.text, letterSpacing:"0.05em", textTransform:"uppercase" }}>{inst.type}</span>
+                                    <div style={{ flex:1, height:"1px", background:c.border }}/>
+                                  </div>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:"0.5rem" }}>
+                                    {inst.groups.map((grp, gi) => (
+                                      <div key={gi} style={{
+                                        background:c.surface,
+                                        border:`1px solid ${c.border}`,
+                                        borderRadius:"8px",
+                                        padding:"0.75rem 0.85rem",
+                                      }}>
+                                        <p style={{ fontFamily:gs, fontSize:"0.59rem", color:c.text, letterSpacing:"0.12em", textTransform:"uppercase", fontWeight:700, marginBottom:"0.5rem" }}>{grp.label}</p>
+                                        {grp.items.map((itm, k) => (
+                                          <div key={k} style={{ display:"flex", alignItems:"flex-start", gap:"0.4rem", marginBottom:"0.3rem" }}>
+                                            <span style={{ color:c.muted, fontSize:"0.55rem", marginTop:"0.25rem", flexShrink:0 }}>◆</span>
+                                            <span style={{ fontFamily:gs, fontSize:"0.77rem", color:c.muted, lineHeight:1.5 }}>{itm}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p style={{ fontFamily:gs, fontSize:"0.9rem", lineHeight:1.75, color:c.muted }}>
+                              {item.a}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <p style={{ fontFamily:gs, fontSize:"0.82rem", color:c.muted, textAlign:"center", marginTop:"2rem", lineHeight:1.7 }}>
+            Still have questions? Email us at{" "}
+            <a href="mailto:support@clarinvest.app" style={{ color:c.text, textDecoration:"none", borderBottom:`1px solid ${c.border}` }}>
+              support@clarinvest.app
+            </a>
+          </p>
+        </div>
+      </section>
+
+      {/* == FOOTER =========================================================== */}
       <footer style={{borderTop:`1px solid ${c.border}`,padding:"2.5rem",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"1rem",background:c.bg}}>
         <div style={{display:"flex",alignItems:"center",gap:"0.6rem"}}>
           <svg width="18" height="18" viewBox="0 0 200 200">
@@ -1028,12 +1141,23 @@ export default function Clarinvest(){
         </div>
         <p style={{fontFamily:gs,color:c.muted,fontSize:"0.73rem"}}>© 2026 Clarinvest · For informational purposes only · Not financial advice</p>
         <div style={{display:"flex",gap:"1.5rem"}}>
-          {["Privacy","Terms","Contact"].map(l=>(
-            <button key={l} style={{background:"none",border:"none",cursor:"pointer",fontFamily:gs,color:c.muted,fontSize:"0.73rem"}}>{l}</button>
+          {[{label:"Privacy",href:"/privacy"},{label:"Terms",href:"/terms"},{label:"Contact",href:"mailto:support@clarinvest.app"}].map(l=>(
+            <a key={l.label} href={l.href} style={{background:"none",border:"none",cursor:"pointer",fontFamily:gs,color:c.muted,fontSize:"0.73rem",textDecoration:"none"}}>{l.label}</a>
           ))}
         </div>
       </footer>
     <div style={{height:botH}}/>
+
+      {showSample&&(
+        <FullReportPopup
+          report={NVDA_SAMPLE_REPORT}
+          ticker="NVDA"
+          name="NVIDIA Corp"
+          onClose={()=>setShowSample(false)}
+          c={c}
+          mode={mode}
+        />
+      )}
   </div>
   );
 }

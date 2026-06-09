@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/lib/theme";
 import { createClient } from "@/lib/supabase";
 import { Pencil, Copy, Trash2 } from "lucide-react";
@@ -537,6 +537,13 @@ export default function PortfolioPage(){
   const [cmpRange,setCmpRange]=useState(10);
   const [cardActiveSlice,setCardActiveSlice]=useState({});  // FIX #4: per-card active slice
   const isUltimate = userPlan === "ultimate";
+  const searchParams = useSearchParams();
+useEffect(()=>{
+if(searchParams.get("new")==="1"){
+setEditingPortfolio(null);
+setShowBuilder(true);
+}
+},[searchParams]);
 
   // Load portfolios from Supabase once auth is confirmed
   useEffect(()=>{
@@ -672,7 +679,7 @@ export default function PortfolioPage(){
         .card-strip::-webkit-scrollbar{display:none;}
       `}</style>
 
-      <div style={{maxWidth:"1100px",margin:"0 auto",padding:"2rem 1.5rem 4rem"}}>
+      <div style={{maxWidth:"1200px",margin:"0 auto",padding:"2.5rem 3.5rem"}}>
 
         {/* ── Header ── */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:"2rem",flexWrap:"wrap",gap:"1rem"}}>

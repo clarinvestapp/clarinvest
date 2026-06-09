@@ -176,7 +176,7 @@ export default function WatchlistPage() {
             {stocks.map(s => (
               <WatchlistCard key={s.ticker} s={s} c={c}
                 onRemove={handleRemove}
-                onClick={(ticker) => router.push(`/dashboard/stock/${ticker}`)}
+                onClick={(ticker) => router.push(`/dashboard/analysis/${ticker}`)}
               />
             ))}
           </div>
