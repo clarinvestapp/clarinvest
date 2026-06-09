@@ -1,7 +1,6 @@
 "use client";
-export const dynamic = "force-dynamic";
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/theme";
 import { createClient } from "@/lib/supabase";
 import { Pencil, Copy, Trash2 } from "lucide-react";
