@@ -537,13 +537,12 @@ export default function PortfolioPage(){
   const [cmpRange,setCmpRange]=useState(10);
   const [cardActiveSlice,setCardActiveSlice]=useState({});  // FIX #4: per-card active slice
   const isUltimate = userPlan === "ultimate";
-  const searchParams = useSearchParams();
-useEffect(()=>{
-if(searchParams.get("new")==="1"){
-setEditingPortfolio(null);
-setShowBuilder(true);
-}
-},[searchParams]);
+  useEffect(()=>{
+    if(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("new")==="1"){
+      setEditingPortfolio(null);
+      setShowBuilder(true);
+    }
+  },[]);
 
   // Load portfolios from Supabase once auth is confirmed
   useEffect(()=>{
