@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [confirmed, setConfirmed] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(null);
   const [firstName, setFirstName] = useState("");
+  const [tosAccepted, setTosAccepted] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -146,13 +147,31 @@ export default function SignupPage() {
               />
             </div>
 
+            {/* ToS + Privacy acceptance */}
+            <div style={{ marginBottom:"1.5rem" }}>
+              <label style={{ display:"flex", alignItems:"flex-start", gap:"0.65rem", cursor:"pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={tosAccepted}
+                  onChange={e => setTosAccepted(e.target.checked)}
+                  style={{ marginTop:"3px", accentColor:c.green, width:"15px", height:"15px", flexShrink:0, cursor:"pointer" }}
+                />
+                <span style={{ color:c.muted, fontSize:"0.78rem", lineHeight:1.6 }}>
+                  I have read and agree to the{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color:c.text, textDecoration:"underline", fontWeight:600 }}>Terms of Service</a>
+                  {" "}and{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color:c.text, textDecoration:"underline", fontWeight:600 }}>Privacy Policy</a>.
+                </span>
+              </label>
+            </div>
+
             {error && (
               <div style={{ background:"rgba(255,24,0,0.08)", border:"1px solid rgba(255,24,0,0.25)", borderRadius:"6px", padding:"10px 14px", marginBottom:"1.25rem" }}>
                 <p style={{ color:"#FF1800", fontSize:"0.85rem", margin:0 }}>{error}</p>
               </div>
             )}
 
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={loading || !tosAccepted}
               style={{ width:"100%", background:c.text, color:c.bg, border:"none", borderRadius:"5px", padding:"13px", fontSize:"0.88rem", fontWeight:600, fontFamily:"inherit", cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1, letterSpacing:"0.04em" }}>
               {loading ? "Creating account..." : "Create account"}
             </button>

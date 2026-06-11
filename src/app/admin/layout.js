@@ -15,6 +15,7 @@ const NAV = [
   { href:"/admin/discounts",label:"Discounts", icon:"%" },
   { href:"/admin/trials",   label:"Trials",    icon:"◇" },
   { href:"/admin/banners",  label:"Banners",   icon:"▣" },
+  { href:"/admin/digests",  label:"Digests",   icon:"◎" },
 ];
 
 function AdminShell({ children }) {

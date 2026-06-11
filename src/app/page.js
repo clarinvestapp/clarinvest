@@ -102,7 +102,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "What payment methods are accepted?",
-    a: "All major credit and debit cards via Stripe. USDC stablecoin payments are also accepted for annual plans.",
+    a: "All major credit and debit cards via Stripe. USDT and USDC stablecoin payments are also accepted via NOWPayments, with no bank account required.",
   },
 ];
 
@@ -232,13 +232,14 @@ const EXCHANGES = [
 ];
 
 const POWERED_BY = [
-  { name:"Anthropic",  logo:"/logos/anthropic.svg" },
-  { name:"Stripe",     logo:"/logos/stripe.svg"    },
-  { name:"Circle",     logo:"/logos/circle.svg"    },
-  { name:"Supabase",   logo:"/logos/supabase.svg"  },
-  { name:"Vercel",     logo:"/logos/vercel.svg"    },
+  { name:"Anthropic",  logo:"/logos/anthropic.svg"    },
+  { name:"Stripe",     logo:"/logos/stripe.svg"       },
+  { name:"NOWPayments",logo:"/logos/nowpayments.svg"  },
+  { name:"Tether",     logo:"/logos/tether.svg"       },
+  { name:"Supabase",   logo:"/logos/supabase.svg"     },
+  { name:"Vercel",     logo:"/logos/vercel.svg"       },
   { name:"Financial Modeling Prep", logo:"/logos/fmp.svg" },
-  { name:"Next.js",    logo:"/logos/nextjs.svg"    },
+  { name:"Next.js",    logo:"/logos/nextjs.svg"       },
 ];
 
 // ─── Marquee carousel ─────────────────────────────────────────────────────────
@@ -901,7 +902,7 @@ export default function Clarinvest(){
               border:`1px solid ${c.borderHi}`,borderRadius:"7px",padding:"10px 18px"}}>
               <span style={{fontSize:"1rem"}}>💎</span>
               <span style={{fontFamily:gs,color:c.muted,fontSize:"0.77rem",lineHeight:1.5}}>
-                Also accepts <strong style={{fontFamily:gs,color:c.text,fontWeight:700}}>USDC</strong> (USD Coin) via Stripe. Pay in stablecoin, no bank required.
+                Also accepts <strong style={{fontFamily:gs,color:c.text,fontWeight:700}}>USDT</strong> and <strong style={{fontFamily:gs,color:c.text,fontWeight:700}}>USDC</strong> stablecoin payments via NOWPayments. No bank required.
               </span>
             </div>
           </div>
