@@ -479,7 +479,7 @@ export default function AccountPage() {
                 type="text"
                 value={nameForm}
                 onChange={e => setNameForm(e.target.value)}
-                placeholder="e.g. Carlo"
+                placeholder="e.g. John"
                 maxLength={30}
                 style={inputStyle}
               />
