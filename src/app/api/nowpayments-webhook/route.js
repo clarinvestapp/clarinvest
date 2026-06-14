@@ -69,7 +69,7 @@ export async function POST(request) {
       .upsert({
         id:                   user.id,
         plan:                 planInfo.plan,
-        plan_interval:        planInfo.interval,
+        billing:              planInfo.interval,
         plan_source:          "nowpayments",
         nowpayments_order_id: order_id,
         updated_at:           new Date().toISOString(),
