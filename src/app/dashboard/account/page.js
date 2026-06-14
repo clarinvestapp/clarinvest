@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme";
+import CryptoPaymentModal from "@/app/components/CryptoPaymentModal";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const C = {
@@ -114,7 +115,7 @@ function UsageBar({ used, limit, label, color, c }) {
 }
 
 // ─── Plan card (used in "Available plans" section) ────────────────────────────
-function PlanCard({ config, currentPlan, billing, currency, onUpgrade, onBillingPortal, upgradeLoading, mode, c }) {
+function PlanCard({ config, currentPlan, billing, currency, onUpgrade, onBillingPortal, onCrypto, upgradeLoading, mode, c }) {
   const curr    = CURR[currency] || CURR.GBP;
   const prices  = { essential:curr.em, pro:curr.pr, ultimate:curr.ul };
   const [mo, yr]= prices[config.id] || [0, 0];
@@ -180,8 +181,17 @@ function PlanCard({ config, currentPlan, billing, currency, onUpgrade, onBilling
         /* Downgrade — routes to Stripe billing portal */
         <button
           onClick={onBillingPortal}
-          style={{ width:"100%", padding:"10px", borderRadius:"4px", border:`1px solid ${c.border}`, background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.8rem", cursor:"pointer", marginBottom:"1.35rem", transition:"all 0.22s" }}>
+          style={{ width:"100%", padding:"10px", borderRadius:"4px", border:`1px solid ${c.border}`, background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.8rem", cursor:"pointer", marginBottom:"0.6rem", transition:"all 0.22s" }}>
           Downgrade →
+        </button>
+      )}
+
+      {/* Crypto button — upgrade-eligible plans only */}
+      {isUpgrade && (
+        <button
+          onClick={() => onCrypto(config.id, mo)}
+          style={{ width:"100%", padding:"9px", borderRadius:"4px", border:`1px solid ${c.border}`, background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.74rem", cursor:"pointer", marginBottom:"1.35rem", display:"flex", alignItems:"center", justifyContent:"center", gap:"0.5rem", transition:"all 0.22s" }}>
+          <span style={{ fontSize:"0.8rem" }}>₮</span> Pay with USDT / USDC
         </button>
       )}
 
@@ -218,6 +228,7 @@ export default function AccountPage() {
   const [loading,         setLoading]         = useState(true);
   const [billingLoading,  setBillingLoading]  = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(null); // planId string while loading
+  const [planMsg,         setPlanMsg]         = useState(null); // { type, text }
   const [billing,         setBilling]         = useState("monthly"); // plan comparison toggle
   const [cur,             setCur]             = useState("GBP");
   const [pwForm,          setPwForm]          = useState({ new:"", confirm:"" });
@@ -231,6 +242,7 @@ export default function AccountPage() {
   const [nameLoading,     setNameLoading]     = useState(false);
   const [nameMsg,         setNameMsg]         = useState(null);
   const [plansModalOpen,  setPlansModalOpen]  = useState(false);
+  const [cryptoModal,     setCryptoModal]     = useState(null); // { plan, amount, billing }
   const [digestEmails,    setDigestEmails]    = useState(true);
   const [digestLoading,   setDigestLoading]   = useState(false);
   const [digestMsg,       setDigestMsg]       = useState(null);
@@ -324,6 +336,11 @@ export default function AccountPage() {
     ? new Date(user.created_at).toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" })
     : "—";
 
+  // ── Crypto checkout ────────────────────────────────────────────────────────
+  const handleCryptoCheckout = (planId, price) => {
+    setCryptoModal({ plan: planId, amount: price, billing });
+  };
+
   // ── Stripe: billing portal (manage, downgrade, cancel) ───────────────────────
   const openBillingPortal = async () => {
     setBillingLoading(true);
@@ -335,8 +352,8 @@ export default function AccountPage() {
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else setPwMsg({ type:"error", text: data.error || "Could not open billing portal." });
-    } catch { setPwMsg({ type:"error", text:"Billing portal unavailable." }); }
+      else setPlanMsg({ type:"error", text: data.error || "Could not open billing portal." });
+    } catch { setPlanMsg({ type:"error", text:"Billing portal unavailable." }); }
     finally   { setBillingLoading(false); }
   };
 
@@ -354,8 +371,8 @@ export default function AccountPage() {
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else setPwMsg({ type:"error", text: data.error || "Could not start checkout." });
-    } catch { setPwMsg({ type:"error", text:"Checkout unavailable. Try again." }); }
+      else setPlanMsg({ type:"error", text: data.error || "Could not start checkout." });
+    } catch { setPlanMsg({ type:"error", text:"Checkout unavailable. Try again." }); }
     finally   { setCheckoutLoading(null); }
   };
 
@@ -608,6 +625,7 @@ export default function AccountPage() {
                     currency={cur}
                     onUpgrade={handleCheckout}
                     onBillingPortal={openBillingPortal}
+                    onCrypto={handleCryptoCheckout}
                     upgradeLoading={checkoutLoading}
                     mode={mode}
                     c={c}
@@ -615,6 +633,12 @@ export default function AccountPage() {
                 ))}
               </div>
 
+              {/* Plan-level error message */}
+              {planMsg && (
+                <div style={{ background: planMsg.type==="success" ? c.greenDim : "rgba(255,24,0,0.08)", border:`1px solid ${planMsg.type==="success" ? c.green+"50" : "rgba(255,24,0,0.25)"}`, borderRadius:"6px", padding:"9px 14px", marginBottom:"1rem" }}>
+                  <p style={{ fontFamily:gs, fontSize:"0.82rem", color: planMsg.type==="success" ? c.green : c.red }}>{planMsg.text}</p>
+                </div>
+              )}
               {/* Downgrade / Cancel row */}
               <div style={{ paddingTop:"1.25rem", borderTop:`1px solid ${c.border}`, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"0.75rem" }}>
                 <div>
@@ -792,6 +816,19 @@ export default function AccountPage() {
         </p>
 
       </div>
+
+      {cryptoModal && (
+        <CryptoPaymentModal
+          plan={cryptoModal.plan}
+          amount={cryptoModal.amount}
+          currency={cur}
+          currencySymbol={(CURR[cur] || CURR.GBP).sym}
+          billing={cryptoModal.billing}
+          c={c}
+          mode={mode}
+          onClose={() => setCryptoModal(null)}
+        />
+      )}
     </div>
   );
 }
