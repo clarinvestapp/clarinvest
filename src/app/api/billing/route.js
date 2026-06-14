@@ -16,8 +16,23 @@ export async function POST(request) {
     const { data:{ user }, error } = await supabase.auth.getUser(token);
     if (error || !user) return NextResponse.json({ error:"Not authenticated" }, { status:401 });
 
-    const customerId = user.user_metadata?.stripe_customer_id;
-    if (!customerId) return NextResponse.json({ error:"No billing account found" }, { status:404 });
+    // Try metadata first (fast path), then fall back to Stripe lookup by email
+    let customerId = user.user_metadata?.stripe_customer_id;
+
+    if (!customerId && user.email) {
+      const existing = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (existing.data.length > 0) {
+        customerId = existing.data[0].id;
+        // Write it back so the next call hits the fast path
+        await supabase.auth.admin.updateUserById(user.id, {
+          user_metadata: { stripe_customer_id: customerId },
+        });
+      }
+    }
+
+    if (!customerId) {
+      return NextResponse.json({ error:"No billing account found. Please subscribe first." }, { status:404 });
+    }
 
     const session = await stripe.billingPortal.sessions.create({
       customer:   customerId,
