@@ -76,7 +76,13 @@ export default function SignupPage() {
 
         {/* Logo */}
         <div style={{ textAlign:"center", marginBottom:"2.5rem" }}>
-          <a href="/" style={{ textDecoration:"none" }}>
+          <a href="/" style={{ textDecoration:"none", display:"inline-flex", alignItems:"center", gap:"0.65rem" }}>
+            <svg width="22" height="22" viewBox="0 0 200 200" style={{ flexShrink:0 }}>
+              <rect x="8"   y="8"   width="84" height="84" rx="10" fill="#F0F0F0"/>
+              <rect x="108" y="8"   width="84" height="84" rx="10" fill="#F0F0F0" opacity="0.22"/>
+              <rect x="8"   y="108" width="84" height="84" rx="10" fill="#F0F0F0" opacity="0.22"/>
+              <rect x="108" y="108" width="84" height="84" rx="10" fill="#F0F0F0"/>
+            </svg>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.2rem", fontWeight:600, letterSpacing:"0.03em", textTransform:"uppercase", color:c.text }}>
               Clarinvest
             </span>
@@ -99,7 +105,7 @@ export default function SignupPage() {
               </svg>
               {oauthLoading==="google" ? "Connecting..." : "Google"}
             </button>
-            <button type="button" onClick={() => handleOAuth("twitter")} disabled={!!oauthLoading}
+            <button type="button" onClick={() => handleOAuth("x")} disabled={!!oauthLoading}
               style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:"0.55rem", background:"#0A0A0A", border:`1px solid ${c.border}`, borderRadius:"5px", padding:"11px", cursor:oauthLoading?"not-allowed":"pointer", opacity:oauthLoading==="twitter"?0.7:1, transition:"opacity 0.18s", fontFamily:"inherit", fontSize:"0.85rem", fontWeight:600, color:c.text }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style={{flexShrink:0}}>
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>

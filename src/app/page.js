@@ -1,5 +1,6 @@
 "use client";
 import ToolsCarousel from "@/app/components/ToolsCarousel";
+import CryptoPaymentModal from "@/app/components/CryptoPaymentModal";
 import FullReportPopup, { NVDA_SAMPLE_REPORT } from "@/app/components/FullReportPopup";
 import { useState, useEffect, useRef } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from "recharts";
@@ -363,6 +364,8 @@ export default function Clarinvest(){
   const[hovPlan,       setHovPlan]      =useState(null);
   const[solid,         setSolid]        =useState(false);
   const[checkoutLoading,setCheckoutLoading]=useState(null);
+  const[cryptoLoading,setCryptoLoading]=useState(null);
+  const[cryptoModal,  setCryptoModal]  =useState(null); // { plan, amount }
   const[banners,       setBanners]      =useState([]);
   const[dismissed,     setDismissed]    =useState(new Set());
   const[faqOpen,       setFaqOpen]      =useState(null);
@@ -423,6 +426,14 @@ export default function Clarinvest(){
       console.error("Checkout error:", err);
       setCheckoutLoading(null);
     }
+  };
+
+  const handleCryptoCheckout = (planName) => {
+    const amount =
+      planName === "Ultimate" ? (billing === "monthly" ? curr.ul[0] : curr.ul[1])
+      : planName === "Pro"    ? (billing === "monthly" ? curr.pr[0] : curr.pr[1])
+                               : (billing === "monthly" ? curr.em[0] : curr.em[1]);
+    setCryptoModal({ plan: planName, amount });
   };
 
   const NAV=[{label:"Features",ref:featRef},{label:"Markets",ref:markRef},{label:"Pricing",ref:priceRef},{label:"About",ref:aboutRef}];
@@ -858,7 +869,7 @@ export default function Clarinvest(){
                     onClick={()=>handleCheckout(plan.name)}
                     disabled={isLoading}
                     style={{
-                      width:"100%",padding:"13px",borderRadius:"5px",marginBottom:"2rem",
+                      width:"100%",padding:"13px",borderRadius:"5px",marginBottom:"0.65rem",
                       background:isHi?c.text:isUlt?c.surface:"transparent",
                       color:isHi?c.bg:c.text,
                       border:isHi?"none":`1px solid ${c.borderHi}`,
@@ -867,6 +878,24 @@ export default function Clarinvest(){
                       cursor:isLoading?"not-allowed":"pointer",
                     }}>
                     {isLoading ? "Redirecting..." : `Start ${plan.name}`}
+                  </button>
+
+                  <button
+                    className="cbtn"
+                    onClick={()=>handleCryptoCheckout(plan.name)}
+                    disabled={!!cryptoLoading}
+                    style={{
+                      width:"100%",padding:"10px",borderRadius:"5px",marginBottom:"2rem",
+                      background:"transparent",
+                      color:c.muted,
+                      border:`1px solid ${c.border}`,
+                      fontSize:"0.75rem",
+                      opacity:cryptoLoading===plan.name?0.7:1,
+                      cursor:cryptoLoading===plan.name?"not-allowed":"pointer",
+                      display:"flex",alignItems:"center",justifyContent:"center",gap:"0.5rem",
+                    }}>
+                    <span style={{fontSize:"0.8rem"}}>₮</span>
+                    {cryptoLoading===plan.name ? "Redirecting..." : "Pay with USDT / USDC"}
                   </button>
 
                   {plan.plusLabel&&(
@@ -1157,6 +1186,19 @@ export default function Clarinvest(){
           onClose={()=>setShowSample(false)}
           c={c}
           mode={mode}
+        />
+      )}
+
+      {cryptoModal&&(
+        <CryptoPaymentModal
+          plan={cryptoModal.plan}
+          amount={cryptoModal.amount}
+          currency={cur}
+          currencySymbol={curr.sym}
+          billing={billing}
+          c={c}
+          mode={mode}
+          onClose={()=>setCryptoModal(null)}
         />
       )}
   </div>

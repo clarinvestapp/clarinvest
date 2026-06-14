@@ -254,6 +254,8 @@ export default function AccountPage() {
   // ── Load user + usage ──────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
+      const { data:{ session } } = await supabase.auth.getSession();
+      if (!session) { router.push("/login"); return; }
       const { data:{ user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       setUser(user);
@@ -261,7 +263,6 @@ export default function AccountPage() {
       if (user.user_metadata?.billing) setBilling(user.user_metadata.billing);
       // Display name is pre-filled from user_profiles below, after the profile query
 
-      const { data:{ session } } = await supabase.auth.getSession();
       if (session) {
         const res = await fetch("/api/usage", {
           headers: { Authorization:`Bearer ${session.access_token}` }

@@ -39,10 +39,12 @@ export async function POST(request) {
       }
     }
 
-    const { payment_status, order_id, tag, customer_email } = payload;
+    const { payment_status, order_id, customer_email } = payload;
+    // priceId was encoded into order_id as NP-{priceId}-{timestamp}
+    const tag = order_id?.split("-").slice(1, -1).join("-");
 
-    // Only act on confirmed payments
-    if (payment_status !== "finished" && payment_status !== "confirmed") {
+    // Only act on confirmed payments (partially_paid added temporarily for live test — remove after)
+    if (payment_status !== "finished" && payment_status !== "confirmed" && payment_status !== "partially_paid") {
       return new Response("OK", { status: 200 });
     }
 
