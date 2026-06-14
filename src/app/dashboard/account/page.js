@@ -583,7 +583,7 @@ export default function AccountPage() {
                         style={{ background: billing === b ? c.text : "transparent", color: billing === b ? c.bg : c.muted, border:"none", cursor:"pointer", padding:"6px 18px", borderRadius:"4px", fontFamily:gs, fontSize:"0.78rem", fontWeight:600, textTransform:"capitalize", transition:"all 0.22s", display:"flex", alignItems:"center", gap:"0.4rem" }}>
                         {b}
                         {b === "yearly" && (
-                          <span style={{ background: mode === "dark" ? "#1A1A1C" : "#FFFFFF", border:`1px solid ${c.borderHi}`, color: billing === "yearly" ? c.bg : c.green, fontSize:"0.6rem", fontWeight:700, padding:"1px 6px", borderRadius:"3px", letterSpacing:"0.02em" }}>
+                          <span style={{ background: mode === "dark" ? "#1A1A1C" : "#FFFFFF", border:`1px solid ${c.borderHi}`, color: c.green, fontSize:"0.6rem", fontWeight:700, padding:"1px 6px", borderRadius:"3px", letterSpacing:"0.02em" }}>
                             −28%
                           </span>
                         )}
