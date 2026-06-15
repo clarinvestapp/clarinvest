@@ -252,7 +252,14 @@ function DashboardShell({ children }) {
                   {plan !== "ultimate" && (
                     <button
                       className="dd-item"
-                      onClick={() => { router.push("/dashboard/account?tab=plan"); setDropdownOpen(false); }}
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        if (window.location.pathname === "/dashboard/account") {
+                          window.dispatchEvent(new CustomEvent("clarinvest:gotoPlan"));
+                        } else {
+                          router.push("/dashboard/account?tab=plan");
+                        }
+                      }}
                       style={menuItem(c.green)}>
                       <span style={{ fontSize:"0.82rem" }}>↑</span> Upgrade plan
                     </button>
