@@ -189,7 +189,7 @@ function PlanCard({ config, currentPlan, billing, currency, onUpgrade, onBilling
       {/* Crypto button — upgrade-eligible plans only */}
       {isUpgrade && (
         <button
-          onClick={() => onCrypto(config.id, mo)}
+          onClick={() => onCrypto(config.id, billing === "yearly" ? yr : mo, billing)}
           style={{ width:"100%", padding:"9px", borderRadius:"4px", border:`1px solid ${c.border}`, background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.74rem", cursor:"pointer", marginBottom:"1.35rem", display:"flex", alignItems:"center", justifyContent:"center", gap:"0.5rem", transition:"all 0.22s" }}>
           <span style={{ fontSize:"0.8rem" }}>₮</span> Pay with USDT / USDC
         </button>
@@ -337,8 +337,9 @@ export default function AccountPage() {
     : "—";
 
   // ── Crypto checkout ────────────────────────────────────────────────────────
-  const handleCryptoCheckout = (planId, price) => {
-    setCryptoModal({ plan: planId, amount: price, billing });
+  const handleCryptoCheckout = (planId, amount, billingCycleAtClick) => {
+    const label = planId.charAt(0).toUpperCase() + planId.slice(1);
+    setCryptoModal({ plan: label, amount, billing: billingCycleAtClick });
   };
 
   // ── Stripe: billing portal (manage, downgrade, cancel) ───────────────────────
