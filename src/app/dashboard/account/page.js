@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { useTheme } from "@/lib/theme";
 import CryptoPaymentModal from "@/app/components/CryptoPaymentModal";
@@ -221,6 +221,7 @@ export default function AccountPage() {
   const { mode } = useTheme();
   const c        = C[mode];
   const router   = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
 
   const [user,            setUser]            = useState(null);
@@ -304,24 +305,20 @@ export default function AccountPage() {
   }, []);
 
   // ── Auto-scroll to plan section when ?tab=plan ─────────────────────────────
-  // Reads URL directly (avoids useSearchParams Suspense requirement)
-  const tabHandledRef = useRef(false);
+  // Watches pathname so it fires even when already on this page
   useEffect(() => {
-    if (!loading && typeof window !== "undefined" && !tabHandledRef.current) {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("tab") === "plan") {
-        tabHandledRef.current = true;
-        const currentPlan = user?.user_metadata?.plan || "essential";
-        if (currentPlan === "ultimate") {
-          setTimeout(() => setPlansModalOpen(true), 350);
-        } else if (planRef.current) {
-          setTimeout(() => {
-            planRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
-          }, 350);
-        }
-      }
+    if (loading || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") !== "plan") return;
+    const currentPlan = user?.user_metadata?.plan || "essential";
+    if (currentPlan === "ultimate") {
+      setTimeout(() => setPlansModalOpen(true), 350);
+    } else if (planRef.current) {
+      setTimeout(() => {
+        planRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
+      }, 350);
     }
-  }, [loading, user]);
+  }, [loading, user, pathname]);
 
   // ── Close plans modal on ESC ──────────────────────────────────────────────
   useEffect(() => {
