@@ -305,19 +305,23 @@ export default function AccountPage() {
 
   // ── Auto-scroll to plan section when ?tab=plan ─────────────────────────────
   // Reads URL directly (avoids useSearchParams Suspense requirement)
+  const tabHandledRef = useRef(false);
   useEffect(() => {
-    if (!loading && typeof window !== "undefined") {
+    if (!loading && typeof window !== "undefined" && !tabHandledRef.current) {
       const params = new URLSearchParams(window.location.search);
       if (params.get("tab") === "plan") {
+        tabHandledRef.current = true;
         const currentPlan = user?.user_metadata?.plan || "essential";
         if (currentPlan === "ultimate") {
           setTimeout(() => setPlansModalOpen(true), 350);
         } else if (planRef.current) {
-          setTimeout(() => planRef.current.scrollIntoView({ behavior:"smooth", block:"start" }), 350);
+          setTimeout(() => {
+            planRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
+          }, 350);
         }
       }
     }
-  }, [loading]);
+  }, [loading, user]);
 
   // ── Close plans modal on ESC ──────────────────────────────────────────────
   useEffect(() => {
