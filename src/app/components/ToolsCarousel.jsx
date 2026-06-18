@@ -122,7 +122,7 @@ function VerdictBadge({ v, pos, c }) {
   const col = pos ? c.green : v === "Hold" ? c.muted : c.red;
   return (
     <span style={{ fontSize:10, fontWeight:500, color:col, background:pos?c.greenDim:"transparent",
-      border:`0.5px solid ${pos?c.green:c.border}`, borderRadius:3,
+      border:`0.5px solid ${pos?c.green:c.border}`, borderRadius:6,
       padding:"2px 6px", whiteSpace:"nowrap", fontFamily:GS }}>
       {v}
     </span>
@@ -139,7 +139,7 @@ function PillGroup({ items, active, onChange, c, small }) {
           border:`0.5px solid ${active===s?c.text:c.border}`,
           background:active===s?c.text:"transparent",
           color:active===s?c.bg:c.muted,
-          cursor:"pointer", whiteSpace:"nowrap", fontFamily:GS, transition:"all .15s",
+          cursor:"pointer", whiteSpace:"nowrap", fontFamily:GS, transition:"opacity .15s ease",
         }}>{s}</button>
       ))}
     </div>
@@ -157,7 +157,7 @@ function InnerTabs({ tabs, active, onChange, c, lg }) {
           color:active===i?c.text:c.muted,
           padding:`5px 2px ${lg?9:7}px`,
           borderBottom:active===i?`2px solid ${c.text}`:"2px solid transparent",
-          fontFamily:GS, transition:"all .15s", marginRight:lg?20:14,
+          fontFamily:GS, transition:"opacity .15s ease", marginRight:lg?20:14,
         }}>{t}</button>
       ))}
     </div>
@@ -171,7 +171,7 @@ function SearchMock({ placeholder, c, animated }) {
       <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", color:c.muted, fontSize:15, zIndex:2, pointerEvents:"none" }}>⌕</span>
       <div
         className={animated ? "cl-srch-anim" : undefined}
-        style={{ background:c.surface, border:`0.5px solid ${c.border}`, borderRadius:7,
+        style={{ background:c.surface, border:`0.5px solid ${c.border}`, borderRadius:8,
           padding:"9px 12px 9px 32px", fontSize:13, color:c.muted, fontFamily:GS,
           position:"relative", overflow:"hidden" }}>
         {placeholder}
@@ -274,7 +274,6 @@ function SlideDiscovery({ c }) {
   const [mkt, setMkt]           = useState("All");
   const [sec, setSec]           = useState("All");
 
-  const amber = c.amber || "#F59E0B";
   const cardContent = [
     /* Overview */
     <div key="ov">
@@ -305,7 +304,7 @@ function SlideDiscovery({ c }) {
     /* Risk */
     <div key="risk">
       {[["China export restrictions","High",c.red],["Customer concentration","Medium",c.text],["AMD MI300X competition","Low",c.green],["TSMC supply chain","Medium",c.text]].map(([f,l,col])=>(
-        <div key={f} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"9px 11px", background:c.surface, borderRadius:7, border:`0.5px solid ${c.border}`, marginBottom:6 }}>
+        <div key={f} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, padding:"9px 11px", background:c.surface, borderRadius:8, border:`0.5px solid ${c.border}`, marginBottom:6 }}>
           <span style={{ fontSize:12, color:col, fontFamily:GS }}>⚠ {f}</span>
           <span style={{ fontSize:10, fontWeight:500, color:col, letterSpacing:".05em", textTransform:"uppercase", fontFamily:GS }}>{l}</span>
         </div>
@@ -319,7 +318,7 @@ function SlideDiscovery({ c }) {
         <div>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
             <span style={{ fontSize:20, fontWeight:500, color:c.text, fontFamily:GS }}>NVDA</span>
-            <span style={{ fontSize:10, fontWeight:500, color:c.green, background:c.greenDim, border:`0.5px solid ${c.green}`, borderRadius:4, padding:"2px 7px", fontFamily:GS }}>OPEN</span>
+            <span style={{ fontSize:10, fontWeight:500, color:c.green, background:c.greenDim, border:`0.5px solid ${c.green}`, borderRadius:6, padding:"2px 7px", fontFamily:GS }}>OPEN</span>
             <span style={{ fontSize:11, color:c.muted, fontFamily:GS }}>NASDAQ</span>
           </div>
           <p style={{ fontSize:12, color:c.muted, fontFamily:GS }}>NVIDIA Corporation · Technology</p>
@@ -330,7 +329,7 @@ function SlideDiscovery({ c }) {
             <p style={{ fontSize:12, fontWeight:500, color:c.green, fontFamily:GS }}>+$45.12 (+5.4%) · 24h</p>
           </div>
           <button onClick={() => { setShowCard(false); setCardTab(0); }}
-            style={{ background:c.surface, border:`0.5px solid ${c.border}`, borderRadius:7, padding:"6px 10px", cursor:"pointer", fontSize:12, color:c.muted, fontFamily:GS }}>
+            style={{ background:c.surface, border:`0.5px solid ${c.border}`, borderRadius:4, padding:"6px 10px", cursor:"pointer", fontSize:12, color:c.muted, fontFamily:GS }}>
             ✕ ESC
           </button>
         </div>
@@ -362,7 +361,7 @@ function SlideDiscovery({ c }) {
           <tbody>
             {DISC.map(s => (
               <tr key={s.t} onClick={() => s.t==="NVDA" && setShowCard(true)}
-                style={{ cursor:s.t==="NVDA"?"pointer":"default", transition:"background .12s" }}
+                style={{ cursor:s.t==="NVDA"?"pointer":"default", transition:"opacity 0.12s ease" }}
                 onMouseEnter={e => e.currentTarget.style.background=c.surface}
                 onMouseLeave={e => e.currentTarget.style.background="transparent"}>
                 <td style={{ padding:"7px 8px", fontFamily:GS }}>
@@ -404,7 +403,7 @@ function SlideAnalysis({ c }) {
         <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
           <span style={{ fontSize:20, fontWeight:500, color:c.text, fontFamily:GS }}>NVDA</span>
           <span style={{ fontSize:11, color:c.muted, fontFamily:GS }}>NVIDIA Corporation · NASDAQ · USD</span>
-          <span style={{ fontSize:10, fontWeight:500, color:c.green, background:c.greenDim, border:`0.5px solid ${c.green}`, borderRadius:4, padding:"2px 7px", fontFamily:GS }}>OPEN</span>
+          <span style={{ fontSize:10, fontWeight:500, color:c.green, background:c.greenDim, border:`0.5px solid ${c.green}`, borderRadius:6, padding:"2px 7px", fontFamily:GS }}>OPEN</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <div style={{ textAlign:"right" }}>
@@ -471,7 +470,7 @@ function SlideAnalysis({ c }) {
                   border:`0.5px solid ${finChart===t?c.text:c.border}`,
                   background:finChart===t?c.text:"transparent",
                   color:finChart===t?c.bg:c.muted,
-                  cursor:"pointer", fontFamily:GS, transition:"all .15s",
+                  cursor:"pointer", fontFamily:GS, transition:"opacity .15s ease",
                 }}>{t==="bar"?"Bar":"Sankey"}</button>
               ))}
               <span style={{ fontSize:10, color:c.blue, fontFamily:GS, marginLeft:2 }}>↗ tap to discover</span>
@@ -572,7 +571,7 @@ function SlidePlanner({ c }) {
   return (
     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
       {/* Params */}
-      <div style={{ background:c.surface, border:`0.5px solid ${c.border}`, borderRadius:10, padding:14 }}>
+      <div style={{ background:c.surface, border:`0.5px solid ${c.border}`, borderRadius:8, padding:14 }}>
         <p style={{ fontSize:12, fontWeight:500, color:c.text, marginBottom:10, fontFamily:GS }}>Parameters</p>
         {[["Based on stock","KO — 3.08% yield applied"],["Initial Investment","$25,000"],["Annual Yield","3.08%"],["Investment Period","15 years"]].map(([l,v])=>(
           <div key={l} style={{ marginBottom:8 }}>
@@ -581,20 +580,20 @@ function SlidePlanner({ c }) {
           </div>
         ))}
         <div onClick={() => setDrip(d=>!d)} style={{ display:"flex", alignItems:"center", gap:7, marginTop:6, cursor:"pointer", userSelect:"none" }}>
-          <div style={{ width:30, height:17, borderRadius:8, background:drip?c.green:c.border, position:"relative", flexShrink:0, transition:"background .2s" }}>
-            <div style={{ position:"absolute", top:2, [drip?"right":"left"]:2, width:13, height:13, borderRadius:"50%", background:"#fff", transition:"all .2s" }} />
+          <div style={{ width:30, height:17, borderRadius:8, background:drip?c.green:c.border, position:"relative", flexShrink:0, transition:"opacity .2s" }}>
+            <div style={{ position:"absolute", top:2, left:2, width:13, height:13, borderRadius:"50%", background:"#fff", transform:drip?"translateX(13px)":"translateX(0)", transition:"transform .2s ease" }} />
           </div>
           <span style={{ fontSize:12, color:c.text, fontWeight:drip?500:400, fontFamily:GS }}>Reinvest dividends (DRIP)</span>
         </div>
       </div>
       {/* Output */}
       <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-        <div style={{ background:c.greenDim, border:`0.5px solid ${c.green}`, borderRadius:10, padding:12 }}>
+        <div style={{ background:c.greenDim, border:`0.5px solid ${c.green}`, borderRadius:8, padding:12 }}>
           <p style={{ fontSize:10, color:c.green, letterSpacing:".09em", textTransform:"uppercase", fontWeight:500, marginBottom:4, fontFamily:GS }}>Year 15 Annual Income</p>
           <p style={{ fontSize:28, fontWeight:500, color:c.green, lineHeight:1, fontFamily:GS }}>{drip?"$2,344":"$1,323"}</p>
           <p style={{ fontSize:11, color:c.green, opacity:.75, marginTop:3, fontFamily:GS }}>{drip?"$195 / month":"$110 / month"}</p>
         </div>
-        <div style={{ background:c.surface, border:`0.5px solid ${c.border}`, borderRadius:10, padding:12, flex:1 }}>
+        <div style={{ background:c.surface, border:`0.5px solid ${c.border}`, borderRadius:8, padding:12, flex:1 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
             <span style={{ fontSize:11, fontWeight:500, color:c.text, fontFamily:GS }}>Annual income projection</span>
             <span style={{ fontSize:10, color:c.green, fontFamily:GS }}>— DRIP</span>
@@ -674,8 +673,7 @@ const TABS = ["Discovery","Instrument Analysis","Dividend Screener","Income Plan
 const SLIDE_COMPONENTS = [SlideDiscovery, SlideAnalysis, SlideScreener, SlidePlanner, SlidePortfolio];
 
 export default function ToolsCarousel({ c: cProp, isDark }) {
-  // Extend c with amber (not always in the page's c object)
-  const c = { ...cProp, amber: isDark ? "#F59E0B" : "#B45309" };
+  const c = cProp;
 
 const [active, setActive]     = useState(0);
 const [progress, setProgress] = useState(0);
@@ -758,7 +756,7 @@ function goTo(i) {
             color:active===i?c.text:c.muted,
             borderBottom:active===i?`2px solid ${c.text}`:"2px solid transparent",
             whiteSpace:"nowrap", fontFamily:GS,
-            transition:"color .15s, border-color .15s", flexShrink:0,
+            transition:"opacity .22s ease", flexShrink:0,
           }}>{t}</button>
         ))}
       </div>
@@ -780,14 +778,14 @@ function goTo(i) {
             width:active===i?20:7, height:7,
             borderRadius:active===i?4:"50%",
             background:active===i?c.text:c.border,
-            transition:"all .22s ease", flexShrink:0, padding:0,
+            transition:"opacity .22s ease", flexShrink:0, padding:0,
           }} />
         ))}
       </div>
 
       {/* ── Progress bar (bottom) ── */}
       <div style={{ height:3, background:c.border }}>
-        <div style={{ height:"100%", width:`${progress}%`, background:c.blue, transition:"width 0.05s linear" }} />
+        <div style={{ height:"100%", width:"100%", background:c.blue, transform:`scaleX(${progress/100})`, transformOrigin:"left", transition:"transform 0.05s linear" }} />
       </div>
     </div>
     </>

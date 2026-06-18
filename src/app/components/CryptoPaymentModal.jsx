@@ -149,10 +149,10 @@ export default function CryptoPaymentModal({ plan, amount, currency, currencySym
           display:"flex", alignItems:"center", justifyContent:"space-between",
         }}>
           <div>
-            <p style={{ fontFamily:gs, fontSize:"0.6rem", color:c.green, letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:700, marginBottom:"0.25rem" }}>
+            <p style={{ fontFamily:gs, fontSize:"0.6rem", color:c.green, letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:500, marginBottom:"0.25rem" }}>
               Stablecoin payment
             </p>
-            <h3 style={{ fontFamily:gs, fontSize:"1.25rem", fontWeight:700, color:c.text, lineHeight:1.2 }}>
+            <h3 style={{ fontFamily:gs, fontSize:"1.25rem", fontWeight:600, color:c.text, lineHeight:1.2 }}>
               {plan} Plan · <span style={{ fontFamily:ns }}>{currencySymbol}{amount}</span><span style={{ fontFamily:gs, fontSize:"0.8rem", color:c.muted, fontWeight:400 }}>/{billing === "monthly" ? "mo" : "yr"}</span>
             </h3>
           </div>
@@ -181,9 +181,9 @@ export default function CryptoPaymentModal({ plan, amount, currency, currencySym
                       display:"flex", alignItems:"center", gap:"1rem",
                       background:mode==="dark"?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)",
                       border:`1px solid ${c.borderHi}`,
-                      borderRadius:"10px", padding:"1rem 1.25rem",
+                      borderRadius:"8px", padding:"1rem 1.25rem",
                       cursor:loading?"not-allowed":"pointer",
-                      transition:"all 0.22s",
+                      transition:"opacity 0.22s ease",
                       opacity: loading && selected === curr.id ? 0.6 : 1,
                       textAlign:"left", width:"100%",
                     }}
@@ -221,7 +221,7 @@ export default function CryptoPaymentModal({ plan, amount, currency, currencySym
                 display:"flex", alignItems:"center", gap:"0.85rem",
                 background:mode==="dark"?"rgba(0,230,118,0.06)":"rgba(0,138,56,0.05)",
                 border:`1px solid ${mode==="dark"?"rgba(0,230,118,0.2)":"rgba(0,138,56,0.15)"}`,
-                borderRadius:"10px", padding:"1rem 1.25rem", marginBottom:"1.25rem",
+                borderRadius:"8px", padding:"1rem 1.25rem", marginBottom:"1.25rem",
               }}>
                 {selectedCurr && <CompositeIcon mainIcon={selectedCurr.icon} network={selectedCurr.network} size={40} />}
                 <div>
@@ -238,10 +238,10 @@ export default function CryptoPaymentModal({ plan, amount, currency, currencySym
               {/* Address */}
               <div style={{ marginBottom:"1.25rem" }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"0.5rem" }}>
-                  <p style={{ fontFamily:gs, fontSize:"0.65rem", color:c.muted, letterSpacing:"0.12em", textTransform:"uppercase", fontWeight:700 }}>
+                  <p style={{ fontFamily:gs, fontSize:"0.65rem", color:c.muted, letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:500 }}>
                     To address
                   </p>
-                  <span style={{ fontFamily:gs, fontSize:"0.65rem", color:c.muted, fontWeight:600 }}>{selectedCurr?.network}</span>
+                  <span style={{ fontFamily:gs, fontSize:"0.65rem", color:c.muted, fontWeight:500 }}>{selectedCurr?.network}</span>
                 </div>
                 <div style={{
                   display:"flex", alignItems:"center", gap:"0.5rem",
@@ -255,10 +255,10 @@ export default function CryptoPaymentModal({ plan, amount, currency, currencySym
                   <button onClick={copyAddress} style={{
                     flexShrink:0, background:copied?c.green:c.surface,
                     border:`1px solid ${copied?c.green:c.border}`,
-                    borderRadius:"5px", padding:"5px 10px",
-                    fontFamily:gs, fontSize:"0.65rem", fontWeight:700,
+                    borderRadius:"4px", padding:"5px 10px",
+                    fontFamily:gs, fontSize:"0.65rem", fontWeight:600,
                     color:copied?(mode==="dark"?"#090909":"#fff"):c.muted,
-                    cursor:"pointer", transition:"all 0.22s", whiteSpace:"nowrap",
+                    cursor:"pointer", transition:"opacity 0.22s ease", whiteSpace:"nowrap",
                   }}>
                     {copied ? "Copied" : "Copy"}
                   </button>
@@ -267,11 +267,11 @@ export default function CryptoPaymentModal({ plan, amount, currency, currencySym
 
               {/* Warning */}
               <div style={{
-                background:mode==="dark"?"rgba(245,158,11,0.08)":"rgba(180,83,9,0.06)",
-                border:`1px solid ${mode==="dark"?"rgba(245,158,11,0.25)":"rgba(180,83,9,0.20)"}`,
+                background:mode==="dark"?"rgba(255,24,0,0.07)":"rgba(204,0,0,0.05)",
+                border:`1px solid ${mode==="dark"?"rgba(255,24,0,0.25)":"rgba(204,0,0,0.20)"}`,
                 borderRadius:"8px", padding:"0.85rem 1rem", marginBottom:"1.25rem",
               }}>
-                <p style={{ fontFamily:gs, fontSize:"0.78rem", color:mode==="dark"?"#F59E0B":"#B45309", lineHeight:1.65 }}>
+                <p style={{ fontFamily:gs, fontSize:"0.78rem", color:mode==="dark"?"#FF1800":"#CC0000", lineHeight:1.65 }}>
                   Send the exact amount shown above to the address above, using the <strong>{selectedCurr?.network}</strong> network. Sending via the wrong network, a different amount, or to the wrong address may result in permanent loss of funds. The address is valid for 20 minutes.
                 </p>
               </div>
@@ -280,8 +280,8 @@ export default function CryptoPaymentModal({ plan, amount, currency, currencySym
               <button onClick={() => setStep("sent")} style={{
                 width:"100%", padding:"13px",
                 background:c.text, color:c.bg,
-                border:"none", borderRadius:"5px",
-                fontFamily:gs, fontSize:"0.84rem", fontWeight:700,
+                border:"none", borderRadius:"4px",
+                fontFamily:gs, fontSize:"0.84rem", fontWeight:600,
                 cursor:"pointer", letterSpacing:"0.03em",
                 marginBottom:"0.75rem",
               }}>
@@ -290,7 +290,7 @@ export default function CryptoPaymentModal({ plan, amount, currency, currencySym
               <button onClick={() => { setStep("choose"); setSelected(null); setPayData(null); }} style={{
                 width:"100%", padding:"10px",
                 background:"transparent", color:c.muted,
-                border:`1px solid ${c.border}`, borderRadius:"5px",
+                border:`1px solid ${c.border}`, borderRadius:"4px",
                 fontFamily:gs, fontSize:"0.78rem", cursor:"pointer",
               }}>
                 Choose a different currency
@@ -308,7 +308,7 @@ export default function CryptoPaymentModal({ plan, amount, currency, currencySym
                 display:"flex", alignItems:"center", justifyContent:"center",
                 margin:"0 auto 1.25rem", fontSize:"1.5rem",
               }}>✓</div>
-              <h3 style={{ fontFamily:gs, fontSize:"1.2rem", fontWeight:700, color:c.text, marginBottom:"0.75rem" }}>
+              <h3 style={{ fontFamily:gs, fontSize:"1.2rem", fontWeight:600, color:c.text, marginBottom:"0.75rem" }}>
                 Payment submitted
               </h3>
               <p style={{ fontFamily:gs, fontSize:"0.87rem", color:c.muted, lineHeight:1.75, marginBottom:"1.5rem" }}>
@@ -326,8 +326,8 @@ export default function CryptoPaymentModal({ plan, amount, currency, currencySym
               <button onClick={onClose} style={{
                 width:"100%", padding:"13px",
                 background:c.text, color:c.bg,
-                border:"none", borderRadius:"5px",
-                fontFamily:gs, fontSize:"0.84rem", fontWeight:700,
+                border:"none", borderRadius:"4px",
+                fontFamily:gs, fontSize:"0.84rem", fontWeight:600,
                 cursor:"pointer", letterSpacing:"0.03em",
               }}>
                 Close

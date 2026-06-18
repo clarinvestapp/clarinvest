@@ -55,7 +55,7 @@ function ScoreRing({ score, c, size = 72 }) {
       </svg>
       <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column",
         alignItems:"center", justifyContent:"center" }}>
-        <span style={{ fontFamily:gs, fontSize: size * 0.28, fontWeight:800, color:col, lineHeight:1 }}>
+        <span style={{ fontFamily:gs, fontSize: size * 0.28, fontWeight:600, color:col, lineHeight:1 }}>
           {score}
         </span>
         <span style={{ fontFamily:gs, fontSize: size * 0.12, fontWeight:600, color:c.muted,
@@ -78,7 +78,7 @@ function VerdictBadge({ verdict, c }) {
     <span style={{
       fontFamily:gs, fontSize:"0.78rem", fontWeight:700, color:col,
       background:bg, border:`1px solid ${bd}`,
-      borderRadius:"5px", padding:"5px 14px", whiteSpace:"nowrap",
+      borderRadius:"6px", padding:"5px 14px", whiteSpace:"nowrap",
     }}>
       {verdict}
     </span>
@@ -87,7 +87,7 @@ function VerdictBadge({ verdict, c }) {
 
 // ── Risk flag row ─────────────────────────────────────────────────────────────
 function RiskFlag({ flag, level, c }) {
-  const col = level === "High" ? c.red : level === "Low" ? c.green : c.amber || "#F59E0B";
+  const col = level === "High" ? c.red : level === "Low" ? c.green : c.muted;
   return (
     <div style={{
       display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -97,7 +97,7 @@ function RiskFlag({ flag, level, c }) {
         <span style={{ fontSize:"0.78rem", flexShrink:0 }}>⚠</span>{flag}
       </span>
       <span style={{
-        fontFamily:gs, fontSize:"0.65rem", fontWeight:700, color:col,
+        fontFamily:gs, fontSize:"0.65rem", fontWeight:500, color:col,
         letterSpacing:"0.06em", textTransform:"uppercase", flexShrink:0,
       }}>
         {level}
@@ -160,7 +160,7 @@ export default function FullReportPopup({
           {/* Top bar: eyebrow + badges + close */}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
             <span style={{
-              fontFamily:gs, fontSize:"0.62rem", fontWeight:700,
+              fontFamily:gs, fontSize:"0.62rem", fontWeight:500,
               color:c.green, letterSpacing:"0.16em", textTransform:"uppercase",
             }}>
               AI Analysis
@@ -170,7 +170,7 @@ export default function FullReportPopup({
                 <span style={{
                   fontFamily:gs, fontSize:"0.65rem", color:c.muted,
                   background:c.surface, border:`1px solid ${c.border}`,
-                  borderRadius:"4px", padding:"3px 10px",
+                  borderRadius:"12px", padding:"3px 10px",
                 }}>
                   Cached · 24h
                 </span>
@@ -179,7 +179,7 @@ export default function FullReportPopup({
                 <span style={{
                   fontFamily:gs, fontSize:"0.65rem", color:c.muted,
                   background:c.surface, border:`1px solid ${c.border}`,
-                  borderRadius:"4px", padding:"3px 10px", textTransform:"capitalize",
+                  borderRadius:"12px", padding:"3px 10px", textTransform:"capitalize",
                 }}>
                   {instrumentType}
                 </span>
@@ -188,7 +188,7 @@ export default function FullReportPopup({
                 onClick={onClose}
                 style={{
                   background:c.surface, border:`1px solid ${c.border}`,
-                  borderRadius:"7px", padding:"6px 10px",
+                  borderRadius:"4px", padding:"6px 10px",
                   cursor:"pointer", color:c.muted,
                   fontFamily:gs, fontSize:"0.75rem",
                   display:"flex", alignItems:"center", gap:"4px",
@@ -232,7 +232,7 @@ export default function FullReportPopup({
               {sections.map((s, i) => (
                 <div key={i}>
                   <p style={{
-                    fontFamily:gs, fontSize:"0.62rem", fontWeight:700,
+                    fontFamily:gs, fontSize:"0.62rem", fontWeight:500,
                     color:c.muted, letterSpacing:"0.14em", textTransform:"uppercase",
                     marginBottom:"0.45rem",
                   }}>
@@ -257,7 +257,7 @@ export default function FullReportPopup({
                 borderBottom:`1px solid ${c.border}`,
               }}>
                 <p style={{
-                  fontFamily:gs, fontSize:"0.62rem", fontWeight:700,
+                  fontFamily:gs, fontSize:"0.62rem", fontWeight:500,
                   color:c.muted, letterSpacing:"0.14em", textTransform:"uppercase",
                   margin:0,
                 }}>
@@ -284,7 +284,7 @@ export default function FullReportPopup({
             style={{
               background:"transparent",
               border:`1px solid ${c.border}`,
-              borderRadius:"7px", padding:"8px 18px",
+              borderRadius:"4px", padding:"8px 18px",
               cursor:"pointer", color:c.muted,
               fontFamily:gs, fontSize:"0.82rem",
             }}>
@@ -297,7 +297,7 @@ export default function FullReportPopup({
               style={{
                 background:"transparent",
                 border:`1px solid ${c.border}`,
-                borderRadius:"7px", padding:"8px 18px",
+                borderRadius:"4px", padding:"8px 18px",
                 cursor:"pointer", color:c.muted,
                 fontFamily:gs, fontSize:"0.82rem",
               }}>

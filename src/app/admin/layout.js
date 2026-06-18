@@ -3,10 +3,11 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { ThemeProvider, useTheme } from "@/lib/theme";
+import { FaSun, FaMoon } from "react-icons/fa6";
 
 const C = {
-  dark:  { bg:"#090909", sidebar:"#0D0D0F", card:"#111113", surface:"#141416", border:"#232325", borderHi:"#333336", text:"#F0F0F0", muted:"#7A7A80", green:"#00E676", red:"#FF1800", amber:"#F59E0B", blue:"#4488FF" },
-  light: { bg:"#F7F7F5", sidebar:"#FFFFFF",  card:"#FFFFFF",  surface:"#EEEEED", border:"#DEDEDD",  borderHi:"#BABAB8", text:"#0A0A0A", muted:"#606065", green:"#008A38", red:"#CC0000", amber:"#B45309", blue:"#1E55CC" },
+  dark:  { bg:"#090909", card:"#111113", surface:"#141416", border:"#232325", borderHi:"#333336", text:"#F0F0F0", muted:"#7A7A80", green:"#00E676", red:"#FF1800", blue:"#4488FF" },
+  light: { bg:"#F7F7F5", card:"#FFFFFF",  surface:"#EEEEED", border:"#DEDEDD",  borderHi:"#BABAB8", text:"#0A0A0A", muted:"#606065", green:"#008A38", red:"#CC0000", blue:"#1E55CC" },
 };
 const gs = "'Google Sans Flex','DM Sans',sans-serif";
 
@@ -57,7 +58,7 @@ function AdminShell({ children }) {
           const active = pathname === n.href;
           return (
             <button key={n.href} onClick={() => { router.push(n.href); setMobileNav(false); }}
-              style={{ width:"100%", display:"flex", alignItems:"center", gap:"0.6rem", padding:"9px 12px", borderRadius:"8px", border:"none", background:active?c.surface:"transparent", color:active?c.text:c.muted, fontFamily:gs, fontSize:"0.84rem", fontWeight:active?600:400, cursor:"pointer", marginBottom:"2px", textAlign:"left", transition:"all 0.15s" }}>
+              style={{ width:"100%", display:"flex", alignItems:"center", gap:"0.6rem", padding:"9px 12px", borderRadius:"8px", border:"none", background:active?c.surface:"transparent", color:active?c.text:c.muted, fontFamily:gs, fontSize:"0.84rem", fontWeight:active?600:400, cursor:"pointer", marginBottom:"2px", textAlign:"left", transition:"opacity 0.22s ease" }}>
               <span style={{ fontSize:"0.85rem", opacity:0.8 }}>{n.icon}</span>
               {n.label}
             </button>
@@ -68,11 +69,11 @@ function AdminShell({ children }) {
       {/* Bottom */}
       <div style={{ borderTop:`1px solid ${c.border}`, paddingTop:"1rem", display:"flex", flexDirection:"column", gap:"0.4rem" }}>
         <button onClick={() => setMode(mode==="dark"?"light":"dark")}
-          style={{ display:"flex", alignItems:"center", gap:"0.5rem", padding:"8px 12px", borderRadius:"7px", border:"none", background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.78rem", cursor:"pointer", textAlign:"left" }}>
-          <span>{mode==="dark"?"☀":"☾"}</span> {mode==="dark"?"Light Mode":"Dark Mode"}
+          style={{ display:"flex", alignItems:"center", gap:"0.5rem", padding:"8px 12px", borderRadius:"4px", border:"none", background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.78rem", cursor:"pointer", textAlign:"left" }}>
+          {mode==="dark" ? <FaSun size={13} color={c.muted}/> : <FaMoon size={13} color={c.muted}/>} {mode==="dark"?"Light Mode":"Dark Mode"}
         </button>
         <button onClick={() => router.push("/dashboard")}
-          style={{ display:"flex", alignItems:"center", gap:"0.5rem", padding:"8px 12px", borderRadius:"7px", border:"none", background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.78rem", cursor:"pointer", textAlign:"left" }}>
+          style={{ display:"flex", alignItems:"center", gap:"0.5rem", padding:"8px 12px", borderRadius:"4px", border:"none", background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.78rem", cursor:"pointer", textAlign:"left" }}>
           ← Back to App
         </button>
       </div>
@@ -90,7 +91,7 @@ function AdminShell({ children }) {
       `}</style>
 
       {/* Desktop sidebar */}
-      <aside style={{ width:"220px", background:c.sidebar, borderRight:`1px solid ${c.border}`, flexShrink:0, position:"sticky", top:0, height:"100vh", overflow:"auto", display:"none" }} className="admin-sidebar">
+      <aside style={{ width:"220px", background:c.card, borderRight:`1px solid ${c.border}`, flexShrink:0, position:"sticky", top:0, height:"100vh", overflow:"auto", display:"none" }} className="admin-sidebar">
         <SideNav/>
       </aside>
 
@@ -100,7 +101,7 @@ function AdminShell({ children }) {
       `}</style>
 
       {/* Mobile top bar */}
-      <div className="admin-topbar" style={{ position:"fixed", top:0, left:0, right:0, zIndex:100, height:"52px", background:c.sidebar, borderBottom:`1px solid ${c.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 1.25rem" }}>
+      <div className="admin-topbar" style={{ position:"fixed", top:0, left:0, right:0, zIndex:100, height:"52px", background:c.card, borderBottom:`1px solid ${c.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 1.25rem" }}>
         <span style={{ fontFamily:"'Playfair Display',serif", fontSize:"0.95rem", fontWeight:600, letterSpacing:"0.03em", textTransform:"uppercase", color:c.text }}>Admin</span>
         <button onClick={() => setMobileNav(!mobileNav)} style={{ background:"none", border:"none", cursor:"pointer", color:c.text, fontSize:"1.2rem" }}>☰</button>
       </div>
@@ -109,7 +110,7 @@ function AdminShell({ children }) {
       {mobileNav && (
         <div style={{ position:"fixed", inset:0, zIndex:200 }}>
           <div onClick={() => setMobileNav(false)} style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.5)" }}/>
-          <div style={{ position:"absolute", left:0, top:0, bottom:0, width:"240px", background:c.sidebar, borderRight:`1px solid ${c.border}` }}>
+          <div style={{ position:"absolute", left:0, top:0, bottom:0, width:"240px", background:c.card, borderRight:`1px solid ${c.border}` }}>
             <SideNav/>
           </div>
         </div>

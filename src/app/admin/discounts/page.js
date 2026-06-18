@@ -13,8 +13,8 @@ const EMPTY = { code:"", discount:"", description:"", active:false, expires_at:"
 
 function Toggle({ on, onChange, c }) {
   return (
-    <div onClick={onChange} style={{ width:"38px", height:"22px", borderRadius:"11px", background:on?c.green:c.surface, border:`1px solid ${on?c.green:c.border}`, cursor:"pointer", position:"relative", transition:"all 0.2s", flexShrink:0 }}>
-      <div style={{ position:"absolute", top:"2px", left:on?"18px":"2px", width:"16px", height:"16px", borderRadius:"50%", background:on?"#050505":"#888", transition:"left 0.2s" }}/>
+    <div onClick={onChange} style={{ width:"38px", height:"22px", borderRadius:"11px", background:on?c.green:c.surface, border:`1px solid ${on?c.green:c.border}`, cursor:"pointer", position:"relative", transition:"opacity 0.22s ease", flexShrink:0 }}>
+      <div style={{ position:"absolute", top:"2px", left:"2px", width:"16px", height:"16px", borderRadius:"50%", background:on?"#050505":"#888", transform:on?"translateX(16px)":"translateX(0)", transition:"transform 0.22s ease" }}/>
     </div>
   );
 }
@@ -69,7 +69,7 @@ export default function DiscountsPage() {
     setCodes(prev => prev.filter(c => c.id !== id));
   };
 
-  const inp = { background:c.surface, border:`1px solid ${c.border}`, borderRadius:"6px", padding:"9px 12px", color:c.text, fontSize:"0.85rem", fontFamily:gs, width:"100%" };
+  const inp = { background:c.surface, border:`1px solid ${c.border}`, borderRadius:"4px", padding:"9px 12px", color:c.text, fontSize:"0.85rem", fontFamily:gs, width:"100%" };
 
   return (
     <div style={{ padding:"2rem 2.5rem", maxWidth:"900px" }}>
@@ -79,14 +79,14 @@ export default function DiscountsPage() {
           <h1 style={{ fontFamily:gs, fontSize:"1.8rem", fontWeight:700, color:c.text }}>Discount Codes</h1>
         </div>
         <button onClick={() => setShowForm(!showForm)}
-          style={{ background:c.text, color:c.bg, border:"none", borderRadius:"7px", padding:"9px 20px", fontFamily:gs, fontSize:"0.84rem", fontWeight:600, cursor:"pointer" }}>
+          style={{ background:c.text, color:c.bg, border:"none", borderRadius:"4px", padding:"9px 20px", fontFamily:gs, fontSize:"0.84rem", fontWeight:600, cursor:"pointer" }}>
           {showForm ? "Cancel" : "+ New Code"}
         </button>
       </div>
 
       {/* Create form */}
       {showForm && (
-        <form onSubmit={save} style={{ background:c.card, border:`1px solid ${c.borderHi}`, borderRadius:"12px", padding:"1.5rem", marginBottom:"1.5rem" }}>
+        <form onSubmit={save} style={{ background:c.card, border:`1px solid ${c.borderHi}`, borderRadius:"14px", padding:"1.5rem", marginBottom:"1.5rem" }}>
           <p style={{ fontFamily:gs, fontSize:"0.8rem", fontWeight:600, color:c.text, marginBottom:"1.1rem" }}>New Discount Code</p>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:"0.85rem", marginBottom:"1rem" }}>
             {[
@@ -97,7 +97,7 @@ export default function DiscountsPage() {
               { key:"expires_at",  label:"Expires",           placeholder:"",                type:"datetime-local" },
             ].map(({ key, label, placeholder, type }) => (
               <div key={key}>
-                <label style={{ display:"block", fontFamily:gs, fontSize:"0.65rem", color:c.muted, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"5px", fontWeight:600 }}>{label}</label>
+                <label style={{ display:"block", fontFamily:gs, fontSize:"0.65rem", color:c.muted, letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"5px", fontWeight:500 }}>{label}</label>
                 <input type={type} placeholder={placeholder} value={form[key]} onChange={e => setForm(p=>({...p,[key]:e.target.value}))} style={inp}/>
               </div>
             ))}
@@ -108,14 +108,14 @@ export default function DiscountsPage() {
           </div>
           {err && <p style={{ fontFamily:gs, fontSize:"0.8rem", color:c.red, marginBottom:"0.75rem" }}>{err}</p>}
           <button type="submit" disabled={saving}
-            style={{ background:c.green, color:"#050505", border:"none", borderRadius:"6px", padding:"9px 22px", fontFamily:gs, fontSize:"0.84rem", fontWeight:700, cursor:saving?"not-allowed":"pointer", opacity:saving?0.65:1 }}>
+            style={{ background:c.green, color:"#050505", border:"none", borderRadius:"4px", padding:"9px 22px", fontFamily:gs, fontSize:"0.84rem", fontWeight:700, cursor:saving?"not-allowed":"pointer", opacity:saving?0.65:1 }}>
             {saving ? "Saving…" : "Create Code"}
           </button>
         </form>
       )}
 
       {/* Codes table */}
-      <div style={{ background:c.card, border:`1px solid ${c.border}`, borderRadius:"12px", overflow:"hidden" }}>
+      <div style={{ background:c.card, border:`1px solid ${c.border}`, borderRadius:"14px", overflow:"hidden" }}>
         {loading ? (
           <div style={{ padding:"2rem", display:"flex", flexDirection:"column", gap:"10px" }}>
             {Array.from({length:3}).map((_,i)=><div key={i} style={{ height:"44px", background:c.surface, borderRadius:"6px", animation:"pulse 1.4s ease infinite" }}/>)}

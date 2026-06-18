@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { FaCookieBite } from "react-icons/fa6";
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
@@ -71,7 +72,7 @@ export default function CookieBanner() {
         }
         .ck-title {
           font-size: 0.75rem;
-          font-weight: 700;
+          font-weight: 500;
           color: #F0F0F0;
           flex: 1;
           padding-top: 0;
@@ -100,14 +101,14 @@ export default function CookieBanner() {
         .ck-btn-ok {
           width: 100%;
           padding: 9px;
-          border-radius: 5px;
+          border-radius: 4px;
           border: none;
           cursor: pointer;
           background: #F0F0F0;
           color: #090909;
           font-family: 'Google Sans Flex', 'DM Sans', Arial, sans-serif;
           font-size: 0.72rem;
-          font-weight: 700;
+          font-weight: 600;
           letter-spacing: 0.03em;
           transition: opacity 0.18s;
         }
@@ -116,7 +117,7 @@ export default function CookieBanner() {
 
       <div className="ck-banner" role="dialog" aria-label="Cookie notice">
         <div className="ck-top">
-          <div className="ck-icon">🍪</div>
+          <div className="ck-icon"><FaCookieBite size={14} color="#7A7A80"/></div>
           <span className="ck-title">Cookies</span>
           <button className="ck-close" onClick={dismiss} aria-label="Dismiss">✕</button>
         </div>

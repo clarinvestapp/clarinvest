@@ -3,6 +3,12 @@ import ToolsCarousel from "@/app/components/ToolsCarousel";
 import CryptoPaymentModal from "@/app/components/CryptoPaymentModal";
 import FullReportPopup, { NVDA_SAMPLE_REPORT } from "@/app/components/FullReportPopup";
 import { useState, useEffect, useRef } from "react";
+import {
+  FaBrain, FaArrowTrendUp, FaChartSimple, FaBullseye, FaGlobe, FaTriangleExclamation,
+  FaSun, FaMoon, FaArrowRight, FaChevronDown, FaCheck, FaXmark,
+  FaDiamond, FaCaretUp, FaCaretDown, FaCoins,
+} from "react-icons/fa6";
+import { SiTether } from "react-icons/si";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from "recharts";
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
@@ -55,12 +61,12 @@ const CHART_DATA=[
 ];
 
 const FEATS=[
-  {icon:"◈",title:"AI Stock Reports",       desc:"Plain-English analysis in seconds. Earnings, valuation, momentum. No jargon, no noise, just the signal you need."},
-  {icon:"▲",title:"Value and Growth Signals",desc:"Screening for undervalued compounders, momentum breakouts, dividend consistency, and alpha across every sector."},
-  {icon:"▣",title:"Deep Fundamentals",       desc:"P/E, EV/EBITDA, revenue growth, debt, margins, all contextualised by AI against sector peers and historical norms."},
-  {icon:"◉",title:"Earnings Intelligence",   desc:"Beat/miss analysis and guidance interpretation. What the numbers actually mean for the stock trajectory ahead."},
-  {icon:"◈",title:"Multi-Market Coverage",   desc:"US, European and UK equities in one interface. Filter by market, sector, or signal type with a single tap."},
-  {icon:"◇",title:"Risk Flag Alerts",        desc:"AI-surfaced red flags: insider selling, covenant risk, sector headwinds, and concentration concerns surfaced fast."},
+  {icon:FaBrain,             title:"AI Stock Reports",       desc:"Plain-English analysis in seconds. Earnings, valuation, momentum. No jargon, no noise, just the signal you need."},
+  {icon:FaArrowTrendUp,      title:"Value and Growth Signals",desc:"Screening for undervalued compounders, momentum breakouts, dividend consistency, and alpha across every sector."},
+  {icon:FaChartSimple,       title:"Deep Fundamentals",       desc:"P/E, EV/EBITDA, revenue growth, debt, margins, all contextualised by AI against sector peers and historical norms."},
+  {icon:FaBullseye,          title:"Earnings Intelligence",   desc:"Beat/miss analysis and guidance interpretation. What the numbers actually mean for the stock trajectory ahead."},
+  {icon:FaGlobe,             title:"Multi-Market Coverage",   desc:"US, European and UK equities in one interface. Filter by market, sector, or signal type with a single tap."},
+  {icon:FaTriangleExclamation,title:"Risk Flag Alerts",       desc:"AI-surfaced red flags: insider selling, covenant risk, sector headwinds, and concentration concerns surfaced fast."},
 ];
 
 const CHIPS=[
@@ -317,7 +323,7 @@ function Marquee({ items, pxPerSec = 40, logoH = 30, c, mode, label, sublabel, r
                 <span style={{
                   display:"none", alignItems:"center", justifyContent:"center",
                   fontFamily:"'Google Sans Flex','DM Sans',sans-serif",
-                  fontSize:"0.72rem", fontWeight:700,
+                  fontSize:"0.72rem", fontWeight:600,
                   color:c.muted, whiteSpace:"nowrap",
                   letterSpacing:"0.04em",
                 }}>{item.name}</span>
@@ -455,7 +461,7 @@ export default function Clarinvest(){
   const botH = botBannerList.length * BANNER_H;
 
   return(
-    <div style={{fontFamily:gs,background:c.bg,color:c.text,minHeight:"100vh",overflowX:"hidden",transition:"background 0.4s,color 0.4s"}}>
+    <div style={{fontFamily:gs,background:c.bg,color:c.text,minHeight:"100vh",overflowX:"hidden"}}>
       <BannerStrip list={topBannerList} side="top" mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
       <BannerStrip list={botBannerList} side="bottom" mode={mode} onDismiss={id=>setDismissed(p=>new Set([...p,id]))}/>
       <style>{`
@@ -519,15 +525,20 @@ export default function Clarinvest(){
       <div style={{position:"sticky",top:topH,zIndex:200}}>
         <nav style={{
           position:"relative",height:"62px",
-          backdropFilter:"blur(12px)",
+          backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
           background:solid
             ?mode==="dark"?"rgba(9,9,9,0.97)":"rgba(247,247,245,0.97)"
             :mode==="dark"?"rgba(9,9,9,0.60)":"rgba(247,247,245,0.60)",
-          borderBottom:`1px solid ${solid?c.border:"transparent"}`,
           display:"flex",alignItems:"center",justifyContent:"space-between",
           padding:"0 2.5rem",gap:"1rem",
-          transition:"background 0.35s,border-color 0.35s",
         }}>
+          <div aria-hidden="true" style={{
+            position:"absolute",top:0,right:0,bottom:0,left:0,pointerEvents:"none",
+            borderBottom:`1px solid ${mode==="dark"?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.09)"}`,
+            boxShadow:mode==="dark"?"0 4px 28px rgba(0,0,0,0.50)":"0 2px 16px rgba(0,0,0,0.07)",
+            opacity:solid?1:0,
+            transition:"opacity 0.22s ease",
+          }}/>
         <button onClick={()=>go(heroRef)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.65rem",flexShrink:0}}>
           <svg width="22" height="22" viewBox="0 0 200 200">
             <rect x="8"   y="8"   width="84" height="84" rx="10" fill={c.text}/>
@@ -548,8 +559,8 @@ export default function Clarinvest(){
 
         <div style={{display:"flex",gap:"0.7rem",alignItems:"center",flexShrink:0}}>
           <button onClick={()=>setMode(m=>m==="dark"?"light":"dark")}
-            style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"50px",padding:"5px 13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"5px",color:c.muted,fontSize:"0.78rem",fontFamily:gs,transition:"background 0.3s"}}>
-            <span>{mode==="dark"?"☀":"☾"}</span>
+            style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"50px",padding:"5px 13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"5px",color:c.muted,fontSize:"0.78rem",fontFamily:gs,transition:"opacity 0.3s ease"}}>
+            {mode==="dark"?<FaSun size={12}/>:<FaMoon size={12}/>}
             <span>{mode==="dark"?"Light":"Dark"}</span>
           </button>
           <button className="cbtn" onClick={()=>{window.location.href="/login";}}
@@ -595,16 +606,16 @@ export default function Clarinvest(){
                 padding:"14px 16px",width:"230px",
                 boxShadow:mode==="dark"?"0 10px 40px rgba(0,0,0,0.6)":"0 8px 28px rgba(0,0,0,0.10)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}}>
-                  <span style={{fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.text}}>{chip.ticker}</span>
-                  <span style={{fontFamily:gs,fontSize:"0.9rem",fontWeight:700,color:c.text}}>{chip.price}</span>
+                  <span style={{fontFamily:gs,fontSize:"1rem",fontWeight:600,color:c.text}}>{chip.ticker}</span>
+                  <span style={{fontFamily:gs,fontSize:"0.9rem",fontWeight:600,color:c.text}}>{chip.price}</span>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
                   <span style={{fontFamily:gs,fontSize:"0.68rem",color:c.muted,flex:1,marginRight:"6px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{chip.name}</span>
-                  <span style={{fontFamily:gs,fontSize:"0.72rem",fontWeight:700,color:pos?c.green:c.red,flexShrink:0}}>{chip.chg}</span>
+                  <span style={{fontFamily:gs,fontSize:"0.72rem",fontWeight:600,color:pos?c.green:c.red,flexShrink:0}}>{chip.chg}</span>
                 </div>
                 <div style={{background:mode==="dark"?"#1A1A1C":"#F0F0EE",borderRadius:"5px",padding:"5px 10px",border:`1px solid ${c.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}}>
                   <span style={{fontFamily:gs,color:c.muted,fontSize:"0.59rem",letterSpacing:"0.08em",fontWeight:600,textTransform:"uppercase",flexShrink:0}}>AI Score</span>
-                  <span style={{fontFamily:gs,color:scoreColor,fontSize:"0.72rem",fontWeight:700,flexShrink:0}}>{chip.score} · {chip.label}</span>
+                  <span style={{fontFamily:gs,color:scoreColor,fontSize:"0.72rem",fontWeight:600,flexShrink:0}}>{chip.score} · {chip.label}</span>
                 </div>
               </div>
             </div>
@@ -622,7 +633,7 @@ export default function Clarinvest(){
             </div>
           </div>
 
-          <h1 style={{fontFamily:ns,fontSize:"clamp(2.8rem,6.5vw,5rem)",fontWeight:700,lineHeight:1.1,letterSpacing:"-0.02em",marginBottom:"1.5rem",animation:"fadeUp 0.8s ease 0.18s both"}}>
+          <h1 style={{fontFamily:ns,fontSize:"clamp(2.8rem,6.5vw,5rem)",fontWeight:600,lineHeight:1.1,letterSpacing:"-0.02em",marginBottom:"1.5rem",animation:"fadeUp 0.8s ease 0.18s both"}}>
             Invest with<br/><span className="silver">Absolute Clarity</span>
           </h1>
 
@@ -631,21 +642,21 @@ export default function Clarinvest(){
           </p>
 
           <div style={{display:"flex",gap:"1rem",justifyContent:"center",flexWrap:"wrap",animation:"fadeUp 0.8s ease 0.38s both"}}>
-            <button className="cbtn" onClick={()=>go(priceRef)} style={{background:c.text,color:c.bg,padding:"14px 38px",borderRadius:"4px"}}>View plans →</button>
+            <button className="cbtn" onClick={()=>go(priceRef)} style={{background:c.text,color:c.bg,padding:"14px 38px",borderRadius:"4px",display:"inline-flex",alignItems:"center",gap:"0.5rem"}}>View plans <FaArrowRight size={13}/></button>
             <button className="cbtn" onClick={()=>setShowSample(true)} style={{background:"transparent",border:`1px solid ${c.borderHi}`,color:c.text,padding:"14px 38px",borderRadius:"4px"}}>See a sample report</button>
           </div>
 
           <div className="hero-trust" style={{marginTop:"2.5rem",display:"flex",gap:"2rem",justifyContent:"center",animation:"fadeUp 0.8s ease 0.46s both"}}>
             {["US, EU and UK markets","Real-time data","Cancel anytime"].map((t,i)=>(
               <span key={i} style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.09em",textTransform:"uppercase",display:"flex",alignItems:"center",gap:"5px"}}>
-                <span style={{color:c.green,fontSize:"0.52rem"}}>◆</span>{t}
+                <FaDiamond size={7} color={c.green}/>{t}
               </span>
             ))}
           </div>
         </div>
 
         <div style={{position:"absolute",bottom:"2rem",left:"50%",textAlign:"center",color:c.muted,fontSize:"0.66rem",letterSpacing:"0.12em",textTransform:"uppercase",animation:"bounce 2.2s ease-in-out infinite",fontFamily:gs}}>
-          <div>Scroll</div><div style={{marginTop:"4px"}}>↓</div>
+          <div>Scroll</div><div style={{marginTop:"4px"}}><FaChevronDown size={10}/></div>
         </div>
       </section>
 
@@ -663,13 +674,15 @@ export default function Clarinvest(){
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"4rem"}}>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>What Clarinvest Does</p>
-            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,lineHeight:1.2}}>
+            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:600,lineHeight:1.2}}>
               Every layer of analysis,<br/><em>made intelligible</em>
             </h2>
           </div>
         </Reveal>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:"1.25rem"}}>
-          {FEATS.map((f,i)=>(
+          {FEATS.map((f,i)=>{
+            const FeatIcon = f.icon;
+            return (
             <Reveal key={i} delay={i*0.07} passStyle={{display:"flex"}}>
               <div className="fcard" style={{
                 background:mode==="dark"?"linear-gradient(150deg,#1A1A1E 0%,#0D0D10 100%)":"linear-gradient(150deg,#FFFFFF 0%,#E6E6F0 100%)",
@@ -677,13 +690,14 @@ export default function Clarinvest(){
                 boxShadow:mode==="dark"?"0 4px 28px rgba(0,0,0,0.4)":"0 4px 20px rgba(0,0,0,0.07)",
               }}>
                 <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"0.85rem"}}>
-                  <span style={{fontSize:"1rem",color:c.muted,flexShrink:0}}>{f.icon}</span>
-                  <h3 style={{fontFamily:gs,fontSize:"1.05rem",fontWeight:700,lineHeight:1.25,color:c.text}}>{f.title}</h3>
+                  <FeatIcon size={18} color={c.muted} style={{flexShrink:0}}/>
+                  <h3 style={{fontFamily:gs,fontSize:"1.05rem",fontWeight:600,lineHeight:1.25,color:c.text}}>{f.title}</h3>
                 </div>
                 <p style={{fontFamily:gs,color:c.muted,fontSize:"0.87rem",lineHeight:1.72,flex:1}}>{f.desc}</p>
               </div>
             </Reveal>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -692,7 +706,7 @@ export default function Clarinvest(){
   <p style={{ fontFamily:"'Google Sans Flex','DM Sans',sans-serif", fontSize:"0.68rem", letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:500, color:c.muted, marginBottom:"1rem", textAlign:"center" }}>
     Platform preview
   </p>
-  <h2 style={{ fontFamily:"'Noto Serif',Georgia,serif", fontSize:"clamp(2rem,4vw,2.8rem)", fontWeight:700, lineHeight:1.2, textAlign:"center", marginBottom:"0.8rem", color:c.text }}>
+  <h2 style={{ fontFamily:"'Noto Serif',Georgia,serif", fontSize:"clamp(2rem,4vw,2.8rem)", fontWeight:600, lineHeight:1.2, textAlign:"center", marginBottom:"0.8rem", color:c.text }}>
     The smart way to invest
   </h2>
   <p style={{ fontFamily:"'Google Sans Flex','DM Sans',sans-serif", fontSize:"1rem", color:c.muted, textAlign:"center", marginBottom:"2.5rem", lineHeight:1.7 }}>
@@ -713,7 +727,7 @@ export default function Clarinvest(){
           <Reveal>
             <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
               <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Markets</p>
-              <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700}}>Three major markets, one platform</h2>
+              <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:600}}>Three major markets, one platform</h2>
             </div>
           </Reveal>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"1.25rem"}}>
@@ -738,9 +752,9 @@ export default function Clarinvest(){
                   <div style={{display:"flex",justifyContent:"center",marginBottom:"1rem"}}>
                     <FlagSVG market={m.code} height={32}/>
                   </div>
-                  <div style={{fontFamily:gs,fontSize:"1.1rem",fontWeight:700,marginBottom:"0.4rem",color:c.text}}>{m.name}</div>
+                  <div style={{fontFamily:gs,fontSize:"1.1rem",fontWeight:600,marginBottom:"0.4rem",color:c.text}}>{m.name}</div>
                   <div style={{fontFamily:gs,color:c.muted,fontSize:"0.81rem",marginBottom:"0.5rem"}}>{m.sub}</div>
-                  <div style={{fontFamily:gs,color:m.live?c.blue:c.muted,fontSize:"0.72rem",fontWeight:700,letterSpacing:"0.04em"}}>{m.detail}</div>
+                  <div style={{fontFamily:gs,color:m.live?c.blue:c.muted,fontSize:"0.72rem",fontWeight:600,letterSpacing:"0.04em"}}>{m.detail}</div>
                 </div>
               </Reveal>
             ))}
@@ -765,7 +779,7 @@ export default function Clarinvest(){
         <Reveal>
           <div style={{textAlign:"center",marginBottom:"3.5rem"}}>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>Pricing</p>
-            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
+            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:600,marginBottom:"0.9rem"}}>Simple, transparent pricing</h2>
             <p style={{fontFamily:gs,color:c.muted,maxWidth:"400px",margin:"0 auto 0.5rem",lineHeight:1.72,fontSize:"0.94rem"}}>
               No hidden fees. No lock-in. Prices shown in your local currency.
             </p>
@@ -778,13 +792,13 @@ export default function Clarinvest(){
                 </span>
               ))}
             </p>
-            <div style={{display:"inline-flex",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"4px"}}>
+            <div style={{display:"inline-flex",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"8px",padding:"4px"}}>
               {["monthly","yearly"].map(b=>(
                 <button key={b} onClick={()=>setBilling(b)} style={{
                   background:billing===b?c.text:"transparent",color:billing===b?c.bg:c.muted,
                   border:"none",cursor:"pointer",padding:"8px 22px",borderRadius:"4px",
                   fontFamily:gs,fontSize:"0.8rem",fontWeight:600,letterSpacing:"0.03em",
-                  textTransform:"capitalize",transition:"all 0.22s",
+                  textTransform:"capitalize",transition:"opacity 0.22s ease",
                   display:"flex",alignItems:"center",gap:"0.5rem",
                 }}>
                   {b}
@@ -792,8 +806,8 @@ export default function Clarinvest(){
                     <span style={{
                       background:mode==="dark"?"#1A1A1C":"#FFFFFF",
                       border:`1px solid ${c.borderHi}`,
-                      color:c.green,fontSize:"0.59rem",fontWeight:800,
-                      padding:"2px 7px",borderRadius:"3px",letterSpacing:"0.02em",
+                      color:c.green,fontSize:"0.59rem",fontWeight:600,
+                      padding:"2px 7px",borderRadius:"6px",letterSpacing:"0.02em",
                     }}>
                       −28%
                     </span>
@@ -844,17 +858,17 @@ export default function Clarinvest(){
                   {plan.badge&&(
                     <div style={{position:"absolute",top:"-13px",left:"50%",transform:"translateX(-50%)",
                       background:isHi?c.text:c.muted,color:isHi?c.bg:mode==="dark"?"#090909":"#fff",
-                      fontFamily:gs,fontSize:"0.59rem",fontWeight:700,
+                      fontFamily:gs,fontSize:"0.59rem",fontWeight:600,
                       letterSpacing:"0.12em",textTransform:"uppercase",padding:"4px 16px",borderRadius:"50px"}}>
                       {plan.badge}
                     </div>
                   )}
 
-                  <p style={{fontFamily:gs,color:c.green,fontSize:"0.67rem",letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:"0.3rem"}}>{plan.name}</p>
+                  <p style={{fontFamily:gs,color:c.green,fontSize:"0.67rem",letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"0.3rem"}}>{plan.name}</p>
                   <p style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",marginBottom:"1.5rem"}}>{plan.tag}</p>
 
                   <div style={{display:"flex",alignItems:"flex-end",gap:"0.25rem",marginBottom:billing==="yearly"?"0.3rem":"1.8rem"}}>
-                    <span style={{fontFamily:ns,fontSize:"3rem",fontWeight:700,lineHeight:1,color:c.text}}>{curr.sym}{price}</span>
+                    <span style={{fontFamily:ns,fontSize:"3rem",fontWeight:600,lineHeight:1,color:c.text}}>{curr.sym}{price}</span>
                     <span style={{fontFamily:gs,color:c.muted,fontSize:"0.83rem",paddingBottom:"0.45rem"}}>{billing==="monthly"?"/month":"/year"}</span>
                   </div>
 
@@ -894,7 +908,6 @@ export default function Clarinvest(){
                       cursor:cryptoLoading===plan.name?"not-allowed":"pointer",
                       display:"flex",alignItems:"center",justifyContent:"center",gap:"0.5rem",
                     }}>
-                    <span style={{fontSize:"0.8rem"}}>₮</span>
                     {cryptoLoading===plan.name ? "Redirecting..." : "Pay with USDT / USDC"}
                   </button>
 
@@ -907,7 +920,7 @@ export default function Clarinvest(){
 
                   {plan.feats.map((f,j)=>(
                     <div key={j} style={{display:"flex",gap:"0.7rem",alignItems:"flex-start",marginBottom:"0.85rem"}}>
-                      <span style={{fontFamily:gs,color:c.green,fontSize:"0.75rem",marginTop:"0.12rem",flexShrink:0,fontWeight:700}}>✓</span>
+                      <FaCheck size={11} color={c.green} style={{marginTop:"0.12rem",flexShrink:0}}/>
                       <span style={{fontFamily:gs,color:c.muted,fontSize:"0.86rem",lineHeight:1.5}}>{f}</span>
                     </div>
                   ))}
@@ -922,16 +935,16 @@ export default function Clarinvest(){
             <div style={{display:"flex",justifyContent:"center",gap:"2rem",flexWrap:"wrap",marginBottom:"1.2rem"}}>
               {["Cancel anytime","No setup fees","Secure via Stripe"].map((t,i)=>(
                 <span key={i} style={{fontFamily:gs,color:c.muted,fontSize:"0.77rem",display:"flex",alignItems:"center",gap:"5px"}}>
-                  <span style={{color:c.green,fontWeight:700}}>✓</span>{t}
+                  <span style={{color:c.green,fontWeight:600}}>✓</span>{t}
                 </span>
               ))}
             </div>
             <div style={{display:"inline-flex",alignItems:"center",gap:"0.7rem",
               background:mode==="dark"?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)",
               border:`1px solid ${c.borderHi}`,borderRadius:"7px",padding:"10px 18px"}}>
-              <span style={{fontSize:"1rem"}}>💎</span>
+              <SiTether size={15} color={c.muted}/>
               <span style={{fontFamily:gs,color:c.muted,fontSize:"0.77rem",lineHeight:1.5}}>
-                Also accepts <strong style={{fontFamily:gs,color:c.text,fontWeight:700}}>USDT</strong> and <strong style={{fontFamily:gs,color:c.text,fontWeight:700}}>USDC</strong> stablecoin payments via NOWPayments. No bank required.
+                Also accepts <strong style={{fontFamily:gs,color:c.text,fontWeight:600}}>USDT</strong> and <strong style={{fontFamily:gs,color:c.text,fontWeight:600}}>USDC</strong> stablecoin payments via NOWPayments. No bank required.
               </span>
             </div>
           </div>
@@ -957,7 +970,7 @@ export default function Clarinvest(){
         <div style={{maxWidth:"660px",margin:"0 auto",textAlign:"center"}}>
           <Reveal>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"1rem",fontWeight:600}}>About</p>
-            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:700,marginBottom:"1.5rem"}}>Built for the modern investor</h2>
+            <h2 style={{fontFamily:ns,fontSize:"clamp(1.9rem,4vw,3rem)",fontWeight:600,marginBottom:"1.5rem"}}>Built for the modern investor</h2>
             <p style={{fontFamily:gs,color:c.muted,fontSize:"1rem",lineHeight:1.82,marginBottom:"1.5rem"}}>
               Clarinvest was built on a single belief: that institutional-quality stock analysis should be accessible to every investor, not just hedge funds with Bloomberg terminals.
             </p>
@@ -974,7 +987,7 @@ export default function Clarinvest(){
           <Reveal>
             <div style={{ textAlign:"center", marginBottom:"3.5rem" }}>
               <p style={{ fontFamily:gs, color:c.muted, fontSize:"0.68rem", letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"1rem", fontWeight:600 }}>FAQ</p>
-              <h2 style={{ fontFamily:ns, fontSize:"clamp(1.9rem,4vw,3rem)", fontWeight:700, marginBottom:"0.9rem" }}>Common questions</h2>
+              <h2 style={{ fontFamily:ns, fontSize:"clamp(1.9rem,4vw,3rem)", fontWeight:600, marginBottom:"0.9rem" }}>Common questions</h2>
               <p style={{ fontFamily:gs, color:c.muted, maxWidth:"420px", margin:"0 auto", lineHeight:1.72, fontSize:"0.94rem" }}>
                 Everything you need to know before getting started.
               </p>
@@ -998,9 +1011,9 @@ export default function Clarinvest(){
                   display:"flex", alignItems:"center", justifyContent:"space-between", gap:"1rem",
                   textAlign:"left",
                   borderBottom: faqShellOpen ? `1px solid ${c.border}` : "none",
-                  transition:"border-color 0.22s",
+                  transition:"opacity 0.22s ease",
                 }}>
-                <span style={{ fontFamily:gs, fontSize:"0.6rem", color:c.green, letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:700, flex:1, textAlign:"center" }}>Questions and answers</span>
+                <span style={{ fontFamily:gs, fontSize:"0.6rem", color:c.green, letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:500, flex:1, textAlign:"center" }}>Questions and answers</span>
                 <span style={{
                   flexShrink:0, width:24, height:24, borderRadius:"50%",
                   border:`1px solid ${c.borderHi}`,
@@ -1111,7 +1124,7 @@ export default function Clarinvest(){
                               ].map((inst, ii) => (
                                 <div key={ii} style={{ marginBottom:"1.25rem" }}>
                                   <div style={{ display:"flex", alignItems:"center", gap:"0.6rem", marginBottom:"0.75rem" }}>
-                                    <span style={{ fontFamily:gs, fontSize:"0.72rem", fontWeight:700, color:c.text, letterSpacing:"0.05em", textTransform:"uppercase" }}>{inst.type}</span>
+                                    <span style={{ fontFamily:gs, fontSize:"0.72rem", fontWeight:600, color:c.text, letterSpacing:"0.05em", textTransform:"uppercase" }}>{inst.type}</span>
                                     <div style={{ flex:1, height:"1px", background:c.border }}/>
                                   </div>
                                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:"0.5rem" }}>
@@ -1122,7 +1135,7 @@ export default function Clarinvest(){
                                         borderRadius:"8px",
                                         padding:"0.75rem 0.85rem",
                                       }}>
-                                        <p style={{ fontFamily:gs, fontSize:"0.59rem", color:c.text, letterSpacing:"0.12em", textTransform:"uppercase", fontWeight:700, marginBottom:"0.5rem" }}>{grp.label}</p>
+                                        <p style={{ fontFamily:gs, fontSize:"0.59rem", color:c.text, letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:500, marginBottom:"0.5rem" }}>{grp.label}</p>
                                         {grp.items.map((itm, k) => (
                                           <div key={k} style={{ display:"flex", alignItems:"flex-start", gap:"0.4rem", marginBottom:"0.3rem" }}>
                                             <span style={{ color:c.muted, fontSize:"0.55rem", marginTop:"0.25rem", flexShrink:0 }}>◆</span>

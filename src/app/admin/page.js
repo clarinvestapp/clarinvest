@@ -4,16 +4,16 @@ import { useTheme } from "@/lib/theme";
 import { createClient } from "@/lib/supabase";
 
 const C = {
-  dark:  { bg:"#090909", card:"#111113", surface:"#141416", border:"#232325", text:"#F0F0F0", muted:"#7A7A80", green:"#00E676", greenDim:"rgba(0,230,118,0.10)", blue:"#4488FF", red:"#FF1800", amber:"#F59E0B" },
-  light: { bg:"#F7F7F5", card:"#FFFFFF",  surface:"#EEEEED", border:"#DEDEDD",  text:"#0A0A0A", muted:"#606065", green:"#008A38", greenDim:"rgba(0,138,56,0.09)", blue:"#1E55CC", red:"#CC0000", amber:"#B45309" },
+  dark:  { bg:"#090909", card:"#111113", surface:"#141416", border:"#232325", text:"#F0F0F0", muted:"#7A7A80", green:"#00E676", greenDim:"rgba(0,230,118,0.10)", blue:"#4488FF", red:"#FF1800" },
+  light: { bg:"#F7F7F5", card:"#FFFFFF",  surface:"#EEEEED", border:"#DEDEDD",  text:"#0A0A0A", muted:"#606065", green:"#008A38", greenDim:"rgba(0,138,56,0.09)", blue:"#1E55CC", red:"#CC0000" },
 };
 const gs = "'Google Sans Flex','DM Sans',sans-serif";
 
 function StatCard({ label, value, sub, color, c }) {
   return (
     <div style={{ background:c.card, border:`1px solid ${c.border}`, borderRadius:"12px", padding:"1.25rem 1.5rem" }}>
-      <p style={{ fontFamily:gs, fontSize:"0.62rem", color:c.muted, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:"0.5rem", fontWeight:600 }}>{label}</p>
-      <p style={{ fontFamily:gs, fontSize:"1.8rem", fontWeight:700, color:color||c.text, lineHeight:1 }}>{value}</p>
+      <p style={{ fontFamily:gs, fontSize:"0.62rem", color:c.muted, letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"0.5rem", fontWeight:500 }}>{label}</p>
+      <p style={{ fontFamily:gs, fontSize:"1.8rem", fontWeight:600, color:color||c.text, lineHeight:1 }}>{value}</p>
       {sub && <p style={{ fontFamily:gs, fontSize:"0.74rem", color:c.muted, marginTop:"4px" }}>{sub}</p>}
     </div>
   );
@@ -42,13 +42,13 @@ export default function AdminStatsPage() {
   const total   = data?.total || 0;
   const mrr     = data?.mrr   || 0;
 
-  const planColor = (p) => p==="ultimate"?c.amber:p==="pro"?c.green:c.blue;
+  const planColor = (p) => p==="ultimate"?c.blue:p==="pro"?c.green:c.blue;
 
   return (
     <div style={{ padding:"2rem 2.5rem", maxWidth:"1100px" }}>
       <div style={{ marginBottom:"2rem" }}>
         <p style={{ fontFamily:gs, fontSize:"0.62rem", color:c.muted, letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:600, marginBottom:"0.3rem" }}>Admin</p>
-        <h1 style={{ fontFamily:gs, fontSize:"1.8rem", fontWeight:700, color:c.text }}>Overview</h1>
+        <h1 style={{ fontFamily:gs, fontSize:"1.8rem", fontWeight:600, color:c.text }}>Overview</h1>
       </div>
 
       {/* Key metrics */}
@@ -64,7 +64,7 @@ export default function AdminStatsPage() {
           <StatCard label="Full Reports" value={data?.reports||0} sub="this month" c={c}/>
           <StatCard label="Essential" value={plans.essential||0} color={c.blue} c={c}/>
           <StatCard label="Pro" value={plans.pro||0} color={c.green} c={c}/>
-          <StatCard label="Ultimate" value={plans.ultimate||0} color={c.amber} c={c}/>
+          <StatCard label="Ultimate" value={plans.ultimate||0} color={c.blue} c={c}/>
           <StatCard label="Cancelled" value={plans.cancelled||0} color={c.red} c={c}/>
         </div>
       )}
@@ -100,7 +100,7 @@ export default function AdminStatsPage() {
                   <p style={{ fontFamily:gs, fontSize:"0.8rem", color:c.text, fontWeight:500 }}>{u.email}</p>
                   <p style={{ fontFamily:gs, fontSize:"0.68rem", color:c.muted }}>{new Date(u.joined).toLocaleDateString("en-GB")}</p>
                 </div>
-                <span style={{ fontFamily:gs, fontSize:"0.68rem", fontWeight:700, color:planColor(u.plan), textTransform:"capitalize", background:`${planColor(u.plan)}18`, border:`1px solid ${planColor(u.plan)}40`, borderRadius:"4px", padding:"2px 8px" }}>
+                <span style={{ fontFamily:gs, fontSize:"0.68rem", fontWeight:600, color:planColor(u.plan), textTransform:"capitalize", background:`${planColor(u.plan)}18`, border:`1px solid ${planColor(u.plan)}40`, borderRadius:"4px", padding:"2px 8px" }}>
                   {u.plan}
                 </span>
               </div>

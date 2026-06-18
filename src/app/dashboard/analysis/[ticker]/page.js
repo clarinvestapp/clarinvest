@@ -2,17 +2,18 @@
 export const dynamic = "force-dynamic";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
+import { FaBookmark, FaChartPie, FaChartSimple } from "react-icons/fa6";
 import { useTheme } from "@/lib/theme";
 import { createClient } from "@/lib/supabase";
 import FullReportPopup from "@/app/components/FullReportPopup";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
-  ResponsiveContainer, AreaChart, Area,
+  ResponsiveContainer, AreaChart, Area, ReferenceLine,
 } from "recharts";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
-const DARK  = { bg:"#090909",card:"#111113",surface:"#141416",border:"#232325",borderHi:"#333336",text:"#F0F0F0",muted:"#7A7A80",green:"#00E676",greenDim:"rgba(0,230,118,0.10)",blue:"#4488FF",blueDim:"rgba(68,136,255,0.12)",blue2:"rgba(68,136,255,0.62)",blue3:"rgba(68,136,255,0.35)",red:"#FF1800",redDim:"rgba(255,24,0,0.10)",amber:"#F59E0B" };
-const LIGHT = { bg:"#F7F7F5",card:"#FFFFFF",surface:"#EEEEED",border:"#DEDEDD",borderHi:"#BABAB8",text:"#0A0A0A",muted:"#606065",green:"#008A38",greenDim:"rgba(0,138,56,0.09)",blue:"#1E55CC",blueDim:"rgba(30,85,204,0.09)",blue2:"rgba(30,85,204,0.62)",blue3:"rgba(30,85,204,0.35)",red:"#CC0000",redDim:"rgba(204,0,0,0.10)",amber:"#B45309" };
+const DARK  = { bg:"#090909",card:"#111113",surface:"#141416",border:"#232325",borderHi:"#333336",text:"#F0F0F0",muted:"#7A7A80",green:"#00E676",greenDim:"rgba(0,230,118,0.10)",blue:"#4488FF",blueDim:"rgba(68,136,255,0.12)",blue2:"rgba(68,136,255,0.62)",blue3:"rgba(68,136,255,0.35)",red:"#FF1800",redDim:"rgba(255,24,0,0.10)" };
+const LIGHT = { bg:"#F7F7F5",card:"#FFFFFF",surface:"#EEEEED",border:"#DEDEDD",borderHi:"#BABAB8",text:"#0A0A0A",muted:"#606065",green:"#008A38",greenDim:"rgba(0,138,56,0.09)",blue:"#1E55CC",blueDim:"rgba(30,85,204,0.09)",blue2:"rgba(30,85,204,0.62)",blue3:"rgba(30,85,204,0.35)",red:"#CC0000",redDim:"rgba(204,0,0,0.10)" };
 const gs = "'Google Sans Flex','DM Sans',sans-serif";
 
 // ─── 5-year NVDA mock data (FY2022 – FY2026) ──────────────────────────────────
@@ -72,7 +73,7 @@ function AIScore({ score, c, size=68 }) {
         <circle cx={cx} cy={cx} r={r} fill="none" stroke={col} strokeWidth="4" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"/>
       </svg>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-        <span style={{fontFamily:gs,fontSize:size*0.22,fontWeight:800,color:col,lineHeight:1}}>{score??""}</span>
+        <span style={{fontFamily:gs,fontSize:size*0.22,fontWeight:600,color:col,lineHeight:1}}>{score??""}</span>
         <span style={{fontFamily:gs,fontSize:"0.45rem",color:c.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginTop:"2px"}}>AI Score</span>
       </div>
     </div>
@@ -518,18 +519,10 @@ function CashFlowSankey({c}) {
 }
 
 // ─── Sankey toggle icons ───────────────────────────────────────────────────────
-const IconBar = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="3" y="12" width="4" height="9" rx="1.5"/><rect x="10" y="7" width="4" height="14" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>
-  </svg>
-);
+const IconBar = () => <FaChartSimple style={{ width:13, height:13 }}/>;
 const IconFlow = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2.82,6.62h-1.17c-.76,0-1.38-.62-1.38-1.38v-2.62c0-.76.62-1.38,1.38-1.38h1.17c.76,0,1.38.62,1.38,1.38v2.62c0,.76-.62,1.38-1.38,1.38ZM1.66,2.25c-.21,0-.38.17-.38.38v2.62c0,.21.17.38.38.38h1.17c.21,0,.38-.17.38-.38v-2.62c0-.21-.17-.38-.38-.38h-1.17Z"/>
-    <path d="M2.82,12.75h-1.17c-.76,0-1.38-.62-1.38-1.38v-2.62c0-.76.62-1.38,1.38-1.38h1.17c.76,0,1.38.62,1.38,1.38v2.62c0,.76-.62,1.38-1.38,1.38ZM1.66,8.38c-.21,0-.38.17-.38.38v2.62c0,.21.17.38.38.38h1.17c.21,0,.38-.17.38-.38v-2.62c0-.21-.17-.38-.38-.38h-1.17Z"/>
-    <path d="M11.08,4.39v-2.06s-2.96,0-3.81,1.87c-1.24-1.56-3.19-1.87-3.19-1.87v3.21s1.29.22,2,1c.12.14.21.3.3.46-.09.16-.18.33-.3.46-.71.78-2,1-2,1v3.21s1.95-.31,3.19-1.87c.86,1.87,3.81,1.87,3.81,1.87v-2.06s-1.47,0-2.05-.67c-.41-.48-.6-1.22-.74-1.94.14-.72.32-1.46.74-1.94.58-.67,2.05-.67,2.05-.67Z"/>
-    <path d="M12.9,12.59h-.85c-.6,0-1.1-.49-1.1-1.1v-1.71c0-.6.49-1.1,1.1-1.1h.85c.6,0,1.1.49,1.1,1.1v1.71c0,.6-.49,1.1-1.1,1.1ZM12.06,9.69c-.05,0-.1.04-.1.1v1.71c0,.05.04.1.1.1h.85c.05,0,.1-.04.1-.1v-1.71c0-.05-.04-.1-.1-.1h-.85Z"/>
-    <path d="M12.9,5.36h-.85c-.6,0-1.1-.49-1.1-1.1v-1.71c0-.6.49-1.1,1.1-1.1h.85c.6,0,1.1.49,1.1,1.1v1.71c0,.6-.49,1.1-1.1,1.1ZM12.06,2.46c-.05,0-.1.04-.1.1v1.71c0,.05.04.1.1.1h.85c.05,0,.1-.04.1-.1v-1.71c0-.05-.04-.1-.1-.1h-.85Z"/>
+  <svg width="14" height="14" viewBox="0 0 576 512" fill="currentColor">
+    <path d="M299.5 71.4c5.8-4.8 13-7.4 20.5-7.4l192 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-180.4 0-87.1 72.6c-5.8 4.8-13 7.4-20.5 7.4L32 208c-17.7 0-32-14.3-32-32s14.3-32 32-32l180.4 0 87.1-72.6zM144 320L32 320c-17.7 0-32-14.3-32-32s14.3-32 32-32l480 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-288 0 48 64 240 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-256 0c-10.1 0-19.6-4.7-25.6-12.8L144 320z"/>
   </svg>
 );
 
@@ -605,8 +598,8 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
   const [iTab,setITab]=useState("overview");      // index tab — hoisted per Rules of Hooks
   const isUlt=userPlan==="ultimate";
   const d=D[tab]?.[year]||{};
-  const tBtn=a=>({background:"none",border:"none",cursor:"pointer",fontFamily:gs,fontSize:"0.72rem",fontWeight:a?600:400,color:a?c.text:c.muted,borderBottom:`2px solid ${a?c.text:"transparent"}`,padding:"5px 8px",paddingBottom:"7px",marginBottom:"-1px",transition:"all 0.15s",whiteSpace:"nowrap"});
-  const pill=a=>({background:a?c.text:"transparent",color:a?c.bg:c.muted,border:`1px solid ${a?c.text:c.border}`,borderRadius:"4px",padding:"3px 8px",fontFamily:gs,fontSize:"0.66rem",fontWeight:600,cursor:"pointer",transition:"all 0.15s"});
+  const tBtn=a=>({background:"none",border:"none",cursor:"pointer",fontFamily:gs,fontSize:"0.72rem",fontWeight:a?600:400,color:a?c.text:c.muted,borderBottom:`2px solid ${a?c.text:"transparent"}`,padding:"5px 8px",paddingBottom:"7px",marginBottom:"-1px",transition:"opacity 0.15s ease",whiteSpace:"nowrap"});
+  const pill=a=>({background:a?c.text:"transparent",color:a?c.bg:c.muted,border:`1px solid ${a?c.text:c.border}`,borderRadius:"4px",padding:"3px 8px",fontFamily:gs,fontSize:"0.66rem",fontWeight:600,cursor:"pointer",transition:"opacity 0.15s ease"});
   
   function rows() {
     switch(tab){
@@ -630,7 +623,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
     const ETF_TABS = [{id:"overview",l:"Overview"},{id:"performance",l:"Performance"},{id:"holdings",l:"Top Holdings"},{id:"sectors",l:"Allocation"},{id:"dividends",l:"Dividends"}];
     return (
       <div>
-        <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:700,color:c.text,marginBottom:"0.9rem"}}>Fund Profile</p>
+        <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Fund Profile</p>
         <div style={{display:"flex",gap:"0",overflowX:"auto",borderBottom:`1px solid ${c.border}`,marginBottom:"0.9rem",scrollbarWidth:"none"}}>
           {ETF_TABS.map(t=><button key={t.id} onClick={()=>setEtfTab(t.id)} style={tBtn(etfTab===t.id)}>{t.l}</button>)}
         </div>
@@ -661,7 +654,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
               <div key={h.ticker} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${c.border}`}}>
                 <div style={{display:"flex",alignItems:"center",gap:"8px",flex:1,minWidth:0}}>
                   <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,width:"16px",flexShrink:0}}>{i+1}</span>
-                  <span style={{fontFamily:gs,fontSize:"0.8rem",fontWeight:700,color:c.text,flexShrink:0}}>{h.ticker}</span>
+                  <span style={{fontFamily:gs,fontSize:"0.8rem",fontWeight:600,color:c.text,flexShrink:0}}>{h.ticker}</span>
                   <span style={{fontFamily:gs,fontSize:"0.7rem",color:c.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}</span>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0,marginLeft:"8px"}}>
@@ -709,7 +702,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
     const CTABS = [{id:"overview",l:"Overview"},{id:"performance",l:"Performance"},{id:"technicals",l:"Technicals"},{id:"fundamentals",l:"Supply & Demand"}];
     return (
       <div>
-        <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:700,color:c.text,marginBottom:"0.9rem"}}>Commodity Profile</p>
+        <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Commodity Profile</p>
         <div style={{display:"flex",gap:"0",overflowX:"auto",borderBottom:`1px solid ${c.border}`,marginBottom:"0.9rem",scrollbarWidth:"none"}}>
           {CTABS.map(t=><button key={t.id} onClick={()=>setCTab(t.id)} style={tBtn(cTab===t.id)}>{t.l}</button>)}
         </div>
@@ -763,7 +756,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
     const ITABS = [{id:"overview",l:"Overview"},{id:"performance",l:"Performance"},{id:"constituents",l:"Top Holdings"},{id:"sectors",l:"Sectors"}];
     return (
       <div>
-        <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:700,color:c.text,marginBottom:"0.9rem"}}>Index Profile</p>
+        <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Index Profile</p>
         <div style={{display:"flex",gap:"0",overflowX:"auto",borderBottom:`1px solid ${c.border}`,marginBottom:"0.9rem",scrollbarWidth:"none"}}>
           {ITABS.map(t=><button key={t.id} onClick={()=>setITab(t.id)} style={tBtn(iTab===t.id)}>{t.l}</button>)}
         </div>
@@ -794,7 +787,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
               <div key={h.ticker} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${c.border}`}}>
                 <div style={{display:"flex",alignItems:"center",gap:"8px",flex:1,minWidth:0}}>
                   <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,width:"16px",flexShrink:0}}>{i+1}</span>
-                  <span style={{fontFamily:gs,fontSize:"0.8rem",fontWeight:700,color:c.text,flexShrink:0}}>{h.ticker}</span>
+                  <span style={{fontFamily:gs,fontSize:"0.8rem",fontWeight:600,color:c.text,flexShrink:0}}>{h.ticker}</span>
                   <span style={{fontFamily:gs,fontSize:"0.7rem",color:c.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}</span>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0,marginLeft:"8px"}}>
@@ -830,7 +823,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
   return (
     <div>
       {/* Section label */}
-      <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:700,color:c.text,marginBottom:"0.9rem"}}>Statistics</p>
+      <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Statistics</p>
       {/* Tab row */}
       <div style={{display:"flex",gap:"0",overflowX:"auto",borderBottom:`1px solid ${c.border}`,marginBottom:"0.9rem",scrollbarWidth:"none"}}>
         {STABS.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={tBtn(tab===t.id)}>{t.l}</button>)}
@@ -877,19 +870,19 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
             {[{l:"Pays Dividend",v:"Yes",col:c.green},{l:"Annual Yield",v:"0.02%",col:c.muted},{l:"Annual DPS",v:"$0.04",col:c.text},{l:"Payout Ratio",v:"0.81%",col:c.green}].map((item,i)=>(
               <div key={i} style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"8px",padding:"0.7rem"}}>
                 <p style={{fontFamily:gs,fontSize:"0.58rem",color:c.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"3px"}}>{item.l}</p>
-                <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:700,color:item.col}}>{item.v}</p>
+                <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:item.col}}>{item.v}</p>
               </div>
             ))}
           </div>
-          <div style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"10px",padding:"1.25rem",textAlign:"center"}}>
-            <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:700,color:c.text,marginBottom:"0.4rem"}}>Dividend Intelligence</p>
+          <div style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"8px",padding:"1.25rem",textAlign:"center"}}>
+            <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.4rem"}}>Dividend Intelligence</p>
             <p style={{fontFamily:gs,fontSize:"0.78rem",color:c.muted,lineHeight:1.65,marginBottom:"1.1rem",maxWidth:"260px",margin:"0 auto 1.1rem"}}>
               Safety scores, growth gauges, payout history and income projector are available on the Ultimate plan.
             </p>
             <div style={{display:"flex",gap:"0.6rem",justifyContent:"center",flexWrap:"wrap"}}>
               {!isUlt&&(
                 <button onClick={()=>router.push("/dashboard/account?tab=plan")}
-                  style={{background:c.text,color:c.bg,border:"none",borderRadius:"6px",padding:"8px 18px",fontFamily:gs,fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>
+                  style={{background:c.text,color:c.bg,border:"none",borderRadius:"4px",padding:"8px 18px",fontFamily:gs,fontSize:"0.78rem",fontWeight:600,cursor:"pointer"}}>
                   Upgrade to Ultimate
                 </button>
               )}
@@ -900,7 +893,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
                   const paysDividend = divYield && parseFloat(divYield) > 0;
                   router.push(paysDividend ? `/dashboard/dividends?ticker=${ticker}` : "/dashboard/dividends");
                 }}
-                  style={{background:c.green,color:"#050505",border:"none",borderRadius:"6px",padding:"8px 18px",fontFamily:gs,fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>
+                  style={{background:c.green,color:"#050505",border:"none",borderRadius:"4px",padding:"8px 18px",fontFamily:gs,fontSize:"0.78rem",fontWeight:600,cursor:"pointer"}}>
                   Go to Dividends section ↗
                 </button>
               )}
@@ -919,8 +912,8 @@ function FinancialsPanel({c,mode,userPlan}) {
   const [period,setPeriod]=useState("Annual");
   const [view,setView]=useState("bar");
   const isUlt=userPlan==="ultimate";
-  const tBtn=a=>({background:"none",border:"none",cursor:"pointer",fontFamily:gs,fontSize:"0.72rem",fontWeight:a?600:400,color:a?c.text:c.muted,borderBottom:`2px solid ${a?c.text:"transparent"}`,padding:"5px 8px",paddingBottom:"7px",marginBottom:"-1px",transition:"all 0.15s",whiteSpace:"nowrap"});
-  const pill=a=>({background:a?c.text:"transparent",color:a?c.bg:c.muted,border:`1px solid ${a?c.text:c.border}`,borderRadius:"4px",padding:"3px 8px",fontFamily:gs,fontSize:"0.66rem",fontWeight:600,cursor:"pointer",transition:"all 0.15s"});
+  const tBtn=a=>({background:"none",border:"none",cursor:"pointer",fontFamily:gs,fontSize:"0.72rem",fontWeight:a?600:400,color:a?c.text:c.muted,borderBottom:`2px solid ${a?c.text:"transparent"}`,padding:"5px 8px",paddingBottom:"7px",marginBottom:"-1px",transition:"opacity 0.15s ease",whiteSpace:"nowrap"});
+  const pill=a=>({background:a?c.text:"transparent",color:a?c.bg:c.muted,border:`1px solid ${a?c.text:c.border}`,borderRadius:"4px",padding:"3px 8px",fontFamily:gs,fontSize:"0.66rem",fontWeight:600,cursor:"pointer",transition:"opacity 0.15s ease"});
 
   function finRows() {
     if(tab==="income"){ const d=D.income[year]; return [[`Revenue`,`$${d.revenue?.toFixed(2)}B`,false,true],[`Cost of Revenue`,`$${d.cogs?.toFixed(2)}B`,true,false],[`Gross Profit`,`$${d.grossProfit?.toFixed(2)}B`,false,true],[`Gross Margin`,`${((d.grossProfit/d.revenue)*100).toFixed(2)}%`,true,false],[`Operating Expenses`,`$${d.opex?.toFixed(2)}B`,true,false],[`Operating Income`,`$${d.opIncome?.toFixed(2)}B`,false,true],[`Op. Margin`,`${((d.opIncome/d.revenue)*100).toFixed(2)}%`,true,false],[`Other Income / Exp.`,`$${d.otherNet?.toFixed(2)}B`,true,false],[`Income Before Tax`,`$${d.ebt?.toFixed(2)}B`,false,false],[`Income Tax`,`$${d.tax?.toFixed(2)}B`,true,false],[`Net Income`,`$${d.netIncome?.toFixed(2)}B`,false,true],[`Net Margin`,`${((d.netIncome/d.revenue)*100).toFixed(2)}%`,true,false]]; }
@@ -930,7 +923,7 @@ function FinancialsPanel({c,mode,userPlan}) {
 
   return (
     <div>
-      <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:700,color:c.text,marginBottom:"0.9rem"}}>Financials</p>
+      <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Financials</p>
       <div style={{display:"flex",gap:"0",borderBottom:`1px solid ${c.border}`,marginBottom:"0.9rem",scrollbarWidth:"none"}}>
         {[{id:"income",l:"Income Statement"},{id:"balance",l:"Balance Sheet"},{id:"cashflow",l:"Cash Flow"}].map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={tBtn(tab===t.id)}>{t.l}</button>)}
       </div>
@@ -955,7 +948,7 @@ function FinancialsPanel({c,mode,userPlan}) {
             title={isUlt?"Sankey flow diagram":"Upgrade to Ultimate for Sankey diagrams"}
             style={{...pill(view==="sankey"),borderRadius:"4px",padding:"4px 9px",display:"flex",alignItems:"center",gap:"4px",opacity:isUlt?1:0.5,cursor:isUlt?"pointer":"not-allowed",position:"relative"}}>
             <IconFlow/><span style={{fontSize:"0.63rem"}}>Flow</span>
-            {!isUlt&&<span style={{position:"absolute",top:"-4px",right:"-4px",background:c.amber,color:"#000",fontSize:"0.38rem",fontWeight:800,padding:"1px 4px",borderRadius:"2px",letterSpacing:"0.04em"}}>ULT</span>}
+            {!isUlt&&<span style={{position:"absolute",top:"-4px",right:"-4px",background:c.blue,color:"#000",fontSize:"0.38rem",fontWeight:600,padding:"1px 4px",borderRadius:"2px",letterSpacing:"0.04em"}}>ULT</span>}
           </button>
         </div>
       </div>
@@ -1110,7 +1103,7 @@ function TermsExplained({c, instrumentType="stock"}) {
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"0.5rem",paddingTop:"0.4rem",paddingLeft:"1rem",paddingBottom:"0.5rem"}}>
                   {s.items.map(([term,def])=>(
                     <div key={term} style={{background:c.surface,borderRadius:"8px",padding:"0.7rem",border:`1px solid ${c.border}`}}>
-                      <p style={{fontFamily:gs,fontSize:"0.72rem",fontWeight:700,color:c.text,marginBottom:"4px"}}>{term}</p>
+                      <p style={{fontFamily:gs,fontSize:"0.72rem",fontWeight:600,color:c.text,marginBottom:"4px"}}>{term}</p>
                       <p style={{fontFamily:gs,fontSize:"0.72rem",color:c.muted,lineHeight:1.62}}>{def}</p>
                     </div>
                   ))}
@@ -1125,14 +1118,22 @@ function TermsExplained({c, instrumentType="stock"}) {
 }
 
 // ─── SVG action icons ─────────────────────────────────────────────────────────
-const IconBookmark = ({filled,size=14}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill={filled?"currentColor":"none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>);
-const IconPieChartSm = ({size=14}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>);
-const IconChevronDn = ({size=11}) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>);
+const IconBookmark = ({filled, size=14}) => (
+  <FaBookmark style={{ width:size, height:size, opacity: filled ? 1 : 0.5 }}/>
+);
+const IconPieChartSm = ({size=14}) => (
+  <FaChartPie style={{ width:size, height:size }}/>
+);
+const IconChevronDn = ({size=11}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+);
 
 const MOCK_PORTFOLIOS = [{id:"p1",name:"Tech Growth"},{id:"p2",name:"Dividend Income"},{id:"p3",name:"Balanced Global"}];
 
 // ─── Mock price chart ─────────────────────────────────────────────────────────
-const TIME_RANGES=["1W","1M","3M","6M","1Y","2Y","3Y","5Y"];
+const TIME_RANGES=["1W","1M","3M","6M","1Y","2Y","3Y","5Y","Max"];
 function genFullChart(){
   const pts=[];let price=180;
   for(let i=0;i<260;i++){
@@ -1144,7 +1145,34 @@ function genFullChart(){
   return pts;
 }
 const ALL_CHART=genFullChart();
-const RANGE_DAYS={"1W":5,"1M":20,"3M":60,"6M":120,"1Y":260,"2Y":260,"3Y":260,"5Y":260};
+const RANGE_DAYS={"1W":5,"1M":20,"3M":60,"6M":120,"1Y":260,"2Y":260,"3Y":260,"5Y":260,"Max":9999};
+
+const MOCK_EARNINGS_DATES=["2024-02-21","2024-05-22","2024-08-28","2024-11-20","2025-02-26","2025-05-28","2025-08-27","2025-11-19","2026-02-25"];
+const MOCK_ETF_DIV_DATES=["2024-03-21","2024-06-20","2024-09-19","2024-12-19","2025-03-20","2025-06-19","2025-09-18","2025-12-18"];
+
+function snapEvents(events,data){
+  if(!data.length)return[];
+  const min=data[0].date,max=data[data.length-1].date;
+  return events
+    .filter(e=>e>=min&&e<=max)
+    .map(e=>{
+      let best=data[0].date,bestDiff=Math.abs(new Date(e)-new Date(best));
+      for(const pt of data){const diff=Math.abs(new Date(e)-new Date(pt.date));if(diff<bestDiff){bestDiff=diff;best=pt.date;}}
+      return best;
+    })
+    .filter((v,i,a)=>a.indexOf(v)===i);
+}
+
+const _fpEPS=4.93,_fpBVPS=6.47,_fpFCF=3.98,_fpGrowth=65.99;
+const _pegFairP=_fpGrowth*_fpEPS;
+const _grahamP=Math.sqrt(22.5*_fpEPS*_fpBVPS);
+const _fcfFairP=_fpFCF/0.03;
+const FAIR_PRICE=Math.round((_pegFairP*0.50)+(_fcfFairP*0.35)+(_grahamP*0.15));
+
+const _latestP=ALL_CHART[ALL_CHART.length-1]?.price??875.40;
+const _v20=ALL_CHART[Math.max(0,ALL_CHART.length-21)]?.price??_latestP;
+const _momPct=((_latestP-_v20)/_v20)*100;
+const MOMENTUM_SCORE=_momPct<-5?1:_momPct<-1?2:_momPct<1?3:_momPct<5?4:5;
 
 // ─── Main page ─────────────────────────────────────────────────────────────────
 export default function Page(){
@@ -1153,9 +1181,11 @@ export default function Page(){
   const router = useRouter();
   const params = useParams();
   const ticker = params?.ticker || "NVDA";
-  const [userPlan,setUserPlan]=useState("ultimate"); // TODO: wire to user session
-  const [instrumentType]=useState("stock");          // TODO: wire to ticker type from FMP
+  const [userPlan,setUserPlan]=useState("essential");
+  const [instrumentType,setInstrumentType]=useState("stock");
+  const [instrumentGated,setInstrumentGated]=useState(false);
   const [inWL,setInWL]=useState(false);
+  const [chartExpanded,setChartExpanded]=useState(false);
   const [wlToken,setWlToken]=useState(null);
   const [aiState,setAiState]=useState(null);
   const [timeRange,setTimeRange]=useState("3M");
@@ -1173,10 +1203,54 @@ export default function Page(){
 
   // ── Auth + watchlist state + portfolios ──────────────────────────────────────
   useEffect(()=>{
-    supabase.auth.getSession().then(({data:{session}})=>{
+    supabase.auth.getSession().then(async ({data:{session}})=>{
       if(!session) return;
       const tok = session.access_token;
       setWlToken(tok);
+
+      // Wire userPlan from session metadata
+      const plan = session.user?.user_metadata?.plan || "essential";
+      setUserPlan(plan);
+
+      // Wire instrumentType from FMP profile
+      try {
+        const res = await fetch(`/api/analysis/${ticker.toUpperCase()}`);
+        if (res.ok) {
+          const data = await res.json();
+          const profile = data.profile || {};
+          const t = ticker.toUpperCase();
+
+          // Detect type from FMP profile fields and ticker pattern
+          const COMMODITY_SUFFIXES = ["=F","=X","XAUUSD","XAGUSD","XPTUSD","XPDUSD","WTICL","BRENT","NGAS","COPPER"];
+          const isCommodity = COMMODITY_SUFFIXES.some(s => t.endsWith(s) || t === s) || profile.sector === "Commodities";
+          const isIndex     = t.startsWith("^") || profile.isIndex === true;
+          const isEtf       = profile.isEtf === true;
+
+          let detectedType = "stock";
+          if (isCommodity) detectedType = "commodity";
+          else if (isIndex) detectedType = "index";
+          else if (isEtf)   detectedType = "etf";
+
+          // Plan gating: commodity = all plans, index = pro+, etf = ultimate only
+          const PLAN_RANK = { essential:1, pro:2, ultimate:3 };
+          const TYPE_MIN  = { stock:1, commodity:1, index:2, etf:3 };
+          const userRank  = PLAN_RANK[plan] || 1;
+          const typeMin   = TYPE_MIN[detectedType] || 1;
+
+          if (userRank < typeMin) {
+            setInstrumentType("stock"); // safe fallback so page doesn't break
+            setInstrumentGated(true);
+          } else {
+            setInstrumentType(detectedType);
+            setInstrumentGated(false);
+          }
+        }
+      } catch {
+        // FMP unavailable — default to stock layout, no gate
+        setInstrumentType("stock");
+        setInstrumentGated(false);
+      }
+
       // Check if this ticker is already in watchlist
       fetch("/api/watchlist",{headers:{Authorization:`Bearer ${tok}`}})
         .then(r=>r.json())
@@ -1217,10 +1291,13 @@ export default function Page(){
   },[wlToken,inWL,ticker]);
 
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<940);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]);
+  useEffect(()=>{if(!chartExpanded)return;const h=e=>{if(e.key==="Escape")setChartExpanded(false);};window.addEventListener("keydown",h);return()=>window.removeEventListener("keydown",h);},[chartExpanded]);
 
   const chartData=ALL_CHART.slice(-RANGE_DAYS[timeRange]);
   const chartMin=Math.min(...chartData.map(d=>d.price))*0.993;
   const chartMax=Math.max(...chartData.map(d=>d.price))*1.007;
+  const visibleEarnings=useMemo(()=>snapEvents(MOCK_EARNINGS_DATES,chartData),[timeRange]);
+  const visibleDivs=useMemo(()=>snapEvents(MOCK_ETF_DIV_DATES,chartData),[timeRange]);
 
   const generateAnalysis = useCallback(async (type) => {
     setAiLoading(true); setAiError(null);
@@ -1249,13 +1326,13 @@ export default function Page(){
     }
   }, [ticker]);
 
-  const pill=a=>({background:a?c.text:"transparent",color:a?c.bg:c.muted,border:`1px solid ${a?c.text:c.border}`,borderRadius:"4px",padding:"4px 10px",fontFamily:gs,fontSize:"0.68rem",fontWeight:600,cursor:"pointer",transition:"all 0.15s"});
+  const pill=a=>({background:a?c.text:"transparent",color:a?c.bg:c.muted,border:`1px solid ${a?c.text:c.border}`,borderRadius:"4px",padding:"4px 10px",fontFamily:gs,fontSize:"0.68rem",fontWeight:600,cursor:"pointer",transition:"opacity 0.15s ease"});
 
   const ChartTip=({active,payload})=>{
     if(!active||!payload?.length) return null;
     return(<div style={{background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"7px",padding:"7px 11px",boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>
       <div style={{fontFamily:gs,fontSize:"0.66rem",color:c.muted}}>{payload[0].payload.date}</div>
-      <div style={{fontFamily:gs,fontSize:"0.82rem",fontWeight:700,color:c.text}}>${payload[0].value?.toFixed(2)}</div>
+      <div style={{fontFamily:gs,fontSize:"0.82rem",fontWeight:600,color:c.text}}>${payload[0].value?.toFixed(2)}</div>
     </div>);
   };
 
@@ -1273,25 +1350,25 @@ export default function Page(){
       <div style={{position:"sticky",top:0,zIndex:99,background:mode==="dark"?"rgba(9,9,9,0.96)":"rgba(247,247,245,0.96)",backdropFilter:"blur(12px)",borderBottom:`1px solid ${c.border}`}}>
         <div style={{maxWidth:"1100px",margin:"0 auto",padding:"0 2rem",height:"48px",display:"flex",alignItems:"center",gap:"1rem",flexWrap:"nowrap"}}>
         <button onClick={()=>router.push(`/dashboard?instrument=${ticker}`)}
-          style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"4px 11px",cursor:"pointer",color:c.muted,fontFamily:gs,fontSize:"0.76rem",display:"flex",alignItems:"center",gap:"4px",flexShrink:0}}>← Discovery</button>
-        <span style={{fontFamily:gs,fontSize:"0.96rem",fontWeight:700,color:c.text,flexShrink:0}}>NVDA</span>
+          style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"4px 11px",cursor:"pointer",color:c.muted,fontFamily:gs,fontSize:"0.76rem",display:"flex",alignItems:"center",gap:"4px",flexShrink:0}}>← Discovery</button>
+        <span style={{fontFamily:gs,fontSize:"0.96rem",fontWeight:600,color:c.text,flexShrink:0}}>NVDA</span>
         <span style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,flexShrink:0}}>$875.40</span>
-        <span style={{fontFamily:gs,fontSize:"0.8rem",fontWeight:700,color:c.green,flexShrink:0}}>+5.43%</span>
-        <span style={{fontFamily:gs,fontSize:"0.62rem",fontWeight:700,color:c.green,background:c.greenDim,border:`1px solid ${c.green}40`,borderRadius:"4px",padding:"2px 7px",letterSpacing:"0.05em",textTransform:"uppercase",flexShrink:0}}>Open</span>
+        <span style={{fontFamily:gs,fontSize:"0.8rem",fontWeight:600,color:c.green,flexShrink:0}}>+5.43%</span>
+        <span style={{fontFamily:gs,fontSize:"0.62rem",fontWeight:600,color:c.green,background:c.greenDim,border:`1px solid ${c.green}40`,borderRadius:"6px",padding:"2px 7px",letterSpacing:"0.05em",textTransform:"uppercase",flexShrink:0}}>Open</span>
         <div style={{marginLeft:"auto",display:"flex",gap:"0.4rem",alignItems:"center"}}>
           {/* Watchlist */}
           <button onClick={toggleWatchlist}
-            style={{background:inWL?c.greenDim:"transparent",border:`1px solid ${inWL?`${c.green}50`:c.border}`,borderRadius:"6px",padding:"5px 12px",cursor:"pointer",color:inWL?c.green:c.muted,fontFamily:gs,fontSize:"0.78rem",display:"flex",alignItems:"center",gap:"6px",transition:"all 0.2s"}}>
+            style={{background:inWL?c.greenDim:"transparent",border:`1px solid ${inWL?`${c.green}50`:c.border}`,borderRadius:"4px",padding:"5px 12px",cursor:"pointer",color:inWL?c.green:c.muted,fontFamily:gs,fontSize:"0.78rem",display:"flex",alignItems:"center",gap:"6px",transition:"opacity 0.2s ease"}}>
             <IconBookmark filled={inWL} size={14}/>{inWL?"Watching":"Watchlist"}
           </button>
           {/* Add to Portfolio */}
           <div style={{position:"relative"}}>
             <button onClick={()=>setPortOpen(!portOpen)}
-              style={{background:addedTo?c.greenDim:c.surface,border:`1px solid ${addedTo?`${c.green}50`:c.borderHi}`,borderRadius:"6px",padding:"5px 12px",cursor:"pointer",color:addedTo?c.green:c.muted,fontFamily:gs,fontSize:"0.78rem",display:"flex",alignItems:"center",gap:"6px",transition:"all 0.2s"}}>
+              style={{background:addedTo?c.greenDim:c.surface,border:`1px solid ${addedTo?`${c.green}50`:c.borderHi}`,borderRadius:"4px",padding:"5px 12px",cursor:"pointer",color:addedTo?c.green:c.muted,fontFamily:gs,fontSize:"0.78rem",display:"flex",alignItems:"center",gap:"6px",transition:"opacity 0.2s ease"}}>
               <IconPieChartSm size={14}/>{addedTo?`Added to ${addedTo} ✓`:"Portfolio"}<IconChevronDn size={10}/>
             </button>
             {portOpen&&(
-              <div style={{position:"absolute",top:"calc(100% + 5px)",right:0,background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"9px",overflow:"hidden",zIndex:500,boxShadow:"0 8px 24px rgba(0,0,0,0.25)",minWidth:"200px"}}>
+              <div style={{position:"absolute",top:"calc(100% + 5px)",right:0,background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"8px",overflow:"hidden",zIndex:500,boxShadow:"0 8px 24px rgba(0,0,0,0.25)",minWidth:"200px"}}>
                 <div style={{padding:"7px 12px 6px",fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.1em",textTransform:"uppercase",borderBottom:`1px solid ${c.border}`,fontWeight:600}}>Add {ticker.toUpperCase()} to</div>
                 {portfolios.length===0&&(
                   <div style={{padding:"10px 14px",fontFamily:gs,fontSize:"0.76rem",color:c.muted,fontStyle:"italic"}}>No portfolios yet</div>
@@ -1338,43 +1415,18 @@ export default function Page(){
           <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.3rem",flexWrap:"wrap"}}>
             <span style={{fontFamily:gs,fontSize:"0.68rem",color:c.muted}}>NASDAQ · USD · ISIN: US67066G1040</span>
           </div>
-          <h1 style={{fontFamily:gs,fontSize:"clamp(1.3rem,3vw,2rem)",fontWeight:700,color:c.text,marginBottom:"0.4rem"}}>NVDA · NVIDIA Corporation</h1>
+          <h1 style={{fontFamily:gs,fontSize:"clamp(1.3rem,3vw,2rem)",fontWeight:600,color:c.text,marginBottom:"0.4rem"}}>NVDA · NVIDIA Corporation</h1>
           <div style={{display:"flex",alignItems:"flex-end",gap:"0.6rem",flexWrap:"wrap"}}>
-            <span style={{fontFamily:gs,fontSize:"2.2rem",fontWeight:700,color:c.text,lineHeight:1}}>$875.40</span>
-            <span style={{fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.green,paddingBottom:"3px"}}>+$44.99 (+5.43%) today</span>
+            <span style={{fontFamily:gs,fontSize:"2.2rem",fontWeight:600,color:c.text,lineHeight:1}}>$875.40</span>
+            <span style={{fontFamily:gs,fontSize:"1rem",fontWeight:600,color:c.green,paddingBottom:"3px"}}>+$44.99 (+5.43%) today</span>
           </div>
         </div>
 
-        {/* Ranges + Key Metrics: single unified card */}
-        <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"12px",padding:"1rem",marginBottom:"1.5rem",display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:"0",alignItems:"start"}}>
-          {/* Range bars */}
+        {/* Key Metrics + Signals & Ranges */}
+        <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1rem",marginBottom:"1.5rem",display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:"0",alignItems:"start"}}>
+          {/* LEFT: Key Metrics */}
           <div>
-            <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.09em",textTransform:"uppercase",fontWeight:600,marginBottom:"0.75rem"}}>Price Ranges</p>
-            {[{l:"1 Day",lo:831.20,hi:891.60},{l:"52 Week",lo:402.01,hi:974.00}].map((r)=>{
-              const pct=Math.min(100,Math.max(0,((875.40-r.lo)/(r.hi-r.lo))*100));
-              return (
-                <div key={r.l} style={{marginBottom:"0.65rem"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
-                    <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,fontWeight:600}}>{r.l}</span>
-                    <span style={{fontFamily:gs,fontSize:"0.66rem",color:c.text,fontWeight:600}}>$875.40</span>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                    <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.red,fontWeight:600,minWidth:"38px",textAlign:"right"}}>${r.lo.toFixed(0)}</span>
-                    <div style={{flex:1,height:"4px",background:c.surface,borderRadius:"2px",position:"relative"}}>
-                      <div style={{position:"absolute",left:0,width:`${pct}%`,height:"100%",background:`linear-gradient(90deg,${c.red},${c.green})`,borderRadius:"2px"}}/>
-                      <div style={{position:"absolute",top:"-4px",left:`calc(${pct}% - 4px)`,width:"8px",height:"12px",background:c.text,borderRadius:"2px",border:`1px solid ${c.bg}`}}/>
-                    </div>
-                    <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.green,fontWeight:600,minWidth:"38px"}}>${r.hi.toFixed(0)}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {/* Divider */}
-          <div style={{width:"1px",background:c.border,alignSelf:"stretch",margin:"0 1rem"}}/>
-          {/* Key metrics */}
-          <div>
-            <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.09em",textTransform:"uppercase",fontWeight:600,marginBottom:"0.75rem"}}>Key Metrics</p>
+            <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"0.75rem"}}>Key Metrics</p>
             {[["Market Cap","$5.40T"],["P/E Ratio","37.75"],["Beta","2.24"],["EPS","$4.93"],["Avg Volume","171M"],["Div Yield","0.02%"]].map(([l,v])=>(
               <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:`1px solid ${c.border}`}}>
                 <span style={{fontFamily:gs,fontSize:"0.72rem",color:c.muted}}>{l}</span>
@@ -1382,14 +1434,118 @@ export default function Page(){
               </div>
             ))}
           </div>
+          {/* Divider */}
+          <div style={{width:"1px",background:c.border,alignSelf:"stretch",margin:"0 1rem"}}/>
+          {/* RIGHT: Signals + Price Ranges */}
+          <div>
+            {(()=>{
+              const pegVal=D.valuation["2026"].peg??0;
+              const pegPct=Math.min(100,Math.max(0,(pegVal/2)*100));
+              const pegLabel=pegVal<0.75?"Undervalued":pegVal<1.25?"Fair Value":"Overvalued";
+              const pegCol=pegVal<0.75?c.green:pegVal<1.25?c.text:c.red;
+              const momCol=MOMENTUM_SCORE>=4?c.green:MOMENTUM_SCORE<=2?c.red:c.muted;
+              const premium=Math.round(((875.40-FAIR_PRICE)/FAIR_PRICE)*100);
+              return (
+                <>
+                  {/* Signals */}
+                  <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"0.7rem"}}>Signals</p>
+
+                  {/* PEG (Lynch) */}
+                  <div style={{marginBottom:"0.7rem"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
+                      <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,fontWeight:600}}>PEG (Lynch)</span>
+                      <span style={{fontFamily:gs,fontSize:"0.64rem",color:pegCol,fontWeight:700}}>{pegVal.toFixed(2)} — {pegLabel}</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
+                      <span style={{fontFamily:gs,fontSize:"0.56rem",color:c.green,fontWeight:600,minWidth:"10px"}}>0</span>
+                      <div style={{flex:1,height:"4px",background:c.surface,borderRadius:"2px",position:"relative"}}>
+                        <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,${c.green},${c.muted},${c.red})`,borderRadius:"2px",opacity:0.45}}/>
+                        <div style={{position:"absolute",top:"-4px",left:`calc(${pegPct}% - 4px)`,width:"8px",height:"12px",background:c.text,borderRadius:"2px",border:`1px solid ${c.bg}`}}/>
+                      </div>
+                      <span style={{fontFamily:gs,fontSize:"0.56rem",color:c.red,fontWeight:600,minWidth:"14px",textAlign:"right"}}>2+</span>
+                    </div>
+                  </div>
+
+                  {/* Momentum */}
+                  <div style={{marginBottom:"0.7rem"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
+                      <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,fontWeight:600}}>Momentum (20d)</span>
+                      <span style={{fontFamily:gs,fontSize:"0.64rem",color:momCol,fontWeight:700}}>{MOMENTUM_SCORE} / 5</span>
+                    </div>
+                    <div style={{display:"flex",gap:"3px",height:"5px"}}>
+                      {[1,2,3,4,5].map(i=>(
+                        <div key={i} style={{flex:1,borderRadius:"2px",
+                          background:i<=MOMENTUM_SCORE?momCol:c.surface,
+                          opacity:i<=MOMENTUM_SCORE?0.88:0.25,
+                          transition:"opacity 0.2s"}}/>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Fair Price */}
+                  <div style={{marginBottom:"0.75rem"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"2px"}}>
+                      <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,fontWeight:600}}>Fair Price</span>
+                      <span style={{fontFamily:gs,fontSize:"0.78rem",color:c.text,fontWeight:700}}>${FAIR_PRICE.toLocaleString()}</span>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontFamily:gs,fontSize:"0.56rem",color:c.muted,fontStyle:"italic"}}>PEG · FCF · Graham composite</span>
+                      <span style={{fontFamily:gs,fontSize:"0.62rem",fontWeight:600,color:premium>0?c.red:c.green}}>
+                        {premium>0?`+${premium}% premium`:`${Math.abs(premium)}% discount`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Section divider */}
+                  <div style={{height:"1px",background:c.border,margin:"0.5rem 0 0.7rem"}}/>
+
+                  {/* Price Ranges */}
+                  <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"0.6rem"}}>Price Ranges</p>
+                  {[{l:"1 Day",lo:831.20,hi:891.60},{l:"52 Week",lo:402.01,hi:974.00}].map((r)=>{
+                    const pct=Math.min(100,Math.max(0,((875.40-r.lo)/(r.hi-r.lo))*100));
+                    return (
+                      <div key={r.l} style={{marginBottom:"0.65rem"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
+                          <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,fontWeight:600}}>{r.l}</span>
+                          <span style={{fontFamily:gs,fontSize:"0.66rem",color:c.text,fontWeight:600}}>$875.40</span>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                          <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.red,fontWeight:600,minWidth:"38px",textAlign:"right"}}>${r.lo.toFixed(0)}</span>
+                          <div style={{flex:1,height:"4px",background:c.surface,borderRadius:"2px",position:"relative"}}>
+                            <div style={{position:"absolute",left:0,width:`${pct}%`,height:"100%",background:`linear-gradient(90deg,${c.red},${c.green})`,borderRadius:"2px"}}/>
+                            <div style={{position:"absolute",top:"-4px",left:`calc(${pct}% - 4px)`,width:"8px",height:"12px",background:c.text,borderRadius:"2px",border:`1px solid ${c.bg}`}}/>
+                          </div>
+                          <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.green,fontWeight:600,minWidth:"38px"}}>${r.hi.toFixed(0)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              );
+            })()}
+          </div>
         </div>
 
-        {/* Price chart: up to 5Y */}
+        {/* Price chart */}
         <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1.25rem",marginBottom:"1.5rem"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem",flexWrap:"wrap",gap:"0.5rem"}}>
             <p style={{fontFamily:gs,fontSize:"0.86rem",fontWeight:600,color:c.text}}>Price History</p>
-            <div style={{display:"flex",gap:"0.2rem"}}>
-              {TIME_RANGES.map(t=><button key={t} onClick={()=>setTimeRange(t)} style={pill(timeRange===t)}>{t}</button>)}
+            <div style={{display:"flex",alignItems:"center",gap:"0.4rem",flexWrap:"wrap"}}>
+              <div style={{display:"flex",gap:"0.2rem",flexWrap:"wrap"}}>
+                {TIME_RANGES.map(t=><button key={t} onClick={()=>setTimeRange(t)} style={pill(timeRange===t)}>{t}</button>)}
+              </div>
+              <button onClick={()=>setChartExpanded(true)}
+                style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",
+                  padding:"4px 9px",cursor:"pointer",color:c.muted,flexShrink:0,
+                  display:"flex",alignItems:"center",gap:"4px",
+                  fontFamily:gs,fontSize:"0.68rem",transition:"opacity 0.15s ease"}}
+                onMouseEnter={e=>e.currentTarget.style.color=c.text}
+                onMouseLeave={e=>e.currentTarget.style.color=c.muted}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                </svg>
+                Expand
+              </button>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={220}>
@@ -1400,21 +1556,48 @@ export default function Page(){
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={c.border} vertical={false}/>
-              <XAxis dataKey="date" tick={{fill:c.muted,fontSize:8,fontFamily:gs}} axisLine={false} tickLine={false} tickFormatter={d=>{const p=d.split("-");return`${p[2]}/${p[1]}`;}} interval={Math.floor(chartData.length/5)}/>
-              <YAxis domain={[chartMin,chartMax]} tick={{fill:c.muted,fontSize:8,fontFamily:gs}} axisLine={false} tickLine={false} tickFormatter={v=>`$${v>=1000?(v/1000).toFixed(0)+"k":v.toFixed(0)}`} width={44}/>
-              <Tooltip content={<ChartTip/>} wrapperStyle={{outline:"none",background:"transparent"}} cursor={{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
+              <XAxis dataKey="date" tick={{fill:c.muted,fontSize:8,fontFamily:gs}} axisLine={false} tickLine={false}
+                tickFormatter={d=>{const p=d.split("-");return`${p[2]}/${p[1]}`;}}
+                interval={Math.floor(chartData.length/5)}/>
+              <YAxis domain={[chartMin,chartMax]} tick={{fill:c.muted,fontSize:8,fontFamily:gs}}
+                axisLine={false} tickLine={false}
+                tickFormatter={v=>`$${v>=1000?(v/1000).toFixed(0)+"k":v.toFixed(0)}`} width={44}/>
+              <Tooltip content={<ChartTip/>} wrapperStyle={{outline:"none",background:"transparent"}}
+                cursor={{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
               <Area type="monotone" dataKey="price" stroke={c.blue} strokeWidth={2} fill="url(#blueG)" dot={false}/>
+              {instrumentType==="stock"&&visibleEarnings.map(d=>(
+                <ReferenceLine key={`e-${d}`} x={d} stroke={c.green} strokeDasharray="4 3" strokeWidth={1.5} opacity={0.75}/>
+              ))}
+              {instrumentType==="etf"&&visibleDivs.map(d=>(
+                <ReferenceLine key={`d-${d}`} x={d} stroke={c.blue} strokeDasharray="4 3" strokeWidth={1.5} opacity={0.75}/>
+              ))}
             </AreaChart>
           </ResponsiveContainer>
+          {((instrumentType==="stock"&&visibleEarnings.length>0)||(instrumentType==="etf"&&visibleDivs.length>0))&&(
+            <div style={{display:"flex",gap:"1rem",marginTop:"8px",paddingTop:"6px",borderTop:`1px solid ${c.border}`}}>
+              {instrumentType==="stock"&&visibleEarnings.length>0&&(
+                <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
+                  <svg width="18" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke={c.green} strokeWidth="1.5" strokeDasharray="4 3"/></svg>
+                  <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted}}>Earnings</span>
+                </div>
+              )}
+              {instrumentType==="etf"&&visibleDivs.length>0&&(
+                <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
+                  <svg width="18" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke={c.blue} strokeWidth="1.5" strokeDasharray="4 3"/></svg>
+                  <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted}}>Ex-Dividend</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* AI Analysis */}
         <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1.25rem",marginBottom:"1.5rem"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.9rem"}}>
-            <p style={{fontFamily:gs,fontSize:"0.62rem",color:c.green,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600}}>AI Analysis</p>
+            <p style={{fontFamily:gs,fontSize:"0.62rem",color:c.green,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500}}>AI Analysis</p>
             <div style={{display:"flex",alignItems:"center",gap:"0.5rem"}}>
-              {aiState&&<span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"2px 7px"}}>Cached · 24h</span>}
-              <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"2px 7px"}}>{summaryLimit}</span>
+              {aiState&&<span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,background:c.surface,border:`1px solid ${c.border}`,borderRadius:"12px",padding:"2px 7px"}}>Cached · 24h</span>}
+              <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,background:c.surface,border:`1px solid ${c.border}`,borderRadius:"12px",padding:"2px 7px"}}>{summaryLimit}</span>
             </div>
           </div>
 
@@ -1429,11 +1612,11 @@ export default function Page(){
               </div>
               <div style={{display:"flex",gap:"0.6rem",flexWrap:"wrap"}}>
                 <button onClick={()=>generateAnalysis("summary")} disabled={aiLoading}
-                  style={{background:c.green,color:"#050505",border:"none",borderRadius:"6px",padding:"9px 20px",fontFamily:gs,fontSize:"0.82rem",fontWeight:700,cursor:aiLoading?"not-allowed":"pointer",opacity:aiLoading?0.7:1}}>
+                  style={{background:c.green,color:"#050505",border:"none",borderRadius:"4px",padding:"9px 20px",fontFamily:gs,fontSize:"0.82rem",fontWeight:600,cursor:aiLoading?"not-allowed":"pointer",opacity:aiLoading?0.7:1}}>
                   {aiLoading?"Generating...":"Generate AI Summary"}
                 </button>
                 <button onClick={()=>{if(canFull&&!aiLoading)generateAnalysis("full");}} disabled={!canFull||aiLoading}
-                  style={{background:"transparent",color:c.text,border:`1px solid ${c.borderHi}`,borderRadius:"6px",padding:"9px 20px",fontFamily:gs,fontSize:"0.82rem",fontWeight:600,cursor:(canFull&&!aiLoading)?"pointer":"not-allowed",opacity:(canFull&&!aiLoading)?1:0.45}}>
+                  style={{background:"transparent",color:c.text,border:`1px solid ${c.borderHi}`,borderRadius:"4px",padding:"9px 20px",fontFamily:gs,fontSize:"0.82rem",fontWeight:600,cursor:(canFull&&!aiLoading)?"pointer":"not-allowed",opacity:(canFull&&!aiLoading)?1:0.45}}>
                   {aiLoading?"Generating...":"Generate Full Report"}{!canFull&&" (Pro+)"}
                 </button>
                 {aiError&&<p style={{fontFamily:gs,fontSize:"0.78rem",color:c.red,width:"100%",marginTop:"0.3rem"}}>{aiError}</p>}
@@ -1451,7 +1634,7 @@ export default function Page(){
                     const col=isBull?c.green:isBear?c.red:c.muted;
                     const bg=isBull?c.greenDim:isBear?c.redDim:c.surface;
                     const bd=isBull?`${c.green}50`:isBear?`${c.red}50`:c.border;
-                    return <span style={{fontFamily:gs,fontSize:"0.78rem",fontWeight:700,color:col,background:bg,border:`1px solid ${bd}`,borderRadius:"5px",padding:"3px 11px",display:"inline-block",marginBottom:"0.6rem"}}>{v}</span>;
+                    return <span style={{fontFamily:gs,fontSize:"0.78rem",fontWeight:600,color:col,background:bg,border:`1px solid ${bd}`,borderRadius:"6px",padding:"3px 11px",display:"inline-block",marginBottom:"0.6rem"}}>{v}</span>;
                   })()}
                   <p style={{fontFamily:gs,fontSize:"0.84rem",color:c.text,lineHeight:1.72}}>
                     {summaryResult?.summary??"NVDA's dominance in AI accelerators is structural. CUDA lock-in makes switching costly for hyperscalers, and data centre demand remains robust through FY2027."}
@@ -1463,18 +1646,18 @@ export default function Page(){
               <div style={{display:"flex",gap:"0.6rem",flexWrap:"wrap",borderTop:`1px solid ${c.border}`,paddingTop:"0.9rem",alignItems:"center"}}>
                 {aiState==="summary"&&(
                   <button onClick={()=>{if(canFull&&!aiLoading)generateAnalysis("full");}} disabled={!canFull||aiLoading}
-                    style={{background:"transparent",color:canFull?c.text:c.muted,border:`1px solid ${canFull?c.borderHi:c.border}`,borderRadius:"6px",padding:"8px 18px",fontFamily:gs,fontSize:"0.8rem",fontWeight:600,cursor:canFull?"pointer":"not-allowed",opacity:canFull?1:0.5,position:"relative"}}>
-                    Generate Full Report → {!canFull&&<span style={{marginLeft:"4px",background:c.amber,color:"#000",fontSize:"0.55rem",fontWeight:800,padding:"1px 5px",borderRadius:"3px",verticalAlign:"middle"}}>Pro+</span>}
+                    style={{background:"transparent",color:canFull?c.text:c.muted,border:`1px solid ${canFull?c.borderHi:c.border}`,borderRadius:"4px",padding:"8px 18px",fontFamily:gs,fontSize:"0.8rem",fontWeight:600,cursor:canFull?"pointer":"not-allowed",opacity:canFull?1:0.5,position:"relative"}}>
+                    Generate Full Report → {!canFull&&<span style={{marginLeft:"4px",background:c.blue,color:"#000",fontSize:"0.55rem",fontWeight:600,padding:"1px 5px",borderRadius:"3px",verticalAlign:"middle"}}>Pro+</span>}
                   </button>
                 )}
                 {aiState==="full"&&(
                   <>
                     <button onClick={()=>setShowReport(true)}
-                      style={{background:c.text,color:c.bg,border:"none",borderRadius:"6px",padding:"8px 18px",fontFamily:gs,fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
+                      style={{background:c.text,color:c.bg,border:"none",borderRadius:"4px",padding:"8px 18px",fontFamily:gs,fontSize:"0.8rem",fontWeight:600,cursor:"pointer"}}>
                       View Full Report
                     </button>
                     <button onClick={()=>setAiState("summary")}
-                      style={{background:"transparent",color:c.muted,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"8px 14px",fontFamily:gs,fontSize:"0.78rem",cursor:"pointer"}}>
+                      style={{background:"transparent",color:c.muted,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"8px 14px",fontFamily:gs,fontSize:"0.78rem",cursor:"pointer"}}>
                       Back to Summary
                     </button>
                   </>
@@ -1487,6 +1670,30 @@ export default function Page(){
 
         <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1.25rem",marginBottom:"1.5rem"}}>
           {/* Statistics — always full width, all screen sizes */}
+          {instrumentGated && (
+            <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"2rem",marginBottom:"1.5rem",textAlign:"center"}}>
+              <p style={{fontFamily:gs,fontSize:"1rem",fontWeight:600,color:c.text,marginBottom:"0.5rem"}}>
+                {instrumentType==="stock" && userPlan==="essential" ? "Index and ETF analysis" : instrumentType==="stock" ? "ETF analysis" : "This instrument"} requires a higher plan
+              </p>
+              <p style={{fontFamily:gs,fontSize:"0.82rem",color:c.muted,lineHeight:1.72,marginBottom:"1.25rem",maxWidth:"480px",margin:"0 auto 1.25rem"}}>
+                {(() => {
+                  // Detect what was originally requested before gating
+                  const t = ticker.toUpperCase();
+                  const COMMODITY_SUFFIXES = ["=F","=X","XAUUSD","XAGUSD","XPTUSD","XPDUSD","WTICL","BRENT","NGAS","COPPER"];
+                  const gatedAsIndex = t.startsWith("^");
+                  const gatedAsEtf   = !gatedAsIndex && !COMMODITY_SUFFIXES.some(s => t.endsWith(s) || t === s);
+                  if (gatedAsIndex) return "Index analysis is available on the Pro plan and above.";
+                  if (gatedAsEtf)   return "ETF analysis is available on the Ultimate plan.";
+                  return "This instrument type is not available on your current plan.";
+                })()}
+              </p>
+              <button
+                onClick={() => router.push("/dashboard/account?tab=plan")}
+                style={{background:c.text,color:c.bg,border:"none",borderRadius:"4px",padding:"9px 22px",fontFamily:gs,fontSize:"0.82rem",fontWeight:600,cursor:"pointer"}}>
+                View plans
+              </button>
+            </div>
+          )}
           <StatisticsPanel c={c} mode={mode} userPlan={userPlan} instrumentType={instrumentType} router={router} ticker={ticker}/>
 
           {/* Financials — below Statistics, only for stocks, hidden on mobile unless selected */}
@@ -1497,7 +1704,7 @@ export default function Page(){
                 <div>
                   <div style={{display:"flex",gap:"0",background:c.surface,borderRadius:"8px",padding:"4px",border:`1px solid ${c.border}`,marginBottom:"1rem"}}>
                     {["statistics","financials"].map(t=>(
-                      <button key={t} onClick={()=>setMobileTab(t)} style={{flex:1,background:mobileTab===t?c.text:"transparent",color:mobileTab===t?c.bg:c.muted,border:"none",borderRadius:"6px",padding:"7px",fontFamily:gs,fontSize:"0.78rem",fontWeight:600,cursor:"pointer",textTransform:"capitalize",transition:"all 0.18s"}}>{t}</button>
+                      <button key={t} onClick={()=>setMobileTab(t)} style={{flex:1,background:mobileTab===t?c.text:"transparent",color:mobileTab===t?c.bg:c.muted,border:"none",borderRadius:"4px",padding:"7px",fontFamily:gs,fontSize:"0.78rem",fontWeight:600,cursor:"pointer",textTransform:"capitalize",transition:"opacity 0.18s ease"}}>{t}</button>
                     ))}
                   </div>
                   {mobileTab==="financials"&&<FinancialsPanel c={c} mode={mode} userPlan={userPlan}/>}
@@ -1518,8 +1725,8 @@ export default function Page(){
           <p style={{fontFamily:gs,fontSize:"0.84rem",color:c.muted,lineHeight:1.75,marginBottom:"1.1rem"}}>NVIDIA Corporation provides graphics, compute and networking solutions globally. Its Data Center segment powers AI accelerated computing via H100/H200/Blackwell GPUs, Mellanox networking, and the CUDA software platform. Gaming remains a secondary but material revenue contributor.</p>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(175px,1fr))",gap:"0.6rem"}}>
             {[["CEO","Jensen Huang"],["Employees","36,000"],["Headquarters","Santa Clara, CA"],["Sector","Technology"],["Industry","Semiconductors"],["Exchange","NASDAQ"],["ISIN","US67066G1040"],["Website","nvidia.com"]].map(([l,v])=>(
-              <div key={l} style={{background:c.surface,borderRadius:"7px",padding:"0.65rem"}}>
-                <p style={{fontFamily:gs,fontSize:"0.58rem",color:c.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"3px"}}>{l}</p>
+              <div key={l} style={{background:c.surface,borderRadius:"8px",padding:"0.65rem"}}>
+                <p style={{fontFamily:gs,fontSize:"0.58rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:"3px"}}>{l}</p>
                 <p style={{fontFamily:gs,fontSize:"0.8rem",fontWeight:600,color:c.text}}>{v}</p>
               </div>
             ))}
@@ -1529,6 +1736,96 @@ export default function Page(){
         <p style={{fontFamily:gs,color:c.muted,fontSize:"0.68rem",textAlign:"center",marginTop:"1.75rem"}}>
           For informational purposes only · Not financial advice · Data via Financial Modeling Prep
         </p>
+
+        {/* Expanded Chart Modal */}
+        {chartExpanded&&(
+          <div style={{position:"fixed",inset:0,zIndex:600,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div onClick={()=>setChartExpanded(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.78)",backdropFilter:"blur(6px)"}}/>
+            <div style={{
+              position:"relative",zIndex:1,
+              width:"min(1160px,95vw)",height:"84vh",
+              background:mode==="dark"?"#0E0E10":"#FFFFFF",
+              border:`1px solid ${c.borderHi}`,borderRadius:"16px",
+              boxShadow:"0 32px 80px rgba(0,0,0,0.55)",
+              display:"flex",flexDirection:"column",overflow:"hidden",
+            }}>
+              {/* Modal header */}
+              <div style={{
+                display:"flex",justifyContent:"space-between",alignItems:"center",
+                padding:"0.9rem 1.5rem",borderBottom:`1px solid ${c.border}`,flexShrink:0,
+                background:mode==="dark"?"linear-gradient(90deg,#111113,#141418)":"linear-gradient(90deg,#FFFFFF,#F5F5F8)",
+                flexWrap:"wrap",gap:"0.5rem",
+              }}>
+                <div style={{display:"flex",alignItems:"center",gap:"0.75rem"}}>
+                  <span style={{fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.text}}>NVDA</span>
+                  <span style={{fontFamily:gs,fontSize:"0.96rem",fontWeight:600,color:c.text}}>$875.40</span>
+                  <span style={{fontFamily:gs,fontSize:"0.84rem",fontWeight:600,color:c.green}}>+5.43%</span>
+                  <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Price History</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:"0.5rem"}}>
+                  <div style={{display:"flex",gap:"0.2rem"}}>
+                    {TIME_RANGES.map(t=>(
+                      <button key={t} onClick={()=>setTimeRange(t)} style={pill(timeRange===t)}>{t}</button>
+                    ))}
+                  </div>
+                  <button onClick={()=>setChartExpanded(false)}
+                    style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",
+                      padding:"5px 10px",cursor:"pointer",color:c.muted,marginLeft:"0.25rem",
+                      fontFamily:gs,fontSize:"0.74rem",display:"flex",alignItems:"center",gap:"4px"}}>
+                    ✕ <span style={{fontSize:"0.56rem",opacity:0.55}}>ESC</span>
+                  </button>
+                </div>
+              </div>
+              {/* Modal chart body */}
+              <div style={{flex:1,padding:"1.25rem 1.5rem 0.75rem",display:"flex",flexDirection:"column",minHeight:0}}>
+                <div style={{flex:1,minHeight:0}}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{top:8,right:8,bottom:0,left:0}}>
+                      <defs>
+                        <linearGradient id="blueGExp" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={c.blue} stopOpacity={0.22}/>
+                          <stop offset="95%" stopColor={c.blue} stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke={c.border} vertical={false}/>
+                      <XAxis dataKey="date" tick={{fill:c.muted,fontSize:9,fontFamily:gs}} axisLine={false} tickLine={false}
+                        tickFormatter={d=>{const p=d.split("-");return`${p[2]}/${p[1]}`;}}
+                        interval={Math.floor(chartData.length/9)}/>
+                      <YAxis domain={[chartMin,chartMax]} tick={{fill:c.muted,fontSize:9,fontFamily:gs}}
+                        axisLine={false} tickLine={false}
+                        tickFormatter={v=>`$${v>=1000?(v/1000).toFixed(0)+"k":v.toFixed(0)}`} width={48}/>
+                      <Tooltip content={<ChartTip/>} wrapperStyle={{outline:"none",background:"transparent"}}
+                        cursor={{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
+                      <Area type="monotone" dataKey="price" stroke={c.blue} strokeWidth={2.5} fill="url(#blueGExp)" dot={false}/>
+                      {instrumentType==="stock"&&visibleEarnings.map(d=>(
+                        <ReferenceLine key={`ee-${d}`} x={d} stroke={c.green} strokeDasharray="4 3" strokeWidth={1.5} opacity={0.8}/>
+                      ))}
+                      {instrumentType==="etf"&&visibleDivs.map(d=>(
+                        <ReferenceLine key={`de-${d}`} x={d} stroke={c.blue} strokeDasharray="4 3" strokeWidth={1.5} opacity={0.8}/>
+                      ))}
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Event legend + ESC hint */}
+                <div style={{display:"flex",alignItems:"center",gap:"1rem",paddingTop:"8px",borderTop:`1px solid ${c.border}`,marginTop:"6px",flexWrap:"wrap"}}>
+                  {instrumentType==="stock"&&visibleEarnings.length>0&&(
+                    <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
+                      <svg width="18" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke={c.green} strokeWidth="1.5" strokeDasharray="4 3"/></svg>
+                      <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted}}>Earnings</span>
+                    </div>
+                  )}
+                  {instrumentType==="etf"&&visibleDivs.length>0&&(
+                    <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
+                      <svg width="18" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke={c.blue} strokeWidth="1.5" strokeDasharray="4 3"/></svg>
+                      <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted}}>Ex-Dividend</span>
+                    </div>
+                  )}
+                  <span style={{fontFamily:gs,fontSize:"0.58rem",color:c.muted,marginLeft:"auto",opacity:0.5}}>Press ESC or click outside to close</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showReport && fullReport && (
           <FullReportPopup

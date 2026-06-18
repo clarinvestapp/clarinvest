@@ -44,13 +44,13 @@ export default function SetupPasswordPage() {
 
   const inputStyle = {
     width:"100%", background:"#0A0A0A", border:`1px solid ${c.border}`,
-    borderRadius:"5px", padding:"11px 14px", color:c.text,
+    borderRadius:"4px", padding:"11px 14px", color:c.text,
     fontSize:"0.95rem", fontFamily:"inherit", outline:"none", boxSizing:"border-box",
   };
 
   const labelStyle = {
-    display:"block", color:c.muted, fontSize:"0.78rem", fontWeight:600,
-    letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"0.5rem",
+    display:"block", color:c.muted, fontSize:"0.78rem", fontWeight:500,
+    letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"0.5rem",
   };
 
   return (
@@ -102,7 +102,7 @@ export default function SetupPasswordPage() {
                   style={inputStyle}/>
               </div>
               <button type="submit" disabled={loading}
-                style={{ width:"100%", background:c.text, color:c.bg, border:"none", borderRadius:"5px", padding:"13px", fontSize:"0.88rem", fontWeight:600, fontFamily:"inherit", cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1 }}>
+                style={{ width:"100%", background:c.text, color:c.bg, border:"none", borderRadius:"4px", padding:"13px", fontSize:"0.88rem", fontWeight:600, fontFamily:"inherit", cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1 }}>
                 {loading ? "Setting up account..." : "Set password and continue →"}
               </button>
             </form>

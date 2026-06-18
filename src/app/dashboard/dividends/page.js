@@ -7,6 +7,7 @@ import {
   ComposedChart, LineChart, Line, Area, Bar, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
+import { FaPiggyBank } from "react-icons/fa6";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -909,7 +910,7 @@ export default function DividendsPage(){
         {/* Ultimate gate */}
         {userPlan!==null&&!isUltimate ? (
           <div style={{background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"16px",padding:"3.5rem 2rem",textAlign:"center"}}>
-            <div style={{fontSize:"2.5rem",marginBottom:"1rem"}}>💰</div>
+            <div style={{marginBottom:"1rem"}}><FaPiggyBank size={40} color={c.muted}/></div>
             <h2 style={{fontFamily:gs,fontSize:"1.3rem",fontWeight:700,color:c.text,marginBottom:"0.75rem"}}>Dividend Intelligence</h2>
             <p style={{fontFamily:gs,fontSize:"0.88rem",color:c.muted,maxWidth:"400px",margin:"0 auto 2rem",lineHeight:1.7}}>
               Safety scores, growth analysis, dividend screener, and income forecasting are available on the Ultimate plan.

@@ -93,7 +93,7 @@ function Card({ children, c, innerRef, extraStyle = {} }) {
 }
 
 function SectionLabel({ text, c }) {
-  return <p style={{ fontFamily:gs, fontSize:"0.62rem", color:c.muted, letterSpacing:"0.12em", textTransform:"uppercase", fontWeight:600, marginBottom:"1.1rem" }}>{text}</p>;
+  return <p style={{ fontFamily:gs, fontSize:"0.62rem", color:c.muted, letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:500, marginBottom:"1.1rem" }}>{text}</p>;
 }
 
 function UsageBar({ used, limit, label, color, c }) {
@@ -108,7 +108,7 @@ function UsageBar({ used, limit, label, color, c }) {
         </span>
       </div>
       <div style={{ height:"6px", background:c.surface, borderRadius:"3px", overflow:"hidden" }}>
-        <div style={{ width:`${pct}%`, height:"100%", background:color, borderRadius:"3px", transition:"width 0.6s ease" }}/>
+        <div style={{ width:"100%", height:"100%", background:color, borderRadius:"3px", transform:`scaleX(${pct/100})`, transformOrigin:"left", transition:"transform 0.6s ease" }}/>
       </div>
     </div>
   );
@@ -136,7 +136,7 @@ function PlanCard({ config, currentPlan, billing, currency, onUpgrade, onBilling
       position:"relative",
       display:"flex",
       flexDirection:"column",
-      transition:"border-color 0.2s",
+      transition:"opacity 0.2s ease",
     }}>
 
       {/* Badge pill */}
@@ -151,7 +151,7 @@ function PlanCard({ config, currentPlan, billing, currency, onUpgrade, onBilling
       ) : null}
 
       {/* Plan identity */}
-      <p style={{ fontFamily:gs, color:c.green, fontSize:"0.65rem", letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:700, marginBottom:"0.2rem", marginTop:"0.25rem" }}>{config.name}</p>
+      <p style={{ fontFamily:gs, color:c.green, fontSize:"0.65rem", letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:500, marginBottom:"0.2rem", marginTop:"0.25rem" }}>{config.name}</p>
       <p style={{ fontFamily:gs, color:c.muted, fontSize:"0.77rem", marginBottom:"1.1rem" }}>{config.tag}</p>
 
       {/* Price — Noto Serif per brand guidelines */}
@@ -174,14 +174,14 @@ function PlanCard({ config, currentPlan, billing, currency, onUpgrade, onBilling
         <button
           onClick={() => onUpgrade(config.id)}
           disabled={isLoading}
-          style={{ width:"100%", padding:"10px", borderRadius:"4px", border:"none", background:c.text, color:c.bg, fontFamily:gs, fontSize:"0.82rem", fontWeight:600, cursor: isLoading ? "not-allowed" : "pointer", marginBottom:"1.35rem", opacity: isLoading ? 0.7 : 1, transition:"all 0.22s" }}>
+          style={{ width:"100%", padding:"10px", borderRadius:"4px", border:"none", background:c.text, color:c.bg, fontFamily:gs, fontSize:"0.82rem", fontWeight:600, cursor: isLoading ? "not-allowed" : "pointer", marginBottom:"1.35rem", opacity: isLoading ? 0.7 : 1, transition:"opacity 0.22s ease" }}>
           {isLoading ? "Redirecting…" : `Upgrade to ${config.name} →`}
         </button>
       ) : (
         /* Downgrade — routes to Stripe billing portal */
         <button
           onClick={onBillingPortal}
-          style={{ width:"100%", padding:"10px", borderRadius:"4px", border:`1px solid ${c.border}`, background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.8rem", cursor:"pointer", marginBottom:"0.6rem", transition:"all 0.22s" }}>
+          style={{ width:"100%", padding:"10px", borderRadius:"4px", border:`1px solid ${c.border}`, background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.8rem", cursor:"pointer", marginBottom:"0.6rem", transition:"opacity 0.22s ease" }}>
           Downgrade →
         </button>
       )}
@@ -190,8 +190,8 @@ function PlanCard({ config, currentPlan, billing, currency, onUpgrade, onBilling
       {isUpgrade && (
         <button
           onClick={() => onCrypto(config.id, billing === "yearly" ? yr : mo, billing)}
-          style={{ width:"100%", padding:"9px", borderRadius:"4px", border:`1px solid ${c.border}`, background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.74rem", cursor:"pointer", marginBottom:"1.35rem", display:"flex", alignItems:"center", justifyContent:"center", gap:"0.5rem", transition:"all 0.22s" }}>
-          <span style={{ fontSize:"0.8rem" }}>₮</span> Pay with USDT / USDC
+          style={{ width:"100%", padding:"9px", borderRadius:"4px", border:`1px solid ${c.border}`, background:"transparent", color:c.muted, fontFamily:gs, fontSize:"0.74rem", cursor:"pointer", marginBottom:"1.35rem", display:"flex", alignItems:"center", justifyContent:"center", gap:"0.5rem", transition:"opacity 0.22s ease" }}>
+          Pay with USDT / USDC
         </button>
       )}
 
@@ -459,18 +459,18 @@ export default function AccountPage() {
   // ── Style helpers ──────────────────────────────────────────────────────────
   const inputStyle = {
     width:"100%", background: mode === "dark" ? "#0A0A0A" : c.surface,
-    border:`1px solid ${c.border}`, borderRadius:"5px",
+    border:`1px solid ${c.border}`, borderRadius:"4px",
     padding:"10px 14px", color:c.text, fontSize:"0.9rem",
     fontFamily:gs, outline:"none",
   };
   const btnPrimary = (disabled) => ({
     background: disabled ? c.surface : c.text,
     color:      disabled ? c.muted   : c.bg,
-    border:"none", borderRadius:"6px", padding:"10px 22px",
+    border:"none", borderRadius:"4px", padding:"10px 22px",
     fontFamily:gs, fontSize:"0.84rem", fontWeight:600,
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.6 : 1,
-    transition:"all 0.2s",
+    transition:"opacity 0.2s ease",
   });
 
   // ── Loading spinner ────────────────────────────────────────────────────────
@@ -491,7 +491,7 @@ export default function AccountPage() {
 
         {/* Page header */}
         <div style={{ marginBottom:"2rem" }}>
-          <p style={{ fontFamily:gs, color:c.muted, fontSize:"0.65rem", letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"0.4rem", fontWeight:600 }}>Settings</p>
+          <p style={{ fontFamily:gs, color:c.muted, fontSize:"0.65rem", letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"0.4rem", fontWeight:500 }}>Settings</p>
           <h1 style={{ fontFamily:gs, fontSize:"clamp(1.5rem,3vw,2rem)", fontWeight:700, color:c.text }}>My Account</h1>
         </div>
 
@@ -503,7 +503,7 @@ export default function AccountPage() {
               Your display name is shown in the app and used to address you in emails.
             </p>
             <div style={{ marginBottom:"1.25rem" }}>
-              <label style={{ display:"block", fontFamily:gs, fontSize:"0.72rem", color:c.muted, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"6px", fontWeight:600 }}>Display Name</label>
+              <label style={{ display:"block", fontFamily:gs, fontSize:"0.72rem", color:c.muted, letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"6px", fontWeight:500 }}>Display Name</label>
               <input
                 type="text"
                 value={nameForm}
@@ -543,7 +543,7 @@ export default function AccountPage() {
             <div style={{ display:"flex", gap:"0.6rem", flexWrap:"wrap" }}>
               {isUltimate && (
                 <button onClick={() => setPlansModalOpen(true)}
-                  style={{ background:"transparent", border:`1px solid ${c.border}`, borderRadius:"6px", padding:"9px 20px", fontFamily:gs, fontSize:"0.82rem", fontWeight:600, color:c.text, cursor:"pointer", transition:"all 0.2s" }}>
+                  style={{ background:"transparent", border:`1px solid ${c.border}`, borderRadius:"4px", padding:"9px 20px", fontFamily:gs, fontSize:"0.82rem", fontWeight:600, color:c.text, cursor:"pointer", transition:"opacity 0.2s ease" }}>
                   Manage my plan →
                 </button>
               )}
@@ -589,13 +589,13 @@ export default function AccountPage() {
 
                 <div style={{ display:"flex", alignItems:"center", gap:"0.6rem", marginBottom:"1.1rem" }}>
                   {/* Monthly / Yearly toggle */}
-                  <div style={{ display:"inline-flex", background:c.surface, border:`1px solid ${c.border}`, borderRadius:"6px", padding:"3px" }}>
+                  <div style={{ display:"inline-flex", background:c.surface, border:`1px solid ${c.border}`, borderRadius:"8px", padding:"3px" }}>
                     {["monthly","yearly"].map(b => (
                       <button key={b} onClick={() => setBilling(b)}
-                        style={{ background: billing === b ? c.text : "transparent", color: billing === b ? c.bg : c.muted, border:"none", cursor:"pointer", padding:"6px 18px", borderRadius:"4px", fontFamily:gs, fontSize:"0.78rem", fontWeight:600, textTransform:"capitalize", transition:"all 0.22s", display:"flex", alignItems:"center", gap:"0.4rem" }}>
+                        style={{ background: billing === b ? c.text : "transparent", color: billing === b ? c.bg : c.muted, border:"none", cursor:"pointer", padding:"6px 18px", borderRadius:"4px", fontFamily:gs, fontSize:"0.78rem", fontWeight:600, textTransform:"capitalize", transition:"opacity 0.22s ease", display:"flex", alignItems:"center", gap:"0.4rem" }}>
                         {b}
                         {b === "yearly" && (
-                          <span style={{ background: mode === "dark" ? "#1A1A1C" : "#FFFFFF", border:`1px solid ${c.borderHi}`, color: c.green, fontSize:"0.6rem", fontWeight:700, padding:"1px 6px", borderRadius:"3px", letterSpacing:"0.02em" }}>
+                          <span style={{ background: mode === "dark" ? "#1A1A1C" : "#FFFFFF", border:`1px solid ${c.borderHi}`, color: c.green, fontSize:"0.6rem", fontWeight:700, padding:"1px 6px", borderRadius:"6px", letterSpacing:"0.02em" }}>
                             −28%
                           </span>
                         )}
@@ -605,7 +605,7 @@ export default function AccountPage() {
                   {/* Close button — modal only */}
                   {isUltimate && (
                     <button onClick={() => setPlansModalOpen(false)}
-                      style={{ background:c.surface, border:`1px solid ${c.border}`, borderRadius:"7px", padding:"6px 10px", cursor:"pointer", color:c.muted, fontFamily:gs, fontSize:"0.78rem", display:"flex", alignItems:"center", gap:"4px", flexShrink:0 }}>
+                      style={{ background:c.surface, border:`1px solid ${c.border}`, borderRadius:"4px", padding:"6px 10px", cursor:"pointer", color:c.muted, fontFamily:gs, fontSize:"0.78rem", display:"flex", alignItems:"center", gap:"4px", flexShrink:0 }}>
                       ✕ <span style={{ fontSize:"0.58rem", opacity:0.6 }}>ESC</span>
                     </button>
                   )}
@@ -658,7 +658,7 @@ export default function AccountPage() {
                   <p style={{ fontFamily:gs, fontSize:"0.73rem", color:c.muted }}>Changes take effect at the end of your current billing period.</p>
                 </div>
                 <button onClick={openBillingPortal} disabled={billingLoading}
-                  style={{ background:"transparent", border:`1px solid ${c.border}`, borderRadius:"6px", padding:"8px 18px", fontFamily:gs, fontSize:"0.8rem", color:c.muted, cursor: billingLoading ? "not-allowed" : "pointer", transition:"all 0.2s", flexShrink:0 }}>
+                  style={{ background:"transparent", border:`1px solid ${c.border}`, borderRadius:"4px", padding:"8px 18px", fontFamily:gs, fontSize:"0.8rem", color:c.muted, cursor: billingLoading ? "not-allowed" : "pointer", transition:"opacity 0.2s ease", flexShrink:0 }}>
                   {billingLoading ? "Opening…" : "Manage subscription →"}
                 </button>
               </div>
@@ -672,7 +672,7 @@ export default function AccountPage() {
           <UsageBar used={usage.summaries} limit={limits.summaries}        label="AI Summaries"   color={c.green} c={c}/>
           <UsageBar used={usage.reports}   limit={limits.reports === 0 ? 1 : limits.reports} label="AI Full Reports" color={c.blue}  c={c}/>
           {limits.reports === 0 && (
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:c.surface, borderRadius:"7px", padding:"10px 14px", marginTop:"0.5rem" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:c.surface, borderRadius:"8px", padding:"10px 14px", marginTop:"0.5rem" }}>
               <span style={{ fontFamily:gs, fontSize:"0.78rem", color:c.muted }}>Full reports unlock on Pro and above</span>
               <button
                 onClick={() => isUltimate
@@ -695,13 +695,13 @@ export default function AccountPage() {
               Current address: <strong style={{ color:c.text }}>{user?.email}</strong>
             </p>
             <div style={{ marginBottom:"1rem" }}>
-              <label style={{ display:"block", fontFamily:gs, fontSize:"0.72rem", color:c.muted, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"6px", fontWeight:600 }}>New Email Address</label>
+              <label style={{ display:"block", fontFamily:gs, fontSize:"0.72rem", color:c.muted, letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"6px", fontWeight:500 }}>New Email Address</label>
               <input type="email" value={emailForm.new} onChange={e => setEmailForm(p => ({ ...p, new:e.target.value }))}
                 placeholder="your@newemail.com"
                 style={inputStyle}/>
             </div>
             <div style={{ marginBottom:"1.25rem" }}>
-              <label style={{ display:"block", fontFamily:gs, fontSize:"0.72rem", color:c.muted, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"6px", fontWeight:600 }}>Confirm New Email Address</label>
+              <label style={{ display:"block", fontFamily:gs, fontSize:"0.72rem", color:c.muted, letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"6px", fontWeight:500 }}>Confirm New Email Address</label>
               <input type="email" value={emailForm.confirm} onChange={e => setEmailForm(p => ({ ...p, confirm:e.target.value }))}
                 placeholder="Repeat your new email"
                 style={inputStyle}/>
@@ -722,13 +722,13 @@ export default function AccountPage() {
           {/* Password change */}
           <form onSubmit={changePassword}>
             <div style={{ marginBottom:"1rem" }}>
-              <label style={{ display:"block", fontFamily:gs, fontSize:"0.72rem", color:c.muted, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"6px", fontWeight:600 }}>New Password</label>
+              <label style={{ display:"block", fontFamily:gs, fontSize:"0.72rem", color:c.muted, letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"6px", fontWeight:500 }}>New Password</label>
               <input type="password" value={pwForm.new} onChange={e => setPwForm(p => ({ ...p, new:e.target.value }))}
                 placeholder="Min 8 chars, uppercase, number, symbol"
                 style={inputStyle}/>
             </div>
             <div style={{ marginBottom:"1.25rem" }}>
-              <label style={{ display:"block", fontFamily:gs, fontSize:"0.72rem", color:c.muted, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"6px", fontWeight:600 }}>Confirm New Password</label>
+              <label style={{ display:"block", fontFamily:gs, fontSize:"0.72rem", color:c.muted, letterSpacing:"0.18em", textTransform:"uppercase", marginBottom:"6px", fontWeight:500 }}>Confirm New Password</label>
               <input type="password" value={pwForm.confirm} onChange={e => setPwForm(p => ({ ...p, confirm:e.target.value }))}
                 placeholder="Repeat your new password"
                 style={inputStyle}/>
@@ -772,16 +772,17 @@ export default function AccountPage() {
                   background: digestEmails ? c.green : c.surface,
                   border: `1px solid ${digestEmails ? c.green : c.borderHi}`,
                   cursor: digestLoading ? "not-allowed" : "pointer",
-                  position:"relative", transition:"background 0.22s, border-color 0.22s",
+                  position:"relative", transition:"opacity 0.22s",
                   flexShrink:0, padding:0,
                   opacity: digestLoading ? 0.6 : 1,
                 }}>
                 <span style={{
                   position:"absolute", top:"3px",
-                  left: digestEmails ? "24px" : "3px",
+                  left:"3px",
                   width:"18px", height:"18px", borderRadius:"50%",
                   background: digestEmails ? (mode === "dark" ? "#090909" : "#fff") : c.muted,
-                  transition:"left 0.22s",
+                  transform: digestEmails ? "translateX(21px)" : "translateX(0)",
+                  transition:"transform 0.22s",
                 }}/>
               </button>
               <span style={{ fontFamily:gs, fontSize:"0.72rem", color: digestEmails ? c.green : c.muted, fontWeight:600 }}>
@@ -804,18 +805,18 @@ export default function AccountPage() {
           </p>
           {!signOutConf ? (
             <button onClick={() => setSignOutConf(true)}
-              style={{ background:"transparent", color:c.red, border:`1px solid ${c.red}50`, borderRadius:"6px", padding:"9px 20px", fontFamily:gs, fontSize:"0.84rem", fontWeight:600, cursor:"pointer" }}>
+              style={{ background:"transparent", color:c.red, border:`1px solid ${c.red}50`, borderRadius:"4px", padding:"9px 20px", fontFamily:gs, fontSize:"0.84rem", fontWeight:600, cursor:"pointer" }}>
               Sign out
             </button>
           ) : (
             <div style={{ display:"flex", gap:"0.75rem", alignItems:"center", flexWrap:"wrap" }}>
               <span style={{ fontFamily:gs, fontSize:"0.82rem", color:c.muted }}>Are you sure?</span>
               <button onClick={handleSignOut}
-                style={{ background:c.red, color:"#fff", border:"none", borderRadius:"6px", padding:"9px 20px", fontFamily:gs, fontSize:"0.84rem", fontWeight:600, cursor:"pointer" }}>
+                style={{ background:c.red, color:"#fff", border:"none", borderRadius:"4px", padding:"9px 20px", fontFamily:gs, fontSize:"0.84rem", fontWeight:600, cursor:"pointer" }}>
                 Yes, sign out
               </button>
               <button onClick={() => setSignOutConf(false)}
-                style={{ background:"transparent", color:c.muted, border:`1px solid ${c.border}`, borderRadius:"6px", padding:"9px 16px", fontFamily:gs, fontSize:"0.84rem", cursor:"pointer" }}>
+                style={{ background:"transparent", color:c.muted, border:`1px solid ${c.border}`, borderRadius:"4px", padding:"9px 16px", fontFamily:gs, fontSize:"0.84rem", cursor:"pointer" }}>
                 Cancel
               </button>
             </div>

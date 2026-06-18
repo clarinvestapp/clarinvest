@@ -4,13 +4,14 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/theme";
 import { createClient } from "@/lib/supabase";
 import { Pencil, Copy, Trash2 } from "lucide-react";
+import { FaLock } from "react-icons/fa6";
 import {
   PieChart, Pie, Cell, Sector, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 
-const DARK = { bg:"#090909",card:"#111113",surface:"#141416",border:"#232325",borderHi:"#333336",text:"#F0F0F0",muted:"#7A7A80",green:"#00E676",greenDim:"rgba(0,230,118,0.10)",blue:"#4488FF",blueDim:"rgba(68,136,255,0.12)",red:"#FF1800",amber:"#F59E0B",cg:"linear-gradient(145deg,#131316,#0F0F12)" };
-const LIGHT = { bg:"#F7F7F5",card:"#FFFFFF",surface:"#EEEEED",border:"#DEDEDD",borderHi:"#BABAB8",text:"#0A0A0A",muted:"#606065",green:"#008A38",greenDim:"rgba(0,138,56,0.09)",blue:"#1E55CC",blueDim:"rgba(30,85,204,0.09)",red:"#CC0000",amber:"#B45309",cg:"linear-gradient(145deg,#FFFFFF,#F2F2F0)" };
+const DARK = { bg:"#090909",card:"#111113",surface:"#141416",border:"#232325",borderHi:"#333336",text:"#F0F0F0",muted:"#7A7A80",green:"#00E676",greenDim:"rgba(0,230,118,0.10)",blue:"#4488FF",blueDim:"rgba(68,136,255,0.12)",red:"#FF1800" };
+const LIGHT = { bg:"#F7F7F5",card:"#FFFFFF",surface:"#EEEEED",border:"#DEDEDD",borderHi:"#BABAB8",text:"#0A0A0A",muted:"#606065",green:"#008A38",greenDim:"rgba(0,138,56,0.09)",blue:"#1E55CC",blueDim:"rgba(30,85,204,0.09)",red:"#CC0000" };
 const gs = "'Google Sans Flex','DM Sans',sans-serif";
 
 // ── Stock colour palette (consistent across portfolios) ────────────────────────
@@ -152,7 +153,7 @@ function genComparison(portfolios, years) {
 
 // ── Mini circular score ────────────────────────────────────────────────────────
 function ScoreCircle({score,c,size=38,label}){
-  const col=score>=75?c.green:score>=55?c.amber:c.red;
+  const col=score>=75?c.green:score>=55?c.muted:c.red;
   const r=(size-5)/2,cx2=size/2,circ=2*Math.PI*r,off=circ*(1-score/100);
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}}>
@@ -162,7 +163,7 @@ function ScoreCircle({score,c,size=38,label}){
           <circle cx={cx2} cy={cx2} r={r} fill="none" stroke={c.border} strokeWidth="3"/>
           <circle cx={cx2} cy={cx2} r={r} fill="none" stroke={col} strokeWidth="3" strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"/>
         </svg>
-        <span style={{fontFamily:gs,fontSize:"0.6rem",fontWeight:800,color:col,position:"relative",zIndex:1}}>{score}</span>
+        <span style={{fontFamily:gs,fontSize:"0.6rem",fontWeight:600,color:col,position:"relative",zIndex:1}}>{score}</span>
       </div>
       {label&&<span style={{fontFamily:gs,fontSize:"0.52rem",color:c.muted,letterSpacing:"0.04em",textTransform:"uppercase"}}>{label}</span>}
     </div>
@@ -291,7 +292,7 @@ function Builder({c,mode,initial,onSave,onCancel}){
             <p style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600}}>{initial?"Edit Portfolio":"New Portfolio"}</p>
             <h3 style={{fontFamily:gs,fontSize:"1.1rem",fontWeight:700,color:c.text}}>{step===1?"Set your budget":step===2?"Build your portfolio":"Edit holdings"}</h3>
           </div>
-          <button onClick={onCancel} style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"6px 10px",cursor:"pointer",color:c.muted,fontFamily:gs,fontSize:"0.78rem"}}>✕</button>
+          <button onClick={onCancel} style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"6px 10px",cursor:"pointer",color:c.muted,fontFamily:gs,fontSize:"0.78rem"}}>✕</button>
         </div>
 
         <div style={{padding:"1.5rem",display:"flex",flexDirection:isMobile?"column":"row",gap:"1.5rem",flexWrap:"nowrap"}}>
@@ -300,26 +301,26 @@ function Builder({c,mode,initial,onSave,onCancel}){
             <div style={{marginBottom:"1.25rem"}}>
               <label style={{fontFamily:gs,fontSize:"0.72rem",color:c.muted,display:"block",marginBottom:"5px"}}>Portfolio name</label>
               <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Growth Focus, Dividend Income…"
-                style={{width:"100%",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"9px 12px",fontFamily:gs,fontSize:"0.88rem",color:c.text,outline:"none"}}/>
+                style={{width:"100%",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"9px 12px",fontFamily:gs,fontSize:"0.88rem",color:c.text,outline:"none"}}/>
             </div>
             <div style={{marginBottom:"1.5rem"}}>
               <label style={{fontFamily:gs,fontSize:"0.72rem",color:c.muted,display:"block",marginBottom:"5px"}}>Capital to invest ($)</label>
               <input type="number" value={capital} min={100} onChange={e=>setCapital(Math.max(100,+e.target.value))}
-                style={{width:"100%",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"9px 12px",fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.text,outline:"none"}}/>
+                style={{width:"100%",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"9px 12px",fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.text,outline:"none"}}/>
             </div>
 
             {/* Stock search */}
             <div style={{marginBottom:"0.75rem"}}>
               <label style={{fontFamily:gs,fontSize:"0.72rem",color:c.muted,display:"block",marginBottom:"5px"}}>Add stocks</label>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search ticker or company…"
-                style={{width:"100%",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"9px 12px",fontFamily:gs,fontSize:"0.84rem",color:c.text,outline:"none"}}/>
+                style={{width:"100%",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"9px 12px",fontFamily:gs,fontSize:"0.84rem",color:c.text,outline:"none"}}/>
             </div>
             {filtered.length===0&&search.length>0&&<p style={{fontFamily:gs,fontSize:"0.72rem",color:c.muted,marginBottom:"0.4rem"}}>No results for "{search}"</p>}
             {filtered.length>0&&!search&&<p style={{fontFamily:gs,fontSize:"0.66rem",color:c.muted,marginBottom:"0.4rem"}}>Available to add: click to include</p>}
             <div style={{display:"flex",flexWrap:"wrap",gap:"0.4rem",marginBottom:"1.25rem"}}>
               {filtered.map(s=>(
                 <button key={s.ticker} onClick={()=>addStock(s)}
-                  style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"6px",padding:"5px 12px",cursor:"pointer",fontFamily:gs,fontSize:"0.76rem",color:c.text,display:"flex",alignItems:"center",gap:"5px",transition:"border-color 0.15s"}}
+                  style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"5px 12px",cursor:"pointer",fontFamily:gs,fontSize:"0.76rem",color:c.text,display:"flex",alignItems:"center",gap:"5px",transition:"opacity 0.15s ease"}}
                   onMouseEnter={e=>e.currentTarget.style.borderColor=c.borderHi}
                   onMouseLeave={e=>e.currentTarget.style.borderColor=c.border}>
                   <span style={{fontWeight:700}}>{s.ticker}</span>
@@ -381,20 +382,20 @@ function Builder({c,mode,initial,onSave,onCancel}){
                   paddingAngle={2} strokeWidth={0}>
                   {holdings.map((h,i)=><Cell key={i} fill={sCol(h.ticker,i)}/>)}
                 </Pie>
-                <Tooltip formatter={(v,n)=>[`${v}% · $${((v/100)*capital).toLocaleString()}`,n]} contentStyle={{background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"6px",fontFamily:gs,fontSize:"0.78rem",color:c.text}} itemStyle={{color:c.text}} labelStyle={{color:c.muted,display:"none"}}/>
+                <Tooltip formatter={(v,n)=>[`${v}% · $${((v/100)*capital).toLocaleString()}`,n]} contentStyle={{background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"8px",fontFamily:gs,fontSize:"0.78rem",color:c.text}} itemStyle={{color:c.text}} labelStyle={{color:c.muted,display:"none"}}/>
               </PieChart>
               <div style={{background:c.surface,borderRadius:"8px",padding:"0.75rem",width:"100%",textAlign:"center"}}>
                 <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"3px"}}>Weighted Avg. AI Score</p>
-                <p style={{fontFamily:gs,fontSize:"1.4rem",fontWeight:800,color:c.green}}>{wAIScore(holdings)}</p>
+                <p style={{fontFamily:gs,fontSize:"1.4rem",fontWeight:600,color:c.green}}>{wAIScore(holdings)}</p>
               </div>
             </div>
           )}
         </div>
 
         <div style={{padding:"0 1.5rem 1.5rem",display:"flex",gap:"0.75rem",justifyContent:"flex-end"}}>
-          <button onClick={onCancel} style={{background:"transparent",color:c.muted,border:`1px solid ${c.border}`,borderRadius:"7px",padding:"10px 24px",fontFamily:gs,fontSize:"0.84rem",cursor:"pointer"}}>Cancel</button>
+          <button onClick={onCancel} style={{background:"transparent",color:c.muted,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"10px 24px",fontFamily:gs,fontSize:"0.84rem",cursor:"pointer"}}>Cancel</button>
           <button onClick={()=>canSave&&onSave({id:initial?.id||null,name:name.trim(),capital,holdings})} disabled={!canSave}
-            style={{background:c.text,color:c.bg,border:"none",borderRadius:"7px",padding:"10px 28px",fontFamily:gs,fontSize:"0.84rem",fontWeight:700,cursor:canSave?"pointer":"not-allowed",opacity:canSave?1:0.45}}>
+            style={{background:c.text,color:c.bg,border:"none",borderRadius:"4px",padding:"10px 28px",fontFamily:gs,fontSize:"0.84rem",fontWeight:600,cursor:canSave?"pointer":"not-allowed",opacity:canSave?1:0.45}}>
             {initial?"Save Changes":"Create Portfolio"}
           </button>
         </div>
@@ -440,9 +441,9 @@ function TermsGlossary({c}){
         Terms explained
       </button>
       {open&&(
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"0.6rem",marginTop:"0.75rem",padding:"1rem",background:c.surface,borderRadius:"10px",border:`1px solid ${c.border}`}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:"0.6rem",marginTop:"0.75rem",padding:"1rem",background:c.surface,borderRadius:"8px",border:`1px solid ${c.border}`}}>
           {PORT_TERMS.map(({term,full,def})=>(
-            <div key={term} style={{padding:"0.75rem",background:c.card,borderRadius:"7px",border:`1px solid ${c.border}`}}>
+            <div key={term} style={{padding:"0.75rem",background:c.card,borderRadius:"8px",border:`1px solid ${c.border}`}}>
               <p style={{fontFamily:gs,fontSize:"0.72rem",fontWeight:700,color:c.text,marginBottom:"2px"}}>{term}</p>
               <p style={{fontFamily:gs,fontSize:"0.62rem",color:c.blue,marginBottom:"5px",fontWeight:500}}>{full}</p>
               <p style={{fontFamily:gs,fontSize:"0.7rem",color:c.muted,lineHeight:1.6}}>{def}</p>
@@ -466,7 +467,7 @@ function LockedCell({c,align="right"}){
       </span>
       {hov&&(
         <div style={{position:"absolute",bottom:"calc(100% + 6px)",right:0,
-          background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"7px",
+          background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"8px",
           padding:"8px 14px",zIndex:60,whiteSpace:"nowrap",
           boxShadow:"0 6px 20px rgba(0,0,0,0.22)",pointerEvents:"auto"}}>
           <p style={{fontFamily:gs,fontSize:"0.72rem",fontWeight:700,color:c.text,marginBottom:"1px"}}>
@@ -490,7 +491,7 @@ function LockedCell({c,align="right"}){
 function ChartTip({active,payload,label,c,prefix="$"}){
   if(!active||!payload?.length)return null;
   return(
-    <div style={{background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"6px",padding:"8px 12px"}}>
+    <div style={{background:c.card,border:`1px solid ${c.borderHi}`,borderRadius:"8px",padding:"8px 12px"}}>
       <p style={{fontFamily:gs,fontSize:"0.68rem",color:c.muted,marginBottom:"4px"}}>{label}</p>
       {payload.map((p,i)=>(
         <p key={i} style={{fontFamily:gs,fontSize:"0.82rem",fontWeight:700,color:p.color||p.stroke||c.text}}>
@@ -537,6 +538,10 @@ export default function PortfolioPage(){
   const [cmpRange,setCmpRange]=useState(10);
   const [cardActiveSlice,setCardActiveSlice]=useState({});  // FIX #4: per-card active slice
   const isUltimate = userPlan === "ultimate";
+  const isPro      = userPlan === "pro";
+  const dripAllowed = isUltimate || isPro;
+  const [dripTip1, setDripTip1] = useState(false); // Historical chart DRIP toggle tooltip
+  const [dripTip2, setDripTip2] = useState(false); // Projection chart DRIP toggle tooltip
   useEffect(()=>{
     if(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("new")==="1"){
       setEditingPortfolio(null);
@@ -622,24 +627,24 @@ export default function PortfolioPage(){
   const Toggle=({on,set,label,locked})=>(
     <button onClick={()=>!locked&&set(!on)}
       style={{display:"flex",alignItems:"center",gap:"0.4rem",background:"none",border:"none",cursor:locked?"default":"pointer",padding:0,opacity:locked?0.5:1}}>
-      <div style={{width:"32px",height:"18px",borderRadius:"9px",background:on&&!locked?c.green:c.border,position:"relative",transition:"background 0.2s",flexShrink:0}}>
-        <div style={{position:"absolute",top:"2px",left:on&&!locked?"16px":"2px",width:"14px",height:"14px",borderRadius:"50%",background:on&&!locked?(mode==="dark"?"#050505":"#fff"):c.muted,transition:"left 0.2s"}}/>
+      <div style={{width:"32px",height:"18px",borderRadius:"9px",background:on&&!locked?c.green:c.border,position:"relative",transition:"opacity 0.2s",flexShrink:0}}>
+        <div style={{position:"absolute",top:"2px",left:"2px",width:"14px",height:"14px",borderRadius:"50%",background:on&&!locked?(mode==="dark"?"#050505":"#fff"):c.muted,transform:on&&!locked?"translateX(14px)":"translateX(0)",transition:"transform 0.2s"}}/>
       </div>
       <span style={{fontFamily:gs,fontSize:"0.76rem",color:on&&!locked?c.text:c.muted,fontWeight:on&&!locked?600:400}}>{label}</span>
-      {locked&&<span style={{fontSize:"0.62rem",marginLeft:"1px"}}>🔒</span>}
+      {locked&&<FaLock size={9} color={c.muted} style={{marginLeft:"1px",flexShrink:0}}/>}
     </button>
   );
 
   const pillBtn=(active,onClick,label)=>(
-    <button onClick={onClick} style={{background:active?c.text:"transparent",color:active?c.bg:c.muted,border:`1px solid ${active?c.text:c.border}`,borderRadius:"50px",padding:"4px 12px",fontFamily:gs,fontSize:"0.72rem",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>{label}</button>
+    <button onClick={onClick} style={{background:active?c.text:"transparent",color:active?c.bg:c.muted,border:`1px solid ${active?c.text:c.border}`,borderRadius:"50px",padding:"4px 12px",fontFamily:gs,fontSize:"0.72rem",fontWeight:600,cursor:"pointer",transition:"opacity 0.15s ease"}}>{label}</button>
   );
 
   // Computed data
-  const histData=useMemo(()=>selected?genHistorical(selected,whatIfYear,inflation,inflRate,drip&&isUltimate):[]
-  ,[selected,whatIfYear,inflation,inflRate,drip,isUltimate]);
+  const histData=useMemo(()=>selected?genHistorical(selected,whatIfYear,inflation,inflRate,drip&&dripAllowed):[]
+  ,[selected,whatIfYear,inflation,inflRate,drip,dripAllowed]);
 
-  const projData=useMemo(()=>selected?genProjection(selected,projYears,inflation,inflRate,drip&&isUltimate,extraGrowth,monthlyAdd,addEnabled):[]
-  ,[selected,projYears,inflation,inflRate,drip,isUltimate,extraGrowth,monthlyAdd,addEnabled]);
+  const projData=useMemo(()=>selected?genProjection(selected,projYears,inflation,inflRate,drip&&dripAllowed,extraGrowth,monthlyAdd,addEnabled):[]
+  ,[selected,projYears,inflation,inflRate,drip,dripAllowed,extraGrowth,monthlyAdd,addEnabled]);
 
   const cmpPortfolios=portfolios.filter(p=>cmpIds.includes(p.id));
   const cmpData=useMemo(()=>genComparison(cmpPortfolios,cmpRange),[cmpIds,cmpRange,portfolios]);
@@ -683,13 +688,13 @@ export default function PortfolioPage(){
         {/* ── Header ── */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:"2rem",flexWrap:"wrap",gap:"1rem"}}>
           <div>
-            <p style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:600,marginBottom:"0.3rem"}}>Portfolio Hub</p>
-            <h1 style={{fontFamily:gs,fontSize:"clamp(1.5rem,3vw,2.2rem)",fontWeight:700,color:c.text,marginBottom:"0.3rem"}}>My Portfolios</h1>
+            <p style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"0.3rem"}}>Portfolio Hub</p>
+            <h1 style={{fontFamily:gs,fontSize:"clamp(1.5rem,3vw,2.2rem)",fontWeight:600,color:c.text,marginBottom:"0.3rem"}}>My Portfolios</h1>
             <p style={{fontFamily:gs,fontSize:"0.88rem",color:c.muted}}>Build, analyse and project your investment portfolios.</p>
           </div>
           {portfolios.length<5&&(
             <button onClick={()=>{setEditingPortfolio(null);setShowBuilder(true);}}
-              style={{background:c.text,color:c.bg,border:"none",borderRadius:"7px",padding:"11px 24px",fontFamily:gs,fontSize:"0.84rem",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
+              style={{background:c.text,color:c.bg,border:"none",borderRadius:"4px",padding:"11px 24px",fontFamily:gs,fontSize:"0.84rem",fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
               ＋ New Portfolio
             </button>
           )}
@@ -713,24 +718,24 @@ export default function PortfolioPage(){
               const totalReturn=Math.round((wCAGR(p.holdings)*5)*100);
               return(
                 <div key={p.id} onClick={()=>setSelectedId(p.id)}
-                  style={{background:isSelected?c.card:c.cg,border:`1.5px solid ${isSelected?c.blue:c.border}`,borderRadius:"14px",padding:"1.25rem",cursor:"pointer",transition:"all 0.22s",minWidth:"210px",flexShrink:0,position:"relative",
+                  style={{background:isSelected?c.card:c.surface,border:`1.5px solid ${isSelected?c.blue:c.border}`,borderRadius:"14px",padding:"1.25rem",cursor:"pointer",transition:"opacity 0.22s ease",minWidth:"210px",flexShrink:0,position:"relative",
                     boxShadow:isSelected
                       ?`0 0 0 3px ${c.blue}22, 0 0 14px 4px ${c.blue}22, 0 4px 18px rgba(0,0,0,0.22)`
                       :"0 2px 12px rgba(0,0,0,0.1)"}}>
                   {/* Action buttons: modern lucide icons */}
                   <div style={{position:"absolute",top:"0.7rem",right:"0.7rem",display:"flex",flexDirection:"column",gap:"4px"}}>
                     <button onClick={e=>{e.stopPropagation();setEditingPortfolio(p);setShowBuilder(true);}}
-                      title="Edit" style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"5px",width:"26px",height:"26px",cursor:"pointer",color:c.muted,display:"flex",alignItems:"center",justifyContent:"center",transition:"border-color 0.15s"}}
+                      title="Edit" style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",width:"26px",height:"26px",cursor:"pointer",color:c.muted,display:"flex",alignItems:"center",justifyContent:"center",transition:"opacity 0.15s ease"}}
                       onMouseEnter={e=>e.currentTarget.style.borderColor=c.borderHi} onMouseLeave={e=>e.currentTarget.style.borderColor=c.border}>
                       <Pencil size={12}/>
                     </button>
                     <button onClick={e=>{e.stopPropagation();handleDuplicate(p);}}
-                      title="Duplicate" style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"5px",width:"26px",height:"26px",cursor:"pointer",color:c.muted,display:"flex",alignItems:"center",justifyContent:"center",transition:"border-color 0.15s"}}
+                      title="Duplicate" style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",width:"26px",height:"26px",cursor:"pointer",color:c.muted,display:"flex",alignItems:"center",justifyContent:"center",transition:"opacity 0.15s ease"}}
                       onMouseEnter={e=>e.currentTarget.style.borderColor=c.borderHi} onMouseLeave={e=>e.currentTarget.style.borderColor=c.border}>
                       <Copy size={12}/>
                     </button>
                     <button onClick={e=>{e.stopPropagation();handleDelete(p.id);}}
-                      title="Delete" style={{background:c.red+"10",border:`1px solid ${c.red}45`,borderRadius:"5px",width:"26px",height:"26px",cursor:"pointer",color:c.red,display:"flex",alignItems:"center",justifyContent:"center",transition:"opacity 0.15s"}}
+                      title="Delete" style={{background:c.red+"10",border:`1px solid ${c.red}45`,borderRadius:"4px",width:"26px",height:"26px",cursor:"pointer",color:c.red,display:"flex",alignItems:"center",justifyContent:"center",transition:"opacity 0.15s ease"}}
                       onMouseEnter={e=>e.currentTarget.style.opacity="0.75"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
                       <Trash2 size={12}/>
                     </button>
@@ -752,11 +757,11 @@ export default function PortfolioPage(){
                   <p style={{fontFamily:gs,fontSize:"0.92rem",fontWeight:700,color:c.text,marginBottom:"2px"}}>{p.name}</p>
                   <p style={{fontFamily:gs,fontSize:"0.72rem",color:c.muted,marginBottom:"0.75rem"}}>{p.holdings.length} holdings</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.4rem"}}>
-                    <div style={{background:c.surface,borderRadius:"6px",padding:"0.4rem 0.6rem"}}>
+                    <div style={{background:c.surface,borderRadius:"8px",padding:"0.4rem 0.6rem"}}>
                       <p style={{fontFamily:gs,fontSize:"0.55rem",color:c.muted,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"2px"}}>Capital</p>
                       <p style={{fontFamily:gs,fontSize:"0.78rem",fontWeight:700,color:c.text}}>${p.capital.toLocaleString()}</p>
                     </div>
-                    <div style={{background:c.surface,borderRadius:"6px",padding:"0.4rem 0.6rem"}}>
+                    <div style={{background:c.surface,borderRadius:"8px",padding:"0.4rem 0.6rem"}}>
                       <p style={{fontFamily:gs,fontSize:"0.55rem",color:c.muted,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:"2px"}}>Est. CAGR</p>
                       <p style={{fontFamily:gs,fontSize:"0.78rem",fontWeight:700,color:c.green}}>{(wCAGR(p.holdings)*100).toFixed(1)}%</p>
                     </div>
@@ -766,7 +771,7 @@ export default function PortfolioPage(){
             })}
             {portfolios.length<5&&(
               <div onClick={()=>{setEditingPortfolio(null);setShowBuilder(true);}}
-                style={{background:"transparent",border:`2px dashed ${c.border}`,borderRadius:"14px",padding:"1.25rem",cursor:"pointer",minWidth:"180px",flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.5rem",transition:"border-color 0.18s"}}
+                style={{background:"transparent",border:`2px dashed ${c.border}`,borderRadius:"14px",padding:"1.25rem",cursor:"pointer",minWidth:"180px",flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.5rem",transition:"opacity 0.18s ease"}}
                 onMouseEnter={e=>e.currentTarget.style.borderColor=c.borderHi}
                 onMouseLeave={e=>e.currentTarget.style.borderColor=c.border}>
                 <span style={{fontSize:"1.8rem",color:c.muted}}>＋</span>
@@ -786,8 +791,8 @@ export default function PortfolioPage(){
                 Create your first portfolio to start tracking and analysing your investments.
               </p>
               <button onClick={()=>{setEditingPortfolio(null);setShowBuilder(true);}}
-                style={{background:c.text,color:c.bg,border:"none",borderRadius:"7px",
-                  padding:"11px 24px",fontFamily:gs,fontSize:"0.84rem",fontWeight:700,cursor:"pointer"}}>
+                style={{background:c.text,color:c.bg,border:"none",borderRadius:"4px",
+                  padding:"11px 24px",fontFamily:gs,fontSize:"0.84rem",fontWeight:600,cursor:"pointer"}}>
                 + Create Portfolio
               </button>
             </div>
@@ -799,7 +804,7 @@ export default function PortfolioPage(){
           <section style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"16px",padding:"1.5rem",marginBottom:"2rem"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.25rem",flexWrap:"wrap",gap:"0.75rem"}}>
               <div>
-                <p style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600,marginBottom:"2px"}}>{selected.name}</p>
+                <p style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"2px"}}>{selected.name}</p>
                 <h2 style={{fontFamily:gs,fontSize:"1.15rem",fontWeight:700,color:c.text}}>Portfolio Analysis</h2>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:"0.75rem"}}>
@@ -815,16 +820,16 @@ export default function PortfolioPage(){
 
             {/* Rebalancing alert */}
             {drifted.length>0&&(
-              <div style={{background:`${c.amber}12`,border:`1px solid ${c.amber}40`,borderRadius:"8px",padding:"8px 14px",marginBottom:"1.25rem",display:"flex",alignItems:"center",gap:"0.6rem"}}>
-                <span style={{color:c.amber}}>⚖</span>
-                <span style={{fontFamily:gs,fontSize:"0.76rem",color:c.amber}}>
+              <div style={{background:`${c.red}08`,border:`1px solid ${c.red}30`,borderRadius:"8px",padding:"8px 14px",marginBottom:"1.25rem",display:"flex",alignItems:"center",gap:"0.6rem"}}>
+                <span style={{color:c.red}}>⚖</span>
+                <span style={{fontFamily:gs,fontSize:"0.76rem",color:c.red}}>
                   {drifted.map(h=>h.ticker).join(", ")} {drifted.length===1?"has":"have"} drifted &gt;5% from target weight. Consider rebalancing.
                 </span>
               </div>
             )}
 
             {/* Holdings table */}
-            <div style={{overflowX:"auto",marginBottom:"1.5rem",borderRadius:"10px",border:`1px solid ${c.border}`}}>
+            <div style={{overflowX:"auto",marginBottom:"1.5rem",borderRadius:"8px",border:`1px solid ${c.border}`}}>
               <table style={{borderCollapse:"collapse",width:"100%",minWidth:"620px"}}>
                 <thead>
                   <tr style={{background:c.surface}}>
@@ -842,7 +847,7 @@ export default function PortfolioPage(){
                   {selected.holdings.map((h,i)=>{
                     const isDrifted=drifted.find(d=>d.ticker===h.ticker);
                     return(
-                      <tr key={h.ticker} style={{borderTop:`1px solid ${c.border}`,background:isDrifted?`${c.amber}06`:"transparent"}}>
+                      <tr key={h.ticker} style={{borderTop:`1px solid ${c.border}`,background:isDrifted?`${c.red}06`:"transparent"}}>
                         <td style={{padding:"9px 12px"}}>
                           <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
                             <div style={{width:"10px",height:"10px",borderRadius:"2px",background:sCol(h.ticker,i),flexShrink:0}}/>
@@ -880,7 +885,7 @@ export default function PortfolioPage(){
             {/* Sector weight: toggle between bar and donut */}
             <div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.75rem"}}>
-                <p style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600}}>Sector Weights</p>
+                <p style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500}}>Sector Weights</p>
                 <div style={{display:"flex",gap:"0.3rem"}}>
                   {pillBtn(sectorViz==="bar",()=>setSectorViz("bar"),"Bar")}
                   {pillBtn(sectorViz==="donut",()=>setSectorViz("donut"),"Donut")}
@@ -900,7 +905,7 @@ export default function PortfolioPage(){
 
             {/* What If chart */}
             <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1.5rem"}}>
-              <p style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600,marginBottom:"3px"}}>Historical Analysis</p>
+              <p style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"3px"}}>Historical Analysis</p>
               <h3 style={{fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.text,marginBottom:"1rem"}}>What If I invested in {whatIfYear}?</h3>
 
               {/* Controls */}
@@ -908,7 +913,20 @@ export default function PortfolioPage(){
                 {[2010,2015,2018,2019,2020,2021,2022].map(y=>pillBtn(whatIfYear===y,()=>setWhatIfYear(y),String(y)))}
               </div>
               <div style={{display:"flex",gap:"1.25rem",marginBottom:"1rem",flexWrap:"wrap",alignItems:"center"}}>
-                <Toggle on={drip} set={setDrip} label="Include DRIP" locked={!isUltimate}/>
+                <div style={{position:"relative",display:"inline-flex"}}
+                  onMouseEnter={()=>!dripAllowed&&setDripTip1(true)}
+                  onMouseLeave={()=>setDripTip1(false)}
+                  onTouchStart={e=>{if(!dripAllowed){e.preventDefault();setDripTip1(v=>!v);}}}>
+                  <Toggle on={drip} set={setDrip} label="Include DRIP" locked={!dripAllowed}/>
+                  {dripTip1&&(
+                    <div style={{position:"absolute",bottom:"calc(100% + 8px)",left:"0",background:mode==="dark"?"#1C1C1E":"#FFFFFF",border:`1px solid ${c.borderHi}`,borderRadius:"10px",padding:"10px 14px",width:"260px",zIndex:60,boxShadow:"0 8px 28px rgba(0,0,0,0.35)",pointerEvents:"none"}}>
+                      <p style={{fontFamily:gs,fontSize:"0.75rem",color:c.text,lineHeight:1.55,margin:0}}>
+                        Feature only available on Pro and Ultimate plans. Upgrade your plan to enjoy this feature.
+                      </p>
+                      <div style={{position:"absolute",bottom:"-6px",left:"18px",width:"11px",height:"11px",background:mode==="dark"?"#1C1C1E":"#FFFFFF",border:`1px solid ${c.borderHi}`,borderTop:"none",borderLeft:"none",transform:"rotate(45deg)"}}/>
+                    </div>
+                  )}
+                </div>
                 <Toggle on={inflation} set={setInflation} label="Inflation adj."/>
                 {inflation&&(
                   <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
@@ -948,7 +966,7 @@ export default function PortfolioPage(){
 
             {/* Projection chart */}
             <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1.5rem"}}>
-              <p style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600,marginBottom:"3px"}}>Forward Projection</p>
+              <p style={{fontFamily:gs,fontSize:"0.65rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"3px"}}>Forward Projection</p>
               <h3 style={{fontFamily:gs,fontSize:"1rem",fontWeight:700,color:c.text,marginBottom:"1rem"}}>Growth over {projYears} years</h3>
 
               {/* Controls */}
@@ -956,7 +974,20 @@ export default function PortfolioPage(){
                 {[5,10,15,20,25].map(y=>pillBtn(projYears===y,()=>setProjYears(y),`${y}Y`))}
               </div>
               <div style={{display:"flex",gap:"1rem",flexWrap:"wrap",marginBottom:"0.5rem",alignItems:"center"}}>
-                <Toggle on={drip} set={setDrip} label="Include DRIP" locked={!isUltimate}/>
+                <div style={{position:"relative",display:"inline-flex"}}
+                  onMouseEnter={()=>!dripAllowed&&setDripTip2(true)}
+                  onMouseLeave={()=>setDripTip2(false)}
+                  onTouchStart={e=>{if(!dripAllowed){e.preventDefault();setDripTip2(v=>!v);}}}>
+                  <Toggle on={drip} set={setDrip} label="Include DRIP" locked={!dripAllowed}/>
+                  {dripTip2&&(
+                    <div style={{position:"absolute",bottom:"calc(100% + 8px)",left:"0",background:mode==="dark"?"#1C1C1E":"#FFFFFF",border:`1px solid ${c.borderHi}`,borderRadius:"10px",padding:"10px 14px",width:"260px",zIndex:60,boxShadow:"0 8px 28px rgba(0,0,0,0.35)",pointerEvents:"none"}}>
+                      <p style={{fontFamily:gs,fontSize:"0.75rem",color:c.text,lineHeight:1.55,margin:0}}>
+                        Feature only available on Pro and Ultimate plans. Upgrade your plan to enjoy this feature.
+                      </p>
+                      <div style={{position:"absolute",bottom:"-6px",left:"18px",width:"11px",height:"11px",background:mode==="dark"?"#1C1C1E":"#FFFFFF",border:`1px solid ${c.borderHi}`,borderTop:"none",borderLeft:"none",transform:"rotate(45deg)"}}/>
+                    </div>
+                  )}
+                </div>
                 <Toggle on={inflation} set={setInflation} label="Inflation adj."/>
               </div>
               {/* Monthly contribution row */}
@@ -1029,7 +1060,7 @@ export default function PortfolioPage(){
                 const on=cmpIds.includes(p.id);
                 return(
                   <button key={p.id} onClick={()=>setCmpIds(prev=>on?prev.length>2?prev.filter(x=>x!==p.id):prev:[...prev,p.id])}
-                    style={{background:on?sCol(p.id,portfolios.indexOf(p))+"25":"transparent",color:on?sCol(p.id,portfolios.indexOf(p)):c.muted,border:`1px solid ${on?sCol(p.id,portfolios.indexOf(p)):c.border}`,borderRadius:"50px",padding:"4px 14px",fontFamily:gs,fontSize:"0.73rem",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>
+                    style={{background:on?sCol(p.id,portfolios.indexOf(p))+"25":"transparent",color:on?sCol(p.id,portfolios.indexOf(p)):c.muted,border:`1px solid ${on?sCol(p.id,portfolios.indexOf(p)):c.border}`,borderRadius:"50px",padding:"4px 14px",fontFamily:gs,fontSize:"0.73rem",fontWeight:600,cursor:"pointer",transition:"opacity 0.15s ease"}}>
                     {p.name}
                   </button>
                 );

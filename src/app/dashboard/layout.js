@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { Compass, Bookmark, TrendingUp, PieChart, User } from "lucide-react";
+import { FaSun, FaMoon } from "react-icons/fa6";
 
 const C = {
   dark:  { bg:"#090909", card:"#111113", surface:"#141416", border:"#232325", borderHi:"#333336", text:"#F0F0F0", muted:"#7A7A80", green:"#00E676" },
@@ -118,17 +119,16 @@ function DashboardShell({ children }) {
     cursor:"pointer", fontFamily:gs, fontSize:"0.82rem",
     color: color || c.text,
     display:"flex", alignItems:"center", gap:"8px",
-    transition:"background 0.12s",
   });
 
   return (
-    <div style={{ minHeight:"100vh", background:c.bg, color:c.text, fontFamily:gs, transition:"background 0.3s,color 0.3s" }}>
+    <div style={{ minHeight:"100vh", background:c.bg, color:c.text, fontFamily:gs }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Google+Sans+Flex:opsz,wght@8..144,300..700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
         ::-webkit-scrollbar{width:4px;height:4px;}
         ::-webkit-scrollbar-thumb{background:#303032;border-radius:2px;}
-        .nav-link{background:none;border:none;cursor:pointer;font-family:inherit;transition:color 0.18s;}
+        .nav-link{background:none;border:none;cursor:pointer;font-family:inherit;transition:opacity 0.22s ease;}
         .nav-link:hover{opacity:0.6;}
         .dd-item:hover{background:var(--dd-hover) !important;}
         @media(max-width:700px){
@@ -148,16 +148,23 @@ function DashboardShell({ children }) {
 
       {/* Desktop top nav */}
       <nav className="desktop-nav" style={{
-        position:"sticky", top:0, zIndex:200, height:"58px",
+        position:"sticky", top:0, zIndex:200, height:"64px",
         background: solid
           ? (mode==="dark" ? "rgba(9,9,9,0.97)"  : "rgba(247,247,245,0.97)")
           : (mode==="dark" ? "rgba(9,9,9,0.70)"  : "rgba(247,247,245,0.70)"),
-        backdropFilter:"blur(12px)",
-        borderBottom:`1px solid ${solid ? c.border : "transparent"}`,
+        backdropFilter:"blur(14px)", WebkitBackdropFilter:"blur(14px)",
         display:"flex", alignItems:"center", justifyContent:"space-between",
         padding:"0 2.5rem", gap:"1rem",
-        transition:"background 0.3s,border-color 0.3s",
       }}>
+
+        {/* Separator overlay — fades in on scroll, GPU-safe opacity transition */}
+        <div aria-hidden="true" style={{
+          position:"absolute", top:0, right:0, bottom:0, left:0, pointerEvents:"none",
+          borderBottom:`1px solid ${mode==="dark" ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.09)"}`,
+          boxShadow: mode==="dark" ? "0 4px 28px rgba(0,0,0,0.50)" : "0 2px 16px rgba(0,0,0,0.07)",
+          opacity: solid ? 1 : 0,
+          transition:"opacity 0.22s ease",
+        }}/>
 
         {/* Logo */}
         <button onClick={() => router.push("/dashboard")}
@@ -179,7 +186,7 @@ function DashboardShell({ children }) {
               <button key={n.href} className="nav-link"
                 onClick={() => n.ready && router.push(n.href)}
                 title={n.ready ? n.label : n.label + " — coming soon"}
-                style={{ fontFamily:gs, fontSize:"0.83rem", fontWeight:active?600:400, color:active?c.text:c.muted, padding:"6px 14px", borderRadius:"5px", background:active?c.surface:"transparent", opacity:n.ready?1:0.4, cursor:n.ready?"pointer":"default" }}>
+                style={{ fontFamily:gs, fontSize:"0.83rem", fontWeight:active?600:400, color:active?c.text:c.muted, padding:"6px 14px", borderRadius:"4px", background:active?c.surface:"transparent", opacity:n.ready?1:0.4, cursor:n.ready?"pointer":"default" }}>
                 {n.label}
               </button>
             );
@@ -190,7 +197,7 @@ function DashboardShell({ children }) {
         <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", flexShrink:0 }}>
           <button onClick={() => setMode(mode==="dark"?"light":"dark")}
             style={{ background:c.surface, border:"1px solid "+c.border, borderRadius:"50px", padding:"5px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:"4px", color:c.muted, fontSize:"0.76rem", fontFamily:gs }}>
-            <span>{mode==="dark"?"☀":"☾"}</span>
+            {mode==="dark" ? <FaSun size={13} color={c.muted}/> : <FaMoon size={13} color={c.muted}/>}
             <span>{mode==="dark"?"Light":"Dark"}</span>
           </button>
 
@@ -204,7 +211,7 @@ function DashboardShell({ children }) {
               style={{ width:"32px", height:"32px", borderRadius:"50%", background:"linear-gradient(135deg,#1A1A1C,#2A2A2E)", border:"1px solid "+c.borderHi, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", position:"relative" }}>
               <span style={{ fontFamily:gs, fontSize:"0.72rem", color:c.muted, fontWeight:600 }}>{initials}</span>
               {/* Plan badge */}
-              <span style={{ position:"absolute", bottom:"-2px", right:"-2px", background:c.green, color:"#050505", fontSize:"0.42rem", fontWeight:800, fontFamily:gs, padding:"1px 3px", borderRadius:"3px", lineHeight:1.2, pointerEvents:"none" }}>
+              <span style={{ position:"absolute", bottom:"-2px", right:"-2px", background:c.green, color:"#050505", fontSize:"0.42rem", fontWeight:600, fontFamily:gs, padding:"1px 3px", borderRadius:"6px", lineHeight:1.2, pointerEvents:"none" }}>
                 {planLabel.toUpperCase().slice(0,3)}
               </span>
             </button>
@@ -282,7 +289,7 @@ function DashboardShell({ children }) {
       </nav>
 
       {/* Page content */}
-      <div className="page-content" style={{ paddingTop:"58px" }}>
+      <div className="page-content" style={{ paddingTop:"64px" }}>
         {children}
         {/* Footer strip */}
         <div style={{
@@ -324,7 +331,7 @@ function DashboardShell({ children }) {
                 WebkitTapHighlightColor:"transparent",
               }}>
               <Icon size={22} strokeWidth={active?2.2:1.6} color={active?c.green:c.muted}/>
-              <span style={{ fontFamily:gs, fontSize:"0.58rem", fontWeight:active?600:400, color:active?c.text:c.muted, letterSpacing:"0.03em", lineHeight:1 }}>
+              <span style={{ fontFamily:gs, fontSize:"0.65rem", fontWeight:active?600:400, color:active?c.text:c.muted, letterSpacing:"0.03em", lineHeight:1 }}>
                 {n.label}
               </span>
             </button>
