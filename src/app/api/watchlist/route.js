@@ -40,7 +40,7 @@ export async function GET(request) {
 
   const { data: rows, error } = await supabase
     .from("watchlists")
-    .select("ticker,name,sector,market,added_at")
+    .select("ticker,name,sector,market,type,added_at")
     .eq("user_id", user.id)
     .order("added_at", { ascending:false });
 
@@ -51,6 +51,7 @@ export async function GET(request) {
 
   const stocks = (rows||[]).map(r => ({
     ...r,
+    type:  r.type || "stock",
     price: prices[r.ticker]?.price ?? null,
     chg:   prices[r.ticker]?.chg   ?? null,
     score: null,
@@ -64,7 +65,7 @@ export async function POST(request) {
   const user = await getUser(request);
   if (!user) return NextResponse.json({ error:"Not authenticated" }, { status:401 });
 
-  const { ticker, name, sector, market } = await request.json();
+  const { ticker, name, sector, market, type } = await request.json();
   if (!ticker) return NextResponse.json({ error:"Ticker required" }, { status:400 });
 
   const { error } = await supabase.from("watchlists").upsert({
@@ -73,6 +74,7 @@ export async function POST(request) {
     name:    name  || ticker,
     sector:  sector|| "Other",
     market:  market|| "US",
+    type:    type  || "stock",
   }, { onConflict:"user_id,ticker" });
 
   if (error) return NextResponse.json({ error:error.message }, { status:500 });

@@ -10,6 +10,14 @@ const C = {
 };
 const gs = "'Google Sans Flex','DM Sans',sans-serif";
 
+const TYPE_LABEL = { stock:"Stock", etf:"ETF", commodity:"Commodity", index:"Index" };
+const TYPE_COLOR = (type, c) => ({
+  stock:     {bg:`${c.blue}1F`, border:`${c.blue}50`, text:c.blue},
+  etf:       {bg:"rgba(167,139,250,0.10)", border:"rgba(167,139,250,0.30)", text:"#A78BFA"},
+  commodity: {bg:"rgba(245,158,11,0.10)",  border:"rgba(245,158,11,0.30)",  text:"#F59E0B"},
+  index:     {bg:"rgba(52,211,153,0.10)",  border:"rgba(52,211,153,0.30)",  text:"#34D399"},
+}[type] || {bg:c.surface, border:c.border, text:c.muted});
+
 function FlagImg({ market, height = 16 }) {
   const codes = { US:"us", UK:"uk", EU:"eu" };
   return (
@@ -32,7 +40,7 @@ function WatchlistCard({ s, c, onRemove, onClick }) {
   };
 
   return (
-    <div onClick={() => onClick(s.ticker)}
+    <div onClick={() => onClick(s.ticker, s.type)}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{ background:c.card, border:`1px solid ${hov?c.borderHi:c.border}`, borderRadius:"16px", padding:"1.5rem 1.4rem", cursor:"pointer", transition:"transform 0.28s ease", transform:hov?"translateY(-5px)":"translateY(0)", boxShadow:hov?"0 10px 32px rgba(0,0,0,0.25)":"0 1px 8px rgba(0,0,0,0.06)", position:"relative" }}>
 
@@ -45,9 +53,16 @@ function WatchlistCard({ s, c, onRemove, onClick }) {
 
       {/* Ticker + name */}
       <div style={{ paddingRight:"2rem", marginBottom:"0.85rem" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"0.45rem", marginBottom:"0.25rem" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"0.45rem", marginBottom:"0.25rem", flexWrap:"wrap" }}>
           <FlagImg market={s.market||"US"} height={15}/>
           <span style={{ fontFamily:gs, fontSize:"1.05rem", fontWeight:600, color:c.text }}>{s.ticker}</span>
+          {(()=>{ const tc=TYPE_COLOR(s.type||"stock", c); return (
+            <span style={{fontFamily:gs,fontSize:"0.58rem",fontWeight:700,
+              background:tc.bg,border:`1px solid ${tc.border}`,color:tc.text,
+              borderRadius:"5px",padding:"2px 6px",letterSpacing:"0.04em",textTransform:"uppercase"}}>
+              {TYPE_LABEL[s.type||"stock"]}
+            </span>
+          ); })()}
         </div>
         <p style={{ fontFamily:gs, fontSize:"0.72rem", color:c.muted, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.name}</p>
       </div>
@@ -176,7 +191,7 @@ export default function WatchlistPage() {
             {stocks.map(s => (
               <WatchlistCard key={s.ticker} s={s} c={c}
                 onRemove={handleRemove}
-                onClick={(ticker) => router.push(`/dashboard/analysis/${ticker}`)}
+                onClick={(ticker, type) => router.push(`/dashboard/analysis/${ticker}?type=${type||"stock"}`)}
               />
             ))}
           </div>

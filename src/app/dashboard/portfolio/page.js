@@ -4,22 +4,31 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/theme";
 import { createClient } from "@/lib/supabase";
 import { Pencil, Copy, Trash2 } from "lucide-react";
-import { FaLock } from "react-icons/fa6";
+import { FaLock, FaScaleBalanced } from "react-icons/fa6";
 import {
   PieChart, Pie, Cell, Sector, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 
-const DARK = { bg:"#090909",card:"#111113",surface:"#141416",border:"#232325",borderHi:"#333336",text:"#F0F0F0",muted:"#7A7A80",green:"#00E676",greenDim:"rgba(0,230,118,0.10)",blue:"#4488FF",blueDim:"rgba(68,136,255,0.12)",red:"#FF1800" };
-const LIGHT = { bg:"#F7F7F5",card:"#FFFFFF",surface:"#EEEEED",border:"#DEDEDD",borderHi:"#BABAB8",text:"#0A0A0A",muted:"#606065",green:"#008A38",greenDim:"rgba(0,138,56,0.09)",blue:"#1E55CC",blueDim:"rgba(30,85,204,0.09)",red:"#CC0000" };
+const DARK = { bg:"#090909",card:"#111113",surface:"#141416",border:"#232325",borderHi:"#333336",text:"#F0F0F0",muted:"#7A7A80",green:"#00E676",greenDim:"rgba(0,230,118,0.10)",blue:"#4488FF",blueDim:"rgba(68,136,255,0.12)",red:"#FF1800",amber:"#F59E0B",amberDim:"rgba(245,158,11,0.10)" };
+const LIGHT = { bg:"#F7F7F5",card:"#FFFFFF",surface:"#EEEEED",border:"#DEDEDD",borderHi:"#BABAB8",text:"#0A0A0A",muted:"#606065",green:"#008A38",greenDim:"rgba(0,138,56,0.09)",blue:"#1E55CC",blueDim:"rgba(30,85,204,0.09)",red:"#CC0000",amber:"#B45309",amberDim:"rgba(180,83,9,0.08)" };
 const gs = "'Google Sans Flex','DM Sans',sans-serif";
 
 // ── Stock colour palette (consistent across portfolios) ────────────────────────
-const STOCK_COLORS = { AAPL:"#4488FF",MSFT:"#00E676",NVDA:"#A855F7",AMZN:"#F59E0B",TSLA:"#FF6B6B",JNJ:"#06B6D4",KO:"#EF4444",PG:"#8B5CF6",O:"#10B981",CVX:"#F97316",XOM:"#6366F1",T:"#EC4899",ABBV:"#84CC16",WMT:"#14B8A6",V:"#FB923C",MA:"#C084FC",BRK:"#34D399",PFE:"#60A5FA",MRK:"#4ADE80" };
+const STOCK_COLORS = { AAPL:"#4488FF",MSFT:"#00E676",NVDA:"#A855F7",AMZN:"#F59E0B",TSLA:"#FF6B6B",JNJ:"#06B6D4",KO:"#EF4444",PG:"#8B5CF6",O:"#10B981",CVX:"#F97316",XOM:"#6366F1",T:"#EC4899",ABBV:"#84CC16",WMT:"#14B8A6",V:"#FB923C",MA:"#C084FC",BRK:"#34D399",PFE:"#60A5FA",MRK:"#4ADE80",QQQ:"#A78BFA",SPY:"#F472B6",VTI:"#FB7185",XAUUSD:"#FBBF24",XAGUSD:"#CBD5E1",WTICL:"#475569" };
 const PALETTE = ["#4488FF","#00E676","#F59E0B","#A855F7","#FF6B6B","#06B6D4","#EF4444","#8B5CF6","#10B981","#F97316","#6366F1","#EC4899","#84CC16","#14B8A6","#34D399"];
-const SECTOR_COLS = { Technology:"#4488FF",Healthcare:"#00E676",Energy:"#F59E0B",Staples:"#A855F7","Real Estate":"#FF6B6B",Communication:"#06B6D4",Automotive:"#EF4444",Industrials:"#10B981",Financials:"#F97316",Materials:"#6366F1",Utilities:"#EC4899",Defence:"#84CC16" };
+const SECTOR_COLS = { Technology:"#4488FF",Healthcare:"#00E676",Energy:"#F59E0B",Staples:"#A855F7","Real Estate":"#FF6B6B",Communication:"#06B6D4",Automotive:"#EF4444",Industrials:"#10B981",Financials:"#F97316",Materials:"#6366F1",Utilities:"#EC4899",Defence:"#84CC16","Broad Market":"#60A5FA","Precious Metals":"#FBBF24" };
 const sCol = (t,i) => STOCK_COLORS[t] || PALETTE[i % PALETTE.length];
 const scCol = s => SECTOR_COLS[s] || "#7A7A80";
+
+// Instrument type badge helpers — mirrors Discovery / Watchlist for cohesion
+const TYPE_LABEL = { stock:"Stock", etf:"ETF", commodity:"Commodity", index:"Index" };
+const TYPE_COLOR = (type, c) => ({
+  stock:     {bg:c.blueDim, border:`${c.blue}30`, text:c.blue},
+  etf:       {bg:"rgba(167,139,250,0.10)", border:"rgba(167,139,250,0.30)", text:"#A78BFA"},
+  commodity: {bg:"rgba(245,158,11,0.10)",  border:"rgba(245,158,11,0.30)",  text:"#F59E0B"},
+  index:     {bg:"rgba(52,211,153,0.10)",  border:"rgba(52,211,153,0.30)",  text:"#34D399"},
+}[type] || {bg:c.surface, border:c.border, text:c.muted});
 
 // ── Active slice shape for card mini donuts (FIX #4: no ugly tooltip popup) ───
 function CardActiveShape(props){
@@ -29,7 +38,7 @@ function CardActiveShape(props){
       <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius+4}
         startAngle={startAngle} endAngle={endAngle} fill={fill} opacity={1}/>
       <text x={cx} y={cy-6} textAnchor="middle" dominantBaseline="middle"
-        fontFamily={gs} fontSize={9} fontWeight="700" fill={fill}>{payload.ticker}</text>
+        fontFamily={gs} fontSize={payload.ticker.length>5?7.6:9} fontWeight="700" fill={fill}>{payload.ticker}</text>
       <text x={cx} y={cy+6} textAnchor="middle" dominantBaseline="middle"
         fontFamily={gs} fontSize={8} fill="#7A7A80">{payload.weight}%</text>
     </g>
@@ -38,21 +47,31 @@ function CardActiveShape(props){
 
 // ── Available stocks for builder ───────────────────────────────────────────────
 const AVAIL = [
-  {ticker:"AAPL",name:"Apple",          sector:"Technology",   market:"US",price:178.50,aiScore:84,yield:0.5 },
-  {ticker:"MSFT",name:"Microsoft",      sector:"Technology",   market:"US",price:415.20,aiScore:91,yield:0.7 },
-  {ticker:"NVDA",name:"NVIDIA",         sector:"Technology",   market:"US",price:875.00,aiScore:93,yield:0.1 },
-  {ticker:"AMZN",name:"Amazon",         sector:"Technology",   market:"US",price:185.00,aiScore:82,yield:0   },
-  {ticker:"TSLA",name:"Tesla",          sector:"Automotive",   market:"US",price:181.00,aiScore:61,yield:0   },
-  {ticker:"JNJ", name:"J&J",            sector:"Healthcare",   market:"US",price:151.80,aiScore:78,yield:3.14},
-  {ticker:"KO",  name:"Coca-Cola",      sector:"Staples",      market:"US",price:61.20, aiScore:72,yield:3.08},
-  {ticker:"PG",  name:"P&G",            sector:"Staples",      market:"US",price:142.60,aiScore:80,yield:2.51},
-  {ticker:"O",   name:"Realty Income",  sector:"Real Estate",  market:"US",price:54.20, aiScore:71,yield:5.60},
-  {ticker:"CVX", name:"Chevron",        sector:"Energy",       market:"US",price:142.40,aiScore:75,yield:4.35},
-  {ticker:"XOM", name:"Exxon",          sector:"Energy",       market:"US",price:114.20,aiScore:73,yield:3.41},
-  {ticker:"T",   name:"AT&T",           sector:"Communication",market:"US",price:20.40, aiScore:59,yield:5.06},
-  {ticker:"V",   name:"Visa",           sector:"Financials",   market:"US",price:278.00,aiScore:88,yield:0.8 },
-  {ticker:"WMT", name:"Walmart",        sector:"Staples",      market:"US",price:84.60, aiScore:85,yield:1.03},
-  {ticker:"ABBV",name:"AbbVie",         sector:"Healthcare",   market:"US",price:183.60,aiScore:77,yield:3.42},
+  {type:"stock", ticker:"AAPL",name:"Apple",          sector:"Technology",   market:"US",price:178.50,aiScore:84,yield:0.5 },
+  {type:"stock", ticker:"MSFT",name:"Microsoft",      sector:"Technology",   market:"US",price:415.20,aiScore:91,yield:0.7 },
+  {type:"stock", ticker:"NVDA",name:"NVIDIA",         sector:"Technology",   market:"US",price:875.00,aiScore:93,yield:0.1 },
+  {type:"stock", ticker:"AMZN",name:"Amazon",         sector:"Technology",   market:"US",price:185.00,aiScore:82,yield:0   },
+  {type:"stock", ticker:"TSLA",name:"Tesla",          sector:"Automotive",   market:"US",price:181.00,aiScore:61,yield:0   },
+  {type:"stock", ticker:"JNJ", name:"J&J",            sector:"Healthcare",   market:"US",price:151.80,aiScore:78,yield:3.14},
+  {type:"stock", ticker:"KO",  name:"Coca-Cola",      sector:"Staples",      market:"US",price:61.20, aiScore:72,yield:3.08},
+  {type:"stock", ticker:"PG",  name:"P&G",            sector:"Staples",      market:"US",price:142.60,aiScore:80,yield:2.51},
+  {type:"stock", ticker:"O",   name:"Realty Income",  sector:"Real Estate",  market:"US",price:54.20, aiScore:71,yield:5.60},
+  {type:"stock", ticker:"CVX", name:"Chevron",        sector:"Energy",       market:"US",price:142.40,aiScore:75,yield:4.35},
+  {type:"stock", ticker:"XOM", name:"Exxon",          sector:"Energy",       market:"US",price:114.20,aiScore:73,yield:3.41},
+  {type:"stock", ticker:"T",   name:"AT&T",           sector:"Communication",market:"US",price:20.40, aiScore:59,yield:5.06},
+  {type:"stock", ticker:"V",   name:"Visa",           sector:"Financials",   market:"US",price:278.00,aiScore:88,yield:0.8 },
+  {type:"stock", ticker:"WMT", name:"Walmart",        sector:"Staples",      market:"US",price:84.60, aiScore:85,yield:1.03},
+  {type:"stock", ticker:"ABBV",name:"AbbVie",         sector:"Healthcare",   market:"US",price:183.60,aiScore:77,yield:3.42},
+
+  // ── ETFs ──
+  {type:"etf", ticker:"QQQ", name:"Invesco QQQ Trust",         sector:"Technology",  market:"US",price:446.20,aiScore:88,yield:0.54},
+  {type:"etf", ticker:"SPY", name:"SPDR S&P 500 ETF Trust",    sector:"Broad Market",market:"US",price:548.30,aiScore:82,yield:1.31},
+  {type:"etf", ticker:"VTI", name:"Vanguard Total Stock Market",sector:"Broad Market",market:"US",price:268.40,aiScore:80,yield:1.28},
+
+  // ── Commodities ──
+  {type:"commodity", ticker:"XAUUSD",name:"Gold Spot",       sector:"Precious Metals",market:"US",price:2345.60,aiScore:74,yield:0},
+  {type:"commodity", ticker:"XAGUSD",name:"Silver Spot",     sector:"Precious Metals",market:"US",price:31.42,  aiScore:68,yield:0},
+  {type:"commodity", ticker:"WTICL", name:"Crude Oil (WTI)", sector:"Energy",         market:"US",price:78.42,  aiScore:58,yield:0},
 ];
 
 // ── Initial mock portfolios ────────────────────────────────────────────────────
@@ -89,7 +108,7 @@ const INITIAL = [
 ];
 
 // ── Algorithms ─────────────────────────────────────────────────────────────────
-const SECTOR_CAGR = { Technology:0.20,Healthcare:0.11,Energy:0.07,Staples:0.08,"Real Estate":0.09,Communication:0.06,Automotive:0.13,Industrials:0.10,Financials:0.12 };
+const SECTOR_CAGR = { Technology:0.20,Healthcare:0.11,Energy:0.07,Staples:0.08,"Real Estate":0.09,Communication:0.06,Automotive:0.13,Industrials:0.10,Financials:0.12,"Broad Market":0.10,"Precious Metals":0.05 };
 const MKT_RETURNS = { 2010:1.15,2011:0.98,2012:1.16,2013:1.32,2014:1.13,2015:1.01,2016:1.12,2017:1.22,2018:0.96,2019:1.31,2020:1.18,2021:1.28,2022:0.82,2023:1.26,2024:1.23,2025:1.08 };
 
 function wCAGR(h) { return h.reduce((s,x)=>s+(x.weight/100)*(SECTOR_CAGR[x.sector]||0.10),0); }
@@ -318,16 +337,24 @@ function Builder({c,mode,initial,onSave,onCancel}){
             {filtered.length===0&&search.length>0&&<p style={{fontFamily:gs,fontSize:"0.72rem",color:c.muted,marginBottom:"0.4rem"}}>No results for "{search}"</p>}
             {filtered.length>0&&!search&&<p style={{fontFamily:gs,fontSize:"0.66rem",color:c.muted,marginBottom:"0.4rem"}}>Available to add: click to include</p>}
             <div style={{display:"flex",flexWrap:"wrap",gap:"0.4rem",marginBottom:"1.25rem"}}>
-              {filtered.map(s=>(
+              {filtered.map(s=>{
+                const tc = TYPE_COLOR(s.type||"stock", c);
+                return (
                 <button key={s.ticker} onClick={()=>addStock(s)}
                   style={{background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"5px 12px",cursor:"pointer",fontFamily:gs,fontSize:"0.76rem",color:c.text,display:"flex",alignItems:"center",gap:"5px",transition:"opacity 0.15s ease"}}
                   onMouseEnter={e=>e.currentTarget.style.borderColor=c.borderHi}
                   onMouseLeave={e=>e.currentTarget.style.borderColor=c.border}>
                   <span style={{fontWeight:700}}>{s.ticker}</span>
+                  {s.type && (
+                    <span style={{fontSize:"0.56rem",fontWeight:700,background:tc.bg,border:`1px solid ${tc.border}`,color:tc.text,borderRadius:"4px",padding:"1px 5px",letterSpacing:"0.04em",textTransform:"uppercase"}}>
+                      {TYPE_LABEL[s.type]}
+                    </span>
+                  )}
                   <span style={{color:c.muted,fontSize:"0.68rem"}}>{s.yield>0?`${s.yield.toFixed(1)}% yield`:""}</span>
                   <span style={{color:c.green,fontSize:"0.72rem"}}>＋</span>
                 </button>
-              ))}
+                );
+              })}
             </div>
 
             {/* Holdings sliders */}
@@ -346,9 +373,14 @@ function Builder({c,mode,initial,onSave,onCancel}){
                 {holdings.map((h,i)=>(
                   <div key={h.ticker} style={{marginBottom:"0.75rem"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
                         <div style={{width:"10px",height:"10px",borderRadius:"2px",background:sCol(h.ticker,i),flexShrink:0}}/>
                         <span style={{fontFamily:gs,fontSize:"0.82rem",fontWeight:700,color:c.text}}>{h.ticker}</span>
+                        {(()=>{ const tc=TYPE_COLOR(h.type||"stock",c); return (
+                          <span style={{fontSize:"0.54rem",fontWeight:700,background:tc.bg,border:`1px solid ${tc.border}`,color:tc.text,borderRadius:"4px",padding:"1px 5px",letterSpacing:"0.04em",textTransform:"uppercase"}}>
+                            {TYPE_LABEL[h.type||"stock"]}
+                          </span>
+                        ); })()}
                         <span style={{fontFamily:gs,fontSize:"0.7rem",color:c.muted}}>{h.sector}</span>
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
@@ -679,8 +711,11 @@ export default function PortfolioPage(){
         input[type=range]::-moz-range-track{height:5px;background:${c.borderHi};border-radius:3px;}
         input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;background:${c.blue};cursor:pointer;}
         input[type=number]::-webkit-inner-spin-button{opacity:0.35;}
-        .card-strip{display:flex;gap:0.85rem;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;padding-top:28px;padding-bottom:28px;padding-left:4px;padding-right:4px;}
+        .card-strip{display:flex;gap:0.85rem;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;padding-top:28px;padding-bottom:28px;padding-left:16px;padding-right:16px;}
         .card-strip::-webkit-scrollbar{display:none;}
+        .recharts-wrapper,.recharts-wrapper *{outline:none !important;-webkit-tap-highlight-color:transparent;}
+        .recharts-wrapper *:focus,.recharts-wrapper *:focus-visible{outline:none !important;}
+        .recharts-surface{outline:none !important;}
       `}</style>
 
       <div style={{maxWidth:"1200px",margin:"0 auto",padding:"2.5rem 3.5rem"}}>
@@ -716,11 +751,12 @@ export default function PortfolioPage(){
             {portfolios.map(p=>{
               const isSelected=p.id===selectedId;
               const totalReturn=Math.round((wCAGR(p.holdings)*5)*100);
+              const selGlow = mode==="dark" ? "rgba(240,240,240,0.00)" : "rgba(10,10,10,0.00)";
               return(
                 <div key={p.id} onClick={()=>setSelectedId(p.id)}
-                  style={{background:isSelected?c.card:c.surface,border:`1.5px solid ${isSelected?c.blue:c.border}`,borderRadius:"14px",padding:"1.25rem",cursor:"pointer",transition:"opacity 0.22s ease",minWidth:"210px",flexShrink:0,position:"relative",
+                  style={{background:isSelected?c.card:c.bg,border:`1.5px solid ${isSelected?c.borderHi:c.border}`,borderRadius:"14px",padding:"1.25rem",cursor:"pointer",transition:"opacity 0.22s ease",minWidth:"210px",flexShrink:0,position:"relative",
                     boxShadow:isSelected
-                      ?`0 0 0 3px ${c.blue}22, 0 0 14px 4px ${c.blue}22, 0 4px 18px rgba(0,0,0,0.22)`
+                      ?`0 0 11px 2px ${selGlow}, 0 4px 18px rgba(0,0,0,0.12)`
                       :"0 2px 12px rgba(0,0,0,0.1)"}}>
                   {/* Action buttons: modern lucide icons */}
                   <div style={{position:"absolute",top:"0.7rem",right:"0.7rem",display:"flex",flexDirection:"column",gap:"4px"}}>
@@ -742,9 +778,9 @@ export default function PortfolioPage(){
                   </div>
 
                   {/* FIX #4: activeShape on mini pie: no ugly tooltip, shows ticker+% in center */}
-                  <PieChart width={80} height={80} style={{margin:"0 auto 0.75rem"}}>
+                  <PieChart width={92} height={92} style={{margin:"0 auto 0.75rem"}}>
                     <Pie data={p.holdings} dataKey="weight" nameKey="ticker" cx="50%" cy="50%"
-                      outerRadius={36} innerRadius={20} paddingAngle={2} strokeWidth={0}
+                      outerRadius={42} innerRadius={24} paddingAngle={2} strokeWidth={0}
                       activeIndex={cardActiveSlice[p.id]??null}
                       activeShape={CardActiveShape}
                       onMouseEnter={(_,i)=>setCardActiveSlice(prev=>({...prev,[p.id]:i}))}
@@ -820,9 +856,9 @@ export default function PortfolioPage(){
 
             {/* Rebalancing alert */}
             {drifted.length>0&&(
-              <div style={{background:`${c.red}08`,border:`1px solid ${c.red}30`,borderRadius:"8px",padding:"8px 14px",marginBottom:"1.25rem",display:"flex",alignItems:"center",gap:"0.6rem"}}>
-                <span style={{color:c.red}}>⚖</span>
-                <span style={{fontFamily:gs,fontSize:"0.76rem",color:c.red}}>
+              <div style={{background:c.amberDim,border:`1px solid ${c.amber}40`,borderRadius:"8px",padding:"8px 14px",marginBottom:"1.25rem",display:"flex",alignItems:"center",gap:"0.6rem"}}>
+                <FaScaleBalanced size={13} color={c.amber} style={{flexShrink:0}}/>
+                <span style={{fontFamily:gs,fontSize:"0.76rem",color:c.amber}}>
                   {drifted.map(h=>h.ticker).join(", ")} {drifted.length===1?"has":"have"} drifted &gt;5% from target weight. Consider rebalancing.
                 </span>
               </div>
@@ -830,11 +866,11 @@ export default function PortfolioPage(){
 
             {/* Holdings table */}
             <div style={{overflowX:"auto",marginBottom:"1.5rem",borderRadius:"8px",border:`1px solid ${c.border}`}}>
-              <table style={{borderCollapse:"collapse",width:"100%",minWidth:"620px"}}>
+              <table style={{borderCollapse:"collapse",width:"100%",minWidth:"700px"}}>
                 <thead>
                   <tr style={{background:c.surface}}>
-                    {["Stock","Sector","Weight","Capital","Price"].map(h=>(
-                      <th key={h} style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.07em",textTransform:"uppercase",fontWeight:600,padding:"8px 12px",textAlign:h==="Stock"||h==="Sector"?"left":"right",whiteSpace:"nowrap"}}>{h}</th>
+                    {["Stock","Type","Sector","Weight","Capital","Price"].map(h=>(
+                      <th key={h} style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.07em",textTransform:"uppercase",fontWeight:600,padding:"8px 12px",textAlign:h==="Stock"||h==="Type"||h==="Sector"?"left":"right",whiteSpace:"nowrap"}}>{h}</th>
                     ))}
                     {/* Dividend (public) and Yield (Ultimate only) */}
                     {["Dividend","Yield"].map(h=>(
@@ -847,7 +883,7 @@ export default function PortfolioPage(){
                   {selected.holdings.map((h,i)=>{
                     const isDrifted=drifted.find(d=>d.ticker===h.ticker);
                     return(
-                      <tr key={h.ticker} style={{borderTop:`1px solid ${c.border}`,background:isDrifted?`${c.red}06`:"transparent"}}>
+                      <tr key={h.ticker} style={{borderTop:`1px solid ${c.border}`,background:isDrifted?c.amberDim:"transparent"}}>
                         <td style={{padding:"9px 12px"}}>
                           <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
                             <div style={{width:"10px",height:"10px",borderRadius:"2px",background:sCol(h.ticker,i),flexShrink:0}}/>
@@ -856,6 +892,13 @@ export default function PortfolioPage(){
                               <div style={{fontFamily:gs,fontSize:"0.66rem",color:c.muted}}>{h.name}</div>
                             </div>
                           </div>
+                        </td>
+                        <td style={{padding:"9px 12px"}}>
+                          {(()=>{ const tc=TYPE_COLOR(h.type||"stock",c); return (
+                            <span style={{fontFamily:gs,fontSize:"0.62rem",fontWeight:600,background:tc.bg,border:`1px solid ${tc.border}`,color:tc.text,borderRadius:"5px",padding:"2px 6px",whiteSpace:"nowrap"}}>
+                              {TYPE_LABEL[h.type||"stock"]}
+                            </span>
+                          ); })()}
                         </td>
                         <td style={{padding:"9px 12px",fontFamily:gs,fontSize:"0.76rem",color:c.muted}}>{h.sector}</td>
                         <td style={{padding:"9px 12px",textAlign:"right"}}>
@@ -957,7 +1000,7 @@ export default function PortfolioPage(){
                   <CartesianGrid strokeDasharray="3 3" stroke={c.border} vertical={false}/>
                   <XAxis dataKey="year" tick={{fill:c.muted,fontSize:8,fontFamily:gs}} axisLine={false} tickLine={false} interval={2}/>
                   <YAxis tick={{fill:c.muted,fontSize:8,fontFamily:gs}} axisLine={false} tickLine={false} tickFormatter={v=>`$${v>=1000?(v/1000).toFixed(0)+"k":v}`} width={44}/>
-                  <Tooltip content={<ChartTip c={c}/>}/>
+                  <Tooltip content={<ChartTip c={c}/>} cursor={{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
                   <Line type="monotone" dataKey="value" name="Portfolio Value" stroke={c.green} strokeWidth={2.5} dot={false} activeDot={{r:4,fill:c.green}}/>
                   {inflation&&<Line type="monotone" dataKey="nominal" name="Nominal" stroke={c.blue} strokeWidth={1.5} dot={false} strokeDasharray="4 3" opacity={0.5}/>}
                 </LineChart>
@@ -1031,7 +1074,7 @@ export default function PortfolioPage(){
                   <CartesianGrid strokeDasharray="3 3" stroke={c.border} vertical={false}/>
                   <XAxis dataKey="year" tick={{fill:c.muted,fontSize:8,fontFamily:gs}} axisLine={false} tickLine={false} interval={Math.floor(projYears/5)}/>
                   <YAxis tick={{fill:c.muted,fontSize:8,fontFamily:gs}} axisLine={false} tickLine={false} tickFormatter={v=>`$${v>=1000?(v/1000).toFixed(0)+"k":v}`} width={44}/>
-                  <Tooltip content={<ChartTip c={c}/>}/>
+                  <Tooltip content={<ChartTip c={c}/>} cursor={{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
                   <Line type="monotone" dataKey="value" name={inflation?"Adj. Value":"Portfolio Value"} stroke={c.green} strokeWidth={2.5} dot={false} activeDot={{r:4}}/>
                   {inflation&&<Line type="monotone" dataKey="nominal" name="Nominal" stroke={c.green} strokeWidth={1.5} dot={false} strokeDasharray="4 3" opacity={0.45}/>}
                   {addEnabled&&<Line type="monotone" dataKey="withContrib" name={`+$${monthlyAdd}/mo`} stroke={c.blue} strokeWidth={2} dot={false} strokeDasharray="6 3" activeDot={{r:4,fill:c.blue}}/>}
@@ -1073,7 +1116,7 @@ export default function PortfolioPage(){
                 <CartesianGrid strokeDasharray="3 3" stroke={c.border} vertical={false}/>
                 <XAxis dataKey="year" tick={{fill:c.muted,fontSize:8,fontFamily:gs}} axisLine={false} tickLine={false} interval={Math.floor(cmpRange/5)}/>
                 <YAxis tick={{fill:c.muted,fontSize:8,fontFamily:gs}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}`} width={36} unit=""/>
-                <Tooltip content={<ChartTip c={c} prefix=""/>}/>
+                <Tooltip content={<ChartTip c={c} prefix=""/>} cursor={{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
                 <Legend wrapperStyle={{fontFamily:gs,fontSize:"0.72rem",paddingTop:"0.75rem"}}/>
                 {cmpPortfolios.map((p,i)=>(
                   <Line key={p.id} type="monotone" dataKey={p.id} name={p.name} stroke={PALETTE[i%PALETTE.length]} strokeWidth={2.5} dot={false} activeDot={{r:4}}/>

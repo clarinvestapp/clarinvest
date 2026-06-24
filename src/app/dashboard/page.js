@@ -235,6 +235,7 @@ function AIScore({ score, c, size=40 }) {
   const offset = circ*(1-score/100);
   return (
     <div style={{ position:"relative", width:size, height:size, flexShrink:0 }}>
+      <div style={{ position:"absolute", inset:`${size*0.13}px`, borderRadius:"50%", background:`radial-gradient(circle,${col}28 0%,transparent 75%)`, filter:"blur(3px)" }}/>
       <svg width={size} height={size} style={{ position:"absolute", top:0, left:0, transform:"rotate(-90deg)" }}>
         <circle cx={cx2} cy={cx2} r={r} fill="none" stroke={col} strokeOpacity={0.2} strokeWidth="3"/>
         <circle cx={cx2} cy={cx2} r={r} fill="none" stroke={col} strokeWidth="3"
@@ -567,7 +568,7 @@ function StockCard({ stock, c, mode, onClose, watchlist, onWatchlist, portfolios
                 <YAxis domain={[chartMin,chartMax]} tick={{fill:c.muted,fontSize:8,fontFamily:gs}}
                   axisLine={false} tickLine={false}
                   tickFormatter={v => v>=1000?`${(v/1000).toFixed(0)}k`:`${v.toFixed(0)}`} width={44}/>
-                <Tooltip content={<ChartTip c={c}/>}/>
+                <Tooltip content={<ChartTip c={c}/>} cursor={{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
                 <Area type="monotone" dataKey="price" stroke={c.blue} strokeWidth={2}
                   fill="url(#cg-disc-blue)" dot={false} activeDot={{r:4,fill:c.blue}}/>
               </AreaChart>
@@ -704,6 +705,7 @@ export default function DiscoveryPage() {
   const [watchlist,   setWatchlist]   = useState(new Set());
   const [portfolios,  setPortfolios]  = useState([]);
   const [token,       setToken]       = useState(null);
+  const [userPlan,    setUserPlan]    = useState("essential"); // "essential"|"pro"|"ultimate"
 
   const [search,      setSearch]      = useState("");
   const [sfoc,        setSfoc]        = useState(false);
@@ -718,12 +720,53 @@ export default function DiscoveryPage() {
   const [hovRow,      setHovRow]      = useState(null);
   const [openPortRow, setOpenPortRow] = useState(null);
 
+  // ── Smart Filters state ───────────────────────────────────────────────────
+  const [sfPanelOpen,   setSfPanelOpen]   = useState(true);
+  const [sfOpenFilter,  setSfOpenFilter]  = useState(null); // which filter panel is expanded
+  const [sfVol,         setSfVol]         = useState(null); // { dir:"gt"|"lt", val:number }
+  const [sfMc,          setSfMc]          = useState(null);
+  const [sfPe,          setSfPe]          = useState(null); // string label
+  const [sfFv,          setSfFv]          = useState(null);
+  const [sfGpm,         setSfGpm]         = useState(null);
+  const [sfRev,         setSfRev]         = useState(null);
+  const [sfDs,          setSfDs]          = useState(null);
+
+  const sfIsUltimate = userPlan === "ultimate";
+  const sfAnyActive  = [sfVol,sfMc,sfPe,sfFv,sfGpm,sfRev,sfDs].some(v => v !== null);
+
+  // Sync the type filter pill visually when Smart Filters activate/deactivate
+  useEffect(() => {
+    if (sfAnyActive) setTypeFilter("Stocks");
+    else setTypeFilter("All");
+  }, [sfAnyActive]);
+
+  // Graham Number upside: sqrt(22.5 * EPS * BVPS), expressed as % vs current price
+  const grahamUpside = (eps, bvps, price) => {
+    if (!eps || !bvps || eps <= 0 || bvps <= 0) return null;
+    const gn = Math.sqrt(22.5 * eps * bvps);
+    return ((gn - price) / price * 100).toFixed(1);
+  };
+
+  // Smart Filter numeric presets
+  const SF_VOL_PRESETS = [{label:"1M",val:1_000_000},{label:"5M",val:5_000_000},{label:"10M",val:10_000_000},{label:"50M",val:50_000_000}];
+  const SF_MC_PRESETS  = [{label:"$300M",val:300},{label:"$2B",val:2_000},{label:"$10B",val:10_000},{label:"$200B",val:200_000}];
+
   // ── Load session, watchlist, portfolios ────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data:{ session } }) => {
       if (!session) { router.push("/login"); return; }
       const tok = session.access_token;
       setToken(tok);
+
+      // Read plan from user_profiles (canonical source — JWT metadata is stale)
+      try {
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("plan")
+          .eq("id", session.user.id)
+          .single();
+        if (profile?.plan) setUserPlan(profile.plan);
+      } catch {}
 
       // Load watchlist tickers
       try {
@@ -739,7 +782,7 @@ export default function DiscoveryPage() {
         const { data: rows } = await supabase
           .from("user_portfolios")
           .select("id, name")
-          .eq("user_id", session.user.id);
+          .eq("id", session.user.id);
         if (rows) setPortfolios(rows);
       } catch {}
 
@@ -782,7 +825,7 @@ export default function DiscoveryPage() {
         await fetch("/api/watchlist", {
           method:"POST",
           headers:{ "Content-Type":"application/json", Authorization:`Bearer ${token}` },
-          body: JSON.stringify({ ticker, name:stock?.name, sector:stock?.sector, market:stock?.market }),
+          body: JSON.stringify({ ticker, name:stock?.name, sector:stock?.sector, market:stock?.market, type:stock?.type||"stock" }),
         });
       }
     } catch {
@@ -808,13 +851,78 @@ export default function DiscoveryPage() {
       && (industry === "All" || s.industry === industry)
       && (typeFilter === "All" || s.type === TYPE_FILTER_MAP[typeFilter])
     );
-    return [...list].sort((a,b) => {
-      if (sortKey === "ticker")  return sortDir==="asc" ? a.ticker.localeCompare(b.ticker) : b.ticker.localeCompare(a.ticker);
-      if (sortKey === "name")    return sortDir==="asc" ? a.name.localeCompare(b.name)     : b.name.localeCompare(a.name);
-      if (sortKey === "mktCap")  { const av=parseMktCap(a.mktCap), bv=parseMktCap(b.mktCap); return sortDir==="asc"?av-bv:bv-av; }
-      return sortDir==="asc" ? a[sortKey]-b[sortKey] : b[sortKey]-a[sortKey];
+    // Apply Smart Filters (stocks only, Ultimate plan)
+    const sfFiltered = list.filter(s => {
+      if (!sfAnyActive) return true;
+      if (s.type !== "stock") return false;
+      if (sfVol) {
+        const v = s.volume ?? 0;
+        if (sfVol.dir === "gt" && v < sfVol.val) return false;
+        if (sfVol.dir === "lt" && v > sfVol.val) return false;
+      }
+      if (sfMc) {
+        const mc = parseMktCap(s.mktCap);
+        const threshold = sfMc.val * 1_000_000; // stored in $M
+        if (sfMc.dir === "gt" && mc < threshold) return false;
+        if (sfMc.dir === "lt" && mc > threshold) return false;
+      }
+      if (sfPe) {
+        const pe = s.pe ?? 0;
+        if (sfPe === "Low (0–15×)"     && !(pe >= 0   && pe < 15))  return false;
+        if (sfPe === "Mid (15–30×)"    && !(pe >= 15  && pe < 30))  return false;
+        if (sfPe === "High (30–50×)"   && !(pe >= 30  && pe < 50))  return false;
+        if (sfPe === "Premium (50×+)"  && !(pe >= 50))              return false;
+      }
+      if (sfFv) {
+        const eps = s.eps ?? 0; const bvps = s.bvps ?? 0;
+        if (eps > 0 && bvps > 0) {
+          const gn = Math.sqrt(22.5 * eps * bvps);
+          const upsidePct = ((gn - s.price) / s.price) * 100;
+          if (sfFv === "Undervalued" && upsidePct <= 10)  return false;
+          if (sfFv === "Fair"        && Math.abs(upsidePct) > 10) return false;
+          if (sfFv === "Overvalued"  && upsidePct >= -10) return false;
+        }
+      }
+      if (sfGpm) {
+        const gm = parseFloat((s.grossMargin||"0").replace("%",""));
+        if (sfGpm === ">40%" && gm < 40) return false;
+        if (sfGpm === ">60%" && gm < 60) return false;
+        if (sfGpm === ">75%" && gm < 75) return false;
+        if (sfGpm === ">90%" && gm < 90) return false;
+      }
+      if (sfRev) {
+        const rg = parseFloat((s.revenueGrowth||"0").replace(/[^0-9.-]/g,""));
+        if (sfRev === ">10%"  && rg < 10)  return false;
+        if (sfRev === ">25%"  && rg < 25)  return false;
+        if (sfRev === ">50%"  && rg < 50)  return false;
+        if (sfRev === ">100%" && rg < 100) return false;
+      }
+      if (sfDs) {
+        const streak = s.dividendStreak ?? 0;
+        if (sfDs === ">5 yrs"  && streak < 5)  return false;
+        if (sfDs === ">10 yrs" && streak < 10) return false;
+        if (sfDs === ">25 yrs" && streak < 25) return false;
+        if (sfDs === ">50 yrs" && streak < 50) return false;
+      }
+      return true;
     });
-  }, [stocks, search, sector, market, sortKey, sortDir]);
+
+    return [...sfFiltered].sort((a,b) => {
+      if (sortKey === "ticker")   return sortDir==="asc" ? a.ticker.localeCompare(b.ticker) : b.ticker.localeCompare(a.ticker);
+      if (sortKey === "name")     return sortDir==="asc" ? a.name.localeCompare(b.name)     : b.name.localeCompare(a.name);
+      if (sortKey === "mktCap")   { const av=parseMktCap(a.mktCap), bv=parseMktCap(b.mktCap); return sortDir==="asc"?av-bv:bv-av; }
+      if (sortKey === "momentum") {
+        // 20-day momentum: approximate from chg (live data will use actual 20d price change)
+        return sortDir==="asc" ? (a.chg??0)-(b.chg??0) : (b.chg??0)-(a.chg??0);
+      }
+      if (sortKey === "upside") {
+        const au = (a.eps && a.bvps) ? parseFloat(grahamUpside(a.eps,a.bvps,a.price)??"-999") : -999;
+        const bu = (b.eps && b.bvps) ? parseFloat(grahamUpside(b.eps,b.bvps,b.price)??"-999") : -999;
+        return sortDir==="asc" ? au-bu : bu-au;
+      }
+      return sortDir==="asc" ? (a[sortKey]??0)-(b[sortKey]??0) : (b[sortKey]??0)-(a[sortKey]??0);
+    });
+  }, [stocks, search, sector, market, sortKey, sortDir, sfAnyActive, sfVol, sfMc, sfPe, sfFv, sfGpm, sfRev, sfDs]);
 
   const toggleSort = k => {
     if (sortKey === k) setSortDir(d => d==="asc"?"desc":"asc");
@@ -852,6 +960,9 @@ export default function DiscoveryPage() {
         }
         .rbow{animation:rbow 2.8s linear infinite;border-color:transparent !important;}
         .tr-hover{transition:opacity 0.12s;}
+        .recharts-wrapper,.recharts-wrapper *{outline:none !important;-webkit-tap-highlight-color:transparent;}
+        .recharts-wrapper *:focus,.recharts-wrapper *:focus-visible{outline:none !important;}
+        .recharts-surface{outline:none !important;}
       `}</style>
 
       <div style={{ maxWidth:"1200px", margin:"0 auto", padding:"2.5rem 3.5rem" }}>
@@ -966,7 +1077,7 @@ export default function DiscoveryPage() {
               }}>
                 <div style={{
                   marginTop:"8px", padding:"1rem",
-                  background:c.card, border:`1px solid ${c.border}`,
+                  background:c.bg, border:`1px solid ${c.border}`,
                   borderRadius:"10px",
                 }}>
 
@@ -1010,9 +1121,9 @@ export default function DiscoveryPage() {
                         <button key={ind}
                           onClick={() => setIndustry(ind === industry ? "All" : ind)}
                           style={{
-                            background: industry===ind ? c.blue : "transparent",
-                            color: industry===ind ? "#fff" : c.muted,
-                            border:`1px solid ${industry===ind ? c.blue : c.border}`,
+                            background: industry===ind ? c.text : "transparent",
+                            color: industry===ind ? c.bg : c.muted,
+                            border:`1px solid ${industry===ind ? c.text : c.border}`,
                             borderRadius:"50px", padding:"4px 12px",
                             fontFamily:gs, fontSize:"0.72rem", fontWeight:600,
                             cursor:"pointer", transition:"all 0.15s ease", flexShrink:0,
@@ -1031,9 +1142,422 @@ export default function DiscoveryPage() {
           );
         })()}
 
+        {/* Smart Filters panel — Ultimate only */}
+        {(() => {
+          const amber     = mode==="dark" ? "#F59E0B" : "#B45309";
+          const amberDim  = mode==="dark" ? "rgba(245,158,11,0.12)" : "rgba(180,83,9,0.08)";
+          const amberBd   = mode==="dark" ? "rgba(245,158,11,0.30)" : "rgba(180,83,9,0.25)";
+
+          // Helper: pill label for numeric filters
+          const numLabel = (state, fallback) => {
+            if (!state) return fallback;
+            const dir = state.dir === "gt" ? ">" : "<";
+            const v = state.val >= 1_000_000 ? `${(state.val/1_000_000).toFixed(0)}M`
+                    : state.val >= 1_000     ? `${(state.val/1_000).toFixed(0)}K`
+                    : String(state.val);
+            return `${dir}${v}`;
+          };
+
+          // Shared styles
+          const sfPillBase = (isSet, isOpen) => ({
+            borderRadius:"50px", padding:"6px 14px",
+            fontFamily:gs, fontSize:"0.74rem", fontWeight:600,
+            cursor: sfIsUltimate ? "pointer" : "default",
+            border:`1px solid ${isSet ? c.text : isOpen ? c.borderHi : c.border}`,
+            background: isSet ? c.text : "transparent",
+            color: isSet ? c.bg : isOpen ? c.text : c.muted,
+            display:"inline-flex", alignItems:"center", gap:"5px",
+            transition:"all 0.15s", whiteSpace:"nowrap",
+          });
+          const sfOpPill = (isActive) => ({
+            borderRadius:"50px", padding:"5px 13px",
+            fontFamily:gs, fontSize:"0.72rem", fontWeight:600,
+            cursor:"pointer",
+            border:`1px solid ${isActive ? c.text : c.border}`,
+            background: isActive ? c.text : "transparent",
+            color: isActive ? c.bg : c.muted,
+            transition:"all 0.15s", whiteSpace:"nowrap",
+          });
+          const sfFoWrap = (isOpen) => ({
+            overflow:"hidden",
+            maxHeight: isOpen ? "300px" : "0px",
+            opacity: isOpen ? 1 : 0,
+            transition:"max-height 0.26s ease, opacity 0.2s ease",
+            padding:"0 14px",
+          });
+          const sfFoInner = {
+            padding:"10px 12px 12px",
+            background:c.bg,
+            border:`1px solid ${c.borderHi}`,
+            borderRadius:"8px", marginBottom:"10px",
+          };
+          const sfFoLbl = {
+            fontFamily:gs, fontSize:"0.59rem", letterSpacing:"0.12em",
+            textTransform:"uppercase", color:c.muted, fontWeight:600, marginBottom:"8px",
+          };
+
+          // Toggle which filter panel is open
+          const tapFilter = (id, currentVal) => {
+            if (!sfIsUltimate) return;
+            setSfOpenFilter(prev => prev === id ? null : id);
+          };
+
+          // Bucket pick (toggle on/off, close panel)
+          const bucketPick = (setter, currentVal, label) => {
+            setter(currentVal === label ? null : label);
+            setSfOpenFilter(null);
+          };
+
+          // Numeric quick-preset pick (toggle on/off)
+          const numPresetPick = (setter, currentVal, val, dir) => {
+            if (currentVal && currentVal.val === val) {
+              setter(null);
+            } else {
+              setter({ dir, val });
+              setSfOpenFilter(null);
+            }
+          };
+
+          // Clear all Smart Filters
+          const clearAllSf = () => {
+            setSfVol(null); setSfMc(null); setSfPe(null); setSfFv(null);
+            setSfGpm(null); setSfRev(null); setSfDs(null);
+            setSfOpenFilter(null);
+          };
+
+          // Auto-sync type filter pill when SF activates/deactivates
+          // (handled in filtered useMemo — type pill visual sync below)
+
+          const filters = [
+            { id:"vol", label: numLabel(sfVol,"Volume"),           isSet:sfVol!==null },
+            { id:"mc",  label: numLabel(sfMc,"Market Cap"),        isSet:sfMc!==null  },
+            { id:"pe",  label: sfPe  || "P/E Ratio",              isSet:sfPe!==null  },
+            { id:"fv",  label: sfFv  || "Fair Value",             isSet:sfFv!==null  },
+            { id:"gpm", label: sfGpm || "Gross Profit Margin",    isSet:sfGpm!==null },
+            { id:"rev", label: sfRev || "Revenue Growth",         isSet:sfRev!==null },
+            { id:"ds",  label: sfDs  || "Dividend Streak",        isSet:sfDs!==null  },
+          ];
+
+          return (
+            <div style={{
+              position:"relative",
+              borderRadius:"10px", border:`1px solid ${c.border}`,
+              background:c.bg, marginBottom:"1.25rem", overflow:"hidden",
+            }}>
+
+              {/* Lock overlay for non-Ultimate */}
+              {!sfIsUltimate && (
+                <div style={{
+                  position:"absolute", inset:0,
+                  background: mode==="dark" ? "rgba(9,9,9,0.90)" : "rgba(247,247,245,0.92)",
+                  borderRadius:"10px", zIndex:10,
+                  display:"flex", flexDirection:"column",
+                  alignItems:"center", justifyContent:"center",
+                  gap:"6px", padding:"10px 16px",
+                }}>
+                  {/* FA6 lock icon */}
+                  <svg width="18" height="18" viewBox="0 0 448 512" fill={c.muted}>
+                    <path d="M144 144v48h160v-48c0-44.2-35.8-80-80-80s-80 35.8-80 80zM80 192v-48C80 64.5 144.5 0 224 0s144 64.5 144 144v48h16c35.3 0 64 28.7 64 64v192c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V256c0-35.3 28.7-64 64-64H80z"/>
+                  </svg>
+                  <div style={{fontFamily:gs, fontSize:"0.8rem", fontWeight:600, color:c.text}}>Smart Filters require Ultimate</div>
+                  <div style={{fontFamily:gs, fontSize:"0.7rem", color:c.muted, whiteSpace:"nowrap"}}>Upgrade to unlock 7 screener-grade precision filters.</div>
+                  <button
+                    onClick={() => router.push("/dashboard/account")}
+                    style={{background:c.text, color:c.bg, border:"none", borderRadius:"4px",
+                      padding:"6px 16px", fontSize:"0.76rem", fontWeight:700,
+                      cursor:"pointer", fontFamily:gs}}>
+                    View Ultimate plan ↗
+                  </button>
+                </div>
+              )}
+
+              {/* Panel content (blurred when locked) */}
+              <div style={{ filter:sfIsUltimate?"none":"blur(3px)", pointerEvents:sfIsUltimate?"auto":"none" }}>
+
+                {/* Header */}
+                <div
+                  onClick={() => setSfPanelOpen(o => !o)}
+                  style={{
+                    display:"flex", alignItems:"center", gap:"10px",
+                    padding:"11px 14px", cursor:"pointer", userSelect:"none",
+                    borderBottom: sfPanelOpen ? `1px solid ${c.border}` : "none",
+                  }}>
+                  {/* ULTIMATE badge — same style as type badges, amber */}
+                  <span style={{
+                    fontFamily:gs, fontSize:"0.62rem", fontWeight:700,
+                    letterSpacing:"0.06em", textTransform:"uppercase",
+                    color:amber, background:amberDim,
+                    border:`1px solid ${amberBd}`,
+                    borderRadius:"6px", padding:"2px 7px", flexShrink:0,
+                  }}>ULTIMATE</span>
+                  <div style={{flex:1, display:"flex", alignItems:"center", gap:"8px"}}>
+                    <span style={{fontFamily:gs, fontSize:"0.8rem", fontWeight:600, color:c.muted}}>Smart Filters</span>
+                    <span style={{fontFamily:gs, fontSize:"0.71rem", color:c.muted, opacity:0.6}}>(stocks only)</span>
+                  </div>
+                  {sfAnyActive && (
+                    <button
+                      onClick={e => { e.stopPropagation(); clearAllSf(); }}
+                      style={{background:"none", border:`1px solid ${c.border}`, borderRadius:"4px",
+                        padding:"2px 8px", cursor:"pointer", fontFamily:gs,
+                        fontSize:"0.66rem", color:c.muted}}>
+                      Clear all
+                    </button>
+                  )}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.muted}
+                    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                    style={{transform:sfPanelOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.22s ease",flexShrink:0}}>
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
+
+                {/* Collapsible body */}
+                <div style={{
+                  overflow:"hidden",
+                  maxHeight: sfPanelOpen ? "600px" : "0px",
+                  opacity: sfPanelOpen ? 1 : 0,
+                  transition:"max-height 0.28s ease, opacity 0.22s ease",
+                }}>
+
+                  {/* Filter name pills row */}
+                  <div style={{display:"flex", gap:"6px", flexWrap:"wrap", padding:"12px 14px"}}>
+                    {filters.map(f => (
+                      <button key={f.id} onClick={() => tapFilter(f.id)} style={sfPillBase(f.isSet, sfOpenFilter===f.id)}>
+                        {f.label}
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                          style={{opacity:0.55, transform:(sfOpenFilter===f.id||f.isSet)?"rotate(180deg)":"none", transition:"transform 0.18s"}}>
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Volume panel */}
+                  <div style={sfFoWrap(sfOpenFilter==="vol")}>
+                    <div style={sfFoInner}>
+                      <div style={sfFoLbl}>Daily volume threshold</div>
+                      <div style={{display:"flex", alignItems:"center", gap:"8px", flexWrap:"wrap"}}>
+                        <div style={{display:"flex", border:`1px solid ${c.border}`, borderRadius:"50px", overflow:"hidden", height:"30px", flexShrink:0}}>
+                          <button onClick={() => setSfVol(v => v ? {...v,dir:"gt"} : {dir:"gt",val:0})}
+                            style={{padding:"0 11px", background:(!sfVol||sfVol.dir==="gt")?c.text:"transparent",
+                              color:(!sfVol||sfVol.dir==="gt")?c.bg:c.muted,
+                              border:"none", fontWeight:700, cursor:"pointer", fontFamily:gs, fontSize:"0.82rem"}}>
+                            &gt;
+                          </button>
+                          <button onClick={() => setSfVol(v => v ? {...v,dir:"lt"} : {dir:"lt",val:0})}
+                            style={{padding:"0 11px", background:(sfVol?.dir==="lt")?c.text:"transparent",
+                              color:(sfVol?.dir==="lt")?c.bg:c.muted,
+                              border:"none", fontWeight:700, cursor:"pointer", fontFamily:gs, fontSize:"0.82rem"}}>
+                            &lt;
+                          </button>
+                        </div>
+                        <input type="number" placeholder="e.g. 5000000"
+                          value={sfVol?.val||""}
+                          onChange={e => {
+                            const v = parseFloat(e.target.value);
+                            if (!isNaN(v) && v > 0) setSfVol(prev => ({dir:prev?.dir||"gt", val:v}));
+                            else setSfVol(null);
+                            // clear any active preset visual by resetting sfOpenFilter tracking
+                          }}
+                          style={{background:c.card, border:`1px solid ${c.border}`, borderRadius:"50px",
+                            color:c.text, fontSize:"0.8rem", padding:"4px 14px", height:"30px",
+                            width:"130px", outline:"none", fontFamily:gs}}/>
+                        <span style={{fontFamily:gs, fontSize:"0.72rem", color:c.muted}}>shares / day</span>
+                      </div>
+                      <div style={{display:"flex", gap:"6px", flexWrap:"wrap", marginTop:"9px"}}>
+                        {SF_VOL_PRESETS.map(p => (
+                          <button key={p.label}
+                            onClick={() => numPresetPick(setSfVol, sfVol, p.val, sfVol?.dir||"gt")}
+                            style={sfOpPill(sfVol?.val===p.val)}>
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Market Cap panel */}
+                  <div style={sfFoWrap(sfOpenFilter==="mc")}>
+                    <div style={sfFoInner}>
+                      <div style={sfFoLbl}>Market capitalisation threshold</div>
+                      <div style={{display:"flex", alignItems:"center", gap:"8px", flexWrap:"wrap"}}>
+                        <div style={{display:"flex", border:`1px solid ${c.border}`, borderRadius:"50px", overflow:"hidden", height:"30px", flexShrink:0}}>
+                          <button onClick={() => setSfMc(v => v ? {...v,dir:"gt"} : {dir:"gt",val:0})}
+                            style={{padding:"0 11px", background:(!sfMc||sfMc.dir==="gt")?c.text:"transparent",
+                              color:(!sfMc||sfMc.dir==="gt")?c.bg:c.muted,
+                              border:"none", fontWeight:700, cursor:"pointer", fontFamily:gs, fontSize:"0.82rem"}}>
+                            &gt;
+                          </button>
+                          <button onClick={() => setSfMc(v => v ? {...v,dir:"lt"} : {dir:"lt",val:0})}
+                            style={{padding:"0 11px", background:(sfMc?.dir==="lt")?c.text:"transparent",
+                              color:(sfMc?.dir==="lt")?c.bg:c.muted,
+                              border:"none", fontWeight:700, cursor:"pointer", fontFamily:gs, fontSize:"0.82rem"}}>
+                            &lt;
+                          </button>
+                        </div>
+                        <input type="number" placeholder="e.g. 10000"
+                          value={sfMc?.val||""}
+                          onChange={e => {
+                            const v = parseFloat(e.target.value);
+                            if (!isNaN(v) && v > 0) setSfMc(prev => ({dir:prev?.dir||"gt", val:v}));
+                            else setSfMc(null);
+                          }}
+                          style={{background:c.card, border:`1px solid ${c.border}`, borderRadius:"50px",
+                            color:c.text, fontSize:"0.8rem", padding:"4px 14px", height:"30px",
+                            width:"130px", outline:"none", fontFamily:gs}}/>
+                        <span style={{fontFamily:gs, fontSize:"0.72rem", color:c.muted}}>$M</span>
+                      </div>
+                      <div style={{display:"flex", gap:"6px", flexWrap:"wrap", marginTop:"9px"}}>
+                        {SF_MC_PRESETS.map(p => (
+                          <button key={p.label}
+                            onClick={() => numPresetPick(setSfMc, sfMc, p.val, sfMc?.dir||"gt")}
+                            style={sfOpPill(sfMc?.val===p.val)}>
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* P/E Ratio panel */}
+                  <div style={sfFoWrap(sfOpenFilter==="pe")}>
+                    <div style={sfFoInner}>
+                      <div style={sfFoLbl}>Price-to-earnings range</div>
+                      <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
+                        {["Low (0–15×)","Mid (15–30×)","High (30–50×)","Premium (50×+)"].map(lbl => (
+                          <button key={lbl} onClick={() => bucketPick(setSfPe, sfPe, lbl)} style={sfOpPill(sfPe===lbl)}>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fair Value panel */}
+                  <div style={sfFoWrap(sfOpenFilter==="fv")}>
+                    <div style={sfFoInner}>
+                      <div style={sfFoLbl}>AI-computed fair value vs current price</div>
+                      <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
+                        {["Undervalued","Fair","Overvalued"].map(lbl => (
+                          <button key={lbl} onClick={() => bucketPick(setSfFv, sfFv, lbl)} style={sfOpPill(sfFv===lbl)}>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Gross Profit Margin panel */}
+                  <div style={sfFoWrap(sfOpenFilter==="gpm")}>
+                    <div style={sfFoInner}>
+                      <div style={sfFoLbl}>Minimum gross profit margin</div>
+                      <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
+                        {[">40%",">60%",">75%",">90%"].map(lbl => (
+                          <button key={lbl} onClick={() => bucketPick(setSfGpm, sfGpm, lbl)} style={sfOpPill(sfGpm===lbl)}>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Revenue Growth panel */}
+                  <div style={sfFoWrap(sfOpenFilter==="rev")}>
+                    <div style={sfFoInner}>
+                      <div style={sfFoLbl}>Year-on-year revenue growth (minimum)</div>
+                      <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
+                        {[">10%",">25%",">50%",">100%"].map(lbl => (
+                          <button key={lbl} onClick={() => bucketPick(setSfRev, sfRev, lbl)} style={sfOpPill(sfRev===lbl)}>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dividend Streak panel */}
+                  <div style={sfFoWrap(sfOpenFilter==="ds")}>
+                    <div style={sfFoInner}>
+                      <div style={sfFoLbl}>Minimum consecutive years of dividends paid</div>
+                      <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
+                        {[
+                          {label:">5 years",  val:">5 yrs"},
+                          {label:">10 years", val:">10 yrs"},
+                          {label:">25 years", val:">25 yrs", sub:"Aristocrat"},
+                          {label:">50 years", val:">50 yrs", sub:"King"},
+                        ].map(opt => (
+                          <button key={opt.val} onClick={() => bucketPick(setSfDs, sfDs, opt.val)}
+                            style={{...sfOpPill(sfDs===opt.val), display:"inline-flex", alignItems:"center", gap:"5px"}}>
+                            {opt.label}
+                            {opt.sub && <span style={{fontSize:"0.61rem", opacity:0.65, fontWeight:500}}>{opt.sub}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Sort row */}
+        {(() => {
+          const sortOptions = [
+            {k:"score",    label:"AI Score"},
+            {k:"price",    label:"Price"},
+            {k:"chg",      label:"24h Change"},
+            {k:"mktCap",   label:"Market Cap"},
+            {k:"momentum", label:"Momentum"},
+            {k:"upside",   label:"Upside", ultimateOnly:true},
+          ];
+          const sortPillStyle = (isActive) => ({
+            borderRadius:"50px", padding:"5px 13px",
+            fontFamily:gs, fontSize:"0.72rem", fontWeight:600,
+            cursor:"pointer",
+            border:`1px solid ${isActive ? c.text : c.border}`,
+            background: isActive ? c.text : "transparent",
+            color: isActive ? c.bg : c.muted,
+            transition:"all 0.15s", whiteSpace:"nowrap",
+            display:"inline-flex", alignItems:"center", gap:"5px",
+          });
+          return (
+            <div style={{display:"flex", alignItems:"center", gap:"8px", marginBottom:"0.75rem", flexWrap:"wrap"}}>
+              <span style={{fontFamily:gs, fontSize:"0.67rem", color:c.muted, letterSpacing:"0.08em", textTransform:"uppercase", fontWeight:500}}>Sort by</span>
+              {sortOptions.map(opt => {
+                const isActive = sortKey === opt.k;
+                const isLocked = opt.ultimateOnly && userPlan !== "ultimate";
+                return (
+                  <div key={opt.k} style={{position:"relative", display:"inline-flex", alignItems:"center", gap:"4px"}}>
+                    <button
+                      onClick={() => { if (!isLocked) toggleSort(opt.k); }}
+                      style={{...sortPillStyle(isActive), opacity:isLocked?0.45:1, cursor:isLocked?"default":"pointer"}}>
+                      {opt.label}
+                      {isActive && (sortDir==="asc" ? " ↑" : " ↓")}
+                    </button>
+                    {isLocked && (
+                      <div style={{position:"relative"}}>
+                        <svg width="12" height="12" viewBox="0 0 512 512" fill={c.muted} style={{cursor:"default", opacity:0.5}}
+                          onMouseEnter={e => e.currentTarget.nextSibling.style.opacity="1"}
+                          onMouseLeave={e => e.currentTarget.nextSibling.style.opacity="0"}>
+                          <path d="M256 32a224 224 0 1 1 0 448A224 224 0 1 1 256 32zm0 480a256 256 0 1 0 0-512 256 256 0 1 0 0 512zM208 352c-8.8 0-16 7.2-16 16s7.2 16 16 16l96 0c8.8 0 16-7.2 16-16s-7.2-16-16-16l-32 0 0-112c0-8.8-7.2-16-16-16l-48 0c-8.8 0-16 7.2-16 16s7.2 16 16 16l32 0 0 96-32 0zm48-168a24 24 0 1 0 0-48 24 24 0 1 0 0 48z"/>
+                        </svg>
+                        <div style={{
+                          position:"absolute", bottom:"calc(100% + 8px)", left:"50%", transform:"translateX(-50%)",
+                          background:c.card, border:`1px solid ${c.borderHi}`, borderRadius:"8px",
+                          padding:"9px 12px", width:"210px", fontFamily:gs, fontSize:"0.71rem",
+                          color:c.muted, lineHeight:1.55, zIndex:30, opacity:0,
+                          pointerEvents:"none", transition:"opacity 0.18s", whiteSpace:"normal",
+                        }}>
+                          <strong style={{color:c.text, fontWeight:600}}>Ultimate feature.</strong> Sorts by Graham Number upside: estimated intrinsic value vs current price as a percentage gap.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         {/* Result count */}
         <div style={{ fontFamily:gs, fontSize:"0.74rem", color:c.muted, marginBottom:"0.75rem" }}>
-          {filtered.length} instrument{filtered.length !== 1 ? "s" : ""} · tap any row to view details
+          {sfAnyActive
+            ? `${filtered.length} stock${filtered.length !== 1 ? "s" : ""} matched · Smart Filters active`
+            : `${filtered.length} instrument${filtered.length !== 1 ? "s" : ""} · tap any row to view details`}
         </div>
 
         {/* Table */}
@@ -1041,14 +1565,19 @@ export default function DiscoveryPage() {
           <table style={{ borderCollapse:"collapse", width:"100%", minWidth:"900px" }}>
             <thead>
               <tr style={{ background:c.surface }}>
-                <Th k="ticker" label="Ticker"  align="left"/>
-                <Th k="name"   label="Company" align="left"/>
-                <Th k="type"   label="Type"    align="left"/>
-                <Th k="market" label="Market"  align="left"/>
-                <Th k="price"  label="Price"/>
-                <Th k="chg"    label="24h Chg"/>
+                <Th k="ticker" label="Ticker"   align="left"/>
+                <Th k="name"   label="Company"  align="left"/>
+                <Th k="type"   label="Type"     align="left"/>
+                <Th k="market" label="Market"   align="left"/>
+                <Th k="sector" label="Sector"   align="left"/>
                 <Th k="mktCap" label="Mkt Cap"/>
-                <Th k="sector" label="Sector"  align="left"/>
+                <Th k="price"  label="Price"/>
+                <Th k="chg"    label="24h"/>
+                <th style={{ fontFamily:gs, fontSize:"0.6rem", color:c.muted, letterSpacing:"0.07em",
+                  textTransform:"uppercase", fontWeight:500, padding:"8px 10px", textAlign:"right",
+                  borderBottom:`1px solid ${c.border}`, whiteSpace:"nowrap" }}>
+                  Upside
+                </th>
                 <Th k="score"  label="AI Score"/>
                 <th style={{ fontFamily:gs, fontSize:"0.6rem", color:c.muted, letterSpacing:"0.07em",
                   textTransform:"uppercase", fontWeight:600, padding:"8px 10px", textAlign:"center",
@@ -1076,7 +1605,7 @@ export default function DiscoveryPage() {
 
                     {/* Company */}
                     <td onClick={() => setSelected(s)} style={{ padding:"10px", borderBottom:`1px solid ${c.border}` }}>
-                      <div style={{ fontFamily:gs, fontSize:"0.82rem", color:c.muted, maxWidth:"180px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.name}</div>
+                      <div style={{ fontFamily:gs, fontSize:"0.82rem", color:c.muted, maxWidth:"160px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.name}</div>
                     </td>
 
                     {/* Type */}
@@ -1098,9 +1627,23 @@ export default function DiscoveryPage() {
                       </span>
                     </td>
 
+                    {/* Sector */}
+                    <td onClick={() => setSelected(s)} style={{ padding:"10px", borderBottom:`1px solid ${c.border}` }}>
+                      <span style={{ fontFamily:gs, fontSize:"0.72rem", color:c.muted, whiteSpace:"nowrap" }}>
+                        {s.sector}
+                      </span>
+                    </td>
+
+                    {/* Market cap */}
+                    <td onClick={() => setSelected(s)} style={{ padding:"10px", borderBottom:`1px solid ${c.border}`, textAlign:"right", fontFamily:gs, fontSize:"0.82rem", color:c.muted }}>
+                      {s.mktCap}
+                    </td>
+
                     {/* Price */}
                     <td onClick={() => setSelected(s)} style={{ padding:"10px", borderBottom:`1px solid ${c.border}`, textAlign:"right" }}>
-                      <div style={{ fontFamily:gs, fontSize:"0.88rem", fontWeight:600, color:c.text }}>${s.price.toFixed(2)}</div>
+                      <div style={{ fontFamily:gs, fontSize:"0.88rem", fontWeight:600, color:c.text }}>
+                        {s.type==="commodity"||s.type==="index" ? "" : "$"}{s.price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+                      </div>
                     </td>
 
                     {/* 24h change */}
@@ -1110,17 +1653,20 @@ export default function DiscoveryPage() {
                       </span>
                     </td>
 
-                    {/* Market cap */}
-                    <td onClick={() => setSelected(s)} style={{ padding:"10px", borderBottom:`1px solid ${c.border}`, textAlign:"right", fontFamily:gs, fontSize:"0.82rem", color:c.muted }}>
-                      {s.mktCap}
-                    </td>
-
-                    {/* Sector */}
-                    <td onClick={() => setSelected(s)} style={{ padding:"10px", borderBottom:`1px solid ${c.border}` }}>
-                      <span style={{ fontFamily:gs, fontSize:"0.72rem", color:c.muted,
-                        background:c.surface, border:`1px solid ${c.border}`, borderRadius:"6px", padding:"2px 7px", whiteSpace:"nowrap" }}>
-                        {s.sector}
-                      </span>
+                    {/* Upside — Graham Number, Ultimate only */}
+                    <td onClick={() => setSelected(s)} style={{ padding:"10px", borderBottom:`1px solid ${c.border}`, textAlign:"right" }}>
+                      {userPlan !== "ultimate" ? (
+                        <svg width="11" height="11" viewBox="0 0 448 512" fill={c.muted} style={{opacity:0.35}}>
+                          <path d="M144 144v48h160v-48c0-44.2-35.8-80-80-80s-80 35.8-80 80zM80 192v-48C80 64.5 144.5 0 224 0s144 64.5 144 144v48h16c35.3 0 64 28.7 64 64v192c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V256c0-35.3 28.7-64 64-64H80z"/>
+                        </svg>
+                      ) : (() => {
+                        const up = (s.type==="stock" && s.eps && s.bvps)
+                          ? grahamUpside(s.eps, s.bvps, s.price) : null;
+                        if (up === null) return <span style={{color:c.border}}>—</span>;
+                        const n = parseFloat(up);
+                        const col = n >= 10 ? c.green : n <= -10 ? c.red : c.muted;
+                        return <span style={{fontFamily:gs,fontSize:"0.82rem",fontWeight:700,color:col}}>{n>0?"+":""}{up}%</span>;
+                      })()}
                     </td>
 
                     {/* AI Score + Verdict */}
@@ -1219,7 +1765,7 @@ export default function DiscoveryPage() {
           onWatchlist={toggleWatchlist}
           portfolios={portfolios}
           onAddToPortfolio={handleAddToPortfolio}
-          onViewFullAnalysis={() => router.push(`/dashboard/analysis/${selected.ticker}`)}
+          onViewFullAnalysis={() => router.push(`/dashboard/analysis/${selected.ticker}?type=${selected.type||"stock"}`)}
         />
       )}
     </div>

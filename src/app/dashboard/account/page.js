@@ -58,6 +58,7 @@ const PLAN_CONFIGS = [
       "What-if & growth projection charts",
       "Sector diversification analysis",
       "Full statistics & financial statements",
+      "Signals: PEG valuation, momentum, health and fair value",
       "Weekly market digest",
     ],
   },

@@ -825,7 +825,7 @@ export default function Clarinvest(){
              feats:["20 AI summaries per month","US stocks (EU and UK coming soon)","Discovery screener","Price charts","Key financial ratios","Watchlist","Monthly market digest"]},
             {name:"Pro",       tag:"For serious investors",           badge:"Most Popular",  hi:true,  monthly:curr.pr[0], yearly:curr.pr[1],
              plusLabel: "Everything in Essential, plus:",
-             feats:["Unlimited AI summaries","20 full AI reports per month","Indexes","Virtual Portfolio (up to 5 portfolios)","What-if & growth projection charts","Sector diversification analysis","Full statistics & financial statements","Weekly market digest"]},
+             feats:["Unlimited AI summaries","20 full AI reports per month","Indexes","Virtual Portfolio (up to 5 portfolios)","What-if & growth projection charts","Sector diversification analysis","Full statistics & financial statements","Signals: PEG valuation, momentum, health and fair value","Weekly market digest"]},
             {name:"Ultimate",  tag:"For the most demanding investors",badge:"Full Access",   hi:false, monthly:curr.ul[0], yearly:curr.ul[1],
              plusLabel: "Everything in Pro, plus:",
              feats:["Unlimited AI full reports","ETFs","Full financial statements","Balance Sheet and Cash Flow","Sankey flow diagrams","Dividend intelligence and forecasting","Advanced analytics","Priority data refresh","Early access to new features"]},

@@ -1,8 +1,8 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
-import { FaBookmark, FaChartPie, FaChartSimple } from "react-icons/fa6";
+import { FaBookmark, FaChartPie, FaChartSimple, FaRegCircleDot } from "react-icons/fa6";
 import { useTheme } from "@/lib/theme";
 import { createClient } from "@/lib/supabase";
 import FullReportPopup from "@/app/components/FullReportPopup";
@@ -67,7 +67,7 @@ function AIScore({ score, c, size=68 }) {
   const r=(size-8)/2,cx=size/2,circ=2*Math.PI*r,offset=score!=null?circ*(1-score/100):circ;
   return (
     <div style={{position:"relative",width:size,height:size,flexShrink:0}}>
-      <div style={{position:"absolute",inset:"8px",borderRadius:"50%",background:score!=null?`radial-gradient(circle,${col}20 0%,transparent 70%)`:"none",filter:"blur(5px)"}}/>
+      <div style={{position:"absolute",inset:"8px",borderRadius:"50%",background:score!=null?`radial-gradient(circle,${col}28 0%,transparent 70%)`:"none",filter:"blur(5px)"}}/>
       <svg width={size} height={size} style={{position:"absolute",top:0,left:0,transform:"rotate(-90deg)"}}>
         <circle cx={cx} cy={cx} r={r} fill="none" stroke={c.border} strokeWidth="4"/>
         <circle cx={cx} cy={cx} r={r} fill="none" stroke={col} strokeWidth="4" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"/>
@@ -77,6 +77,68 @@ function AIScore({ score, c, size=68 }) {
         <span style={{fontFamily:gs,fontSize:"0.45rem",color:c.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginTop:"2px"}}>AI Score</span>
       </div>
     </div>
+  );
+}
+
+function SignalDonut({ score, c, label, sub, invertColor=false, size=52 }) {
+  const col = score==null ? c.muted
+    : invertColor
+      ? (score>=70 ? c.red : score>=40 ? c.text : c.green)
+      : (score>=80 ? c.green : score>=60 ? c.text : c.red);
+  const r=(size-8)/2, cx=size/2, circ=2*Math.PI*r;
+  const offset = score!=null ? circ*(1-score/100) : circ;
+  return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"4px",padding:"0.6rem 0.3rem",background:c.surface,borderRadius:"8px",border:`1px solid ${c.border}`}}>
+      <div style={{position:"relative",width:size,height:size,flexShrink:0}}>
+        <div style={{position:"absolute",inset:"6px",borderRadius:"50%",background:score!=null?`radial-gradient(circle,${col}28 0%,transparent 75%)`:"none",filter:"blur(4px)"}}/>
+        <svg width={size} height={size} style={{position:"absolute",top:0,left:0,transform:"rotate(-90deg)"}}>
+          <circle cx={cx} cy={cx} r={r} fill="none" stroke={c.border} strokeWidth="3.5"/>
+          <circle cx={cx} cy={cx} r={r} fill="none" stroke={col} strokeWidth="3.5" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"/>
+        </svg>
+        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <span style={{fontFamily:gs,fontSize:size*0.27,fontWeight:700,color:col,lineHeight:1}}>{score??""}</span>
+        </div>
+      </div>
+      <span style={{fontFamily:gs,fontSize:"0.56rem",color:c.muted,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,textAlign:"center",lineHeight:1.2}}>{label}</span>
+      <span style={{fontFamily:gs,fontSize:"0.58rem",fontWeight:600,color:col,textAlign:"center",lineHeight:1.3,maxWidth:"82px"}}>{sub}</span>
+    </div>
+  );
+}
+
+// ─── Center-aligned slider label: centers on pct, clamps within bar edges ────
+// Reusable pattern for any horizontal bar-with-slider metric in the app.
+function SignalLabel({ pct, col, children }) {
+  const ref = useRef(null);
+  const [left, setLeft] = useState(null);
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = ref.current;
+      if (!el || !el.parentElement) return;
+      const w = el.offsetWidth;
+      const parentW = el.parentElement.offsetWidth;
+      if (!parentW || !w) return;
+      const center = (pct / 100) * parentW;
+      const clamped = Math.min(Math.max(center - w / 2, 0), Math.max(parentW - w, 0));
+      setLeft(clamped);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [pct, children]);
+
+  return (
+    <span ref={ref} style={{
+      position:"absolute", top:0,
+      left: left!=null ? `${left}px` : `${pct}%`,
+      transform: left!=null ? "none" : "translateX(-50%)",
+      opacity: left!=null ? 1 : 0,
+      whiteSpace:"nowrap",
+      fontFamily:gs, fontSize:"0.63rem", fontWeight:700, color:col,
+      transition:"opacity 0.15s ease",
+    }}>
+      {children}
+    </span>
   );
 }
 
@@ -589,7 +651,7 @@ const INDEX_DATA = {
   ],
 };
 
-function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="NVDA"}) {
+function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="NVDA",hideTitle=false}) {
   const [tab,setTab]=useState("general");
   const [year,setYear]=useState("2026");
   const [period,setPeriod]=useState("Annual");
@@ -623,7 +685,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
     const ETF_TABS = [{id:"overview",l:"Overview"},{id:"performance",l:"Performance"},{id:"holdings",l:"Top Holdings"},{id:"sectors",l:"Allocation"},{id:"dividends",l:"Dividends"}];
     return (
       <div>
-        <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Fund Profile</p>
+        {!hideTitle&&<p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Fund Profile</p>}
         <div style={{display:"flex",gap:"0",overflowX:"auto",borderBottom:`1px solid ${c.border}`,marginBottom:"0.9rem",scrollbarWidth:"none"}}>
           {ETF_TABS.map(t=><button key={t.id} onClick={()=>setEtfTab(t.id)} style={tBtn(etfTab===t.id)}>{t.l}</button>)}
         </div>
@@ -702,7 +764,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
     const CTABS = [{id:"overview",l:"Overview"},{id:"performance",l:"Performance"},{id:"technicals",l:"Technicals"},{id:"fundamentals",l:"Supply & Demand"}];
     return (
       <div>
-        <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Commodity Profile</p>
+        {!hideTitle&&<p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Commodity Profile</p>}
         <div style={{display:"flex",gap:"0",overflowX:"auto",borderBottom:`1px solid ${c.border}`,marginBottom:"0.9rem",scrollbarWidth:"none"}}>
           {CTABS.map(t=><button key={t.id} onClick={()=>setCTab(t.id)} style={tBtn(cTab===t.id)}>{t.l}</button>)}
         </div>
@@ -756,7 +818,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
     const ITABS = [{id:"overview",l:"Overview"},{id:"performance",l:"Performance"},{id:"constituents",l:"Top Holdings"},{id:"sectors",l:"Sectors"}];
     return (
       <div>
-        <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Index Profile</p>
+        {!hideTitle&&<p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Index Profile</p>}
         <div style={{display:"flex",gap:"0",overflowX:"auto",borderBottom:`1px solid ${c.border}`,marginBottom:"0.9rem",scrollbarWidth:"none"}}>
           {ITABS.map(t=><button key={t.id} onClick={()=>setITab(t.id)} style={tBtn(iTab===t.id)}>{t.l}</button>)}
         </div>
@@ -823,7 +885,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
   return (
     <div>
       {/* Section label */}
-      <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Statistics</p>
+      {!hideTitle&&<p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Statistics</p>}
       {/* Tab row */}
       <div style={{display:"flex",gap:"0",overflowX:"auto",borderBottom:`1px solid ${c.border}`,marginBottom:"0.9rem",scrollbarWidth:"none"}}>
         {STABS.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={tBtn(tab===t.id)}>{t.l}</button>)}
@@ -906,7 +968,7 @@ function StatisticsPanel({c,mode,userPlan,instrumentType="stock",router,ticker="
 }
 
 // ─── Financials panel ──────────────────────────────────────────────────────────
-function FinancialsPanel({c,mode,userPlan}) {
+function FinancialsPanel({c,mode,userPlan,hideTitle=false}) {
   const [tab,setTab]=useState("income");
   const [year,setYear]=useState("2026");
   const [period,setPeriod]=useState("Annual");
@@ -923,7 +985,7 @@ function FinancialsPanel({c,mode,userPlan}) {
 
   return (
     <div>
-      <p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Financials</p>
+      {!hideTitle&&<p style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text,marginBottom:"0.9rem"}}>Financials</p>}
       <div style={{display:"flex",gap:"0",borderBottom:`1px solid ${c.border}`,marginBottom:"0.9rem",scrollbarWidth:"none"}}>
         {[{id:"income",l:"Income Statement"},{id:"balance",l:"Balance Sheet"},{id:"cashflow",l:"Cash Flow"}].map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={tBtn(tab===t.id)}>{t.l}</button>)}
       </div>
@@ -972,6 +1034,132 @@ function FinancialsPanel({c,mode,userPlan}) {
         </div>
       ))}
       <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,marginTop:"0.6rem",fontStyle:"italic"}}>All figures in USD billions. FY ending January.</p>
+    </div>
+  );
+}
+
+// ─── Earnings / Dividends Calendar ─────────────────────────────────────────────
+function CalendarPanel({c, mode, instrumentType}) {
+  const isEarnings = instrumentType === "stock";
+  const [open, setOpen] = useState(false);
+  const [pastShown, setPastShown] = useState(isEarnings ? 5 : 5);
+
+  if (instrumentType === "commodity") return null;
+
+  const events = isEarnings ? EARNINGS_EVENTS : DIVIDEND_EVENTS;
+  const dateKey = isEarnings ? "date" : "exDate";
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  const past = events.filter(e=>e[dateKey]<=todayStr).sort((a,b)=>b[dateKey].localeCompare(a[dateKey]));
+  const upcoming = events.filter(e=>e[dateKey]>todayStr).sort((a,b)=>a[dateKey].localeCompare(b[dateKey])).slice(0,5);
+  const pastVisible = past.slice(0,pastShown);
+  const maxPast = Math.min(20, past.length);
+  const canShowMore = pastShown < maxPast;
+
+  const fmtDate = (d) => { const [y,m,dd]=d.split("-"); return `${dd}/${m}/${y}`; };
+  const th = {textAlign:"left",fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,padding:"0 10px 8px 0",borderBottom:`1px solid ${c.border}`,whiteSpace:"nowrap"};
+  const td = (bold) => ({padding:"7px 10px 7px 0",borderBottom:`1px solid ${c.border}`,fontFamily:gs,fontSize:"0.8rem",color:bold?c.text:c.muted,fontWeight:bold?600:400,whiteSpace:"nowrap"});
+
+  return (
+    <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1.25rem",marginBottom:"1.5rem"}}>
+      <button onClick={()=>setOpen(o=>!o)}
+        style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex",alignItems:"center",gap:"0.5rem",width:"100%",textAlign:"left",marginBottom:open?"0.3rem":0}}>
+        <span style={{fontSize:"0.65rem",color:c.muted,transform:`rotate(${open?90:0}deg)`,transition:"transform 0.2s",display:"inline-block",flexShrink:0}}>▶</span>
+        <span style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text}}>{isEarnings?"Earnings Calendar":"Dividend Calendar"}</span>
+      </button>
+
+      {open && (
+        <>
+          <p style={{fontFamily:gs,fontSize:"0.72rem",color:c.muted,marginBottom:"1.1rem",marginTop:"0.5rem"}}>
+            {isEarnings?"Reported EPS and revenue versus analyst estimates, with upcoming report dates.":"Ex-dividend and payment dates with distribution amount per share."}
+          </p>
+
+          {upcoming.length>0&&(
+            <div style={{marginBottom:"1.4rem"}}>
+              <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:600,marginBottom:"0.6rem"}}>Upcoming</p>
+              <div className="scroll-x">
+                <table style={{width:"100%",borderCollapse:"collapse",minWidth:isEarnings?"480px":"420px"}}>
+                  <thead><tr>
+                    {(isEarnings?["Date","EPS Est.","Revenue Est."]:["Ex-Date","Payment Date","Amount / Share"]).map(h=><th key={h} style={th}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {upcoming.map((e,i)=>(
+                      <tr key={i}>
+                        {isEarnings ? (
+                          <>
+                            <td style={td(true)}>{fmtDate(e.date)}
+                              <span style={{marginLeft:"7px",fontSize:"0.58rem",fontWeight:700,color:c.blue,background:c.blueDim,border:`1px solid ${c.blue}30`,borderRadius:"5px",padding:"1px 6px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Est.</span>
+                            </td>
+                            <td style={td(false)}>${e.epsEst.toFixed(2)}</td>
+                            <td style={td(false)}>${e.revEst.toFixed(2)}B</td>
+                          </>
+                        ) : (
+                          <>
+                            <td style={td(true)}>{fmtDate(e.exDate)}
+                              <span style={{marginLeft:"7px",fontSize:"0.58rem",fontWeight:700,color:c.blue,background:c.blueDim,border:`1px solid ${c.blue}30`,borderRadius:"5px",padding:"1px 6px",letterSpacing:"0.04em",textTransform:"uppercase"}}>Est.</span>
+                            </td>
+                            <td style={td(false)}>{fmtDate(e.payDate)}</td>
+                            <td style={td(false)}>${e.amount.toFixed(3)}</td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:600,marginBottom:"0.6rem"}}>Past Events</p>
+            <div className="scroll-x">
+              <table style={{width:"100%",borderCollapse:"collapse",minWidth:isEarnings?"560px":"420px"}}>
+                <thead><tr>
+                  {(isEarnings?["Date","EPS Actual","EPS Est.","Revenue Actual","Revenue Est.","Result"]:["Ex-Date","Payment Date","Amount / Share"]).map(h=><th key={h} style={th}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {pastVisible.map((e,i)=>{
+                    if(!isEarnings){
+                      return (
+                        <tr key={i}>
+                          <td style={td(true)}>{fmtDate(e.exDate)}</td>
+                          <td style={td(false)}>{fmtDate(e.payDate)}</td>
+                          <td style={td(true)}>${e.amount.toFixed(3)}</td>
+                        </tr>
+                      );
+                    }
+                    const epsSurprise=((e.epsActual-e.epsEst)/e.epsEst)*100;
+                    const revSurprise=((e.revActual-e.revEst)/e.revEst)*100;
+                    const avgSurprise=(epsSurprise+revSurprise)/2;
+                    const isBeat=avgSurprise>1.5, isMiss=avgSurprise<-1.5;
+                    const resCol=isBeat?c.green:isMiss?c.red:c.muted;
+                    const resLabel=isBeat?"Beat":isMiss?"Miss":"In-line";
+                    return (
+                      <tr key={i}>
+                        <td style={td(true)}>{fmtDate(e.date)}</td>
+                        <td style={{...td(false),color:epsSurprise>=0?c.green:c.red}}>${e.epsActual.toFixed(2)}</td>
+                        <td style={td(false)}>${e.epsEst.toFixed(2)}</td>
+                        <td style={{...td(false),color:revSurprise>=0?c.green:c.red}}>${e.revActual.toFixed(2)}B</td>
+                        <td style={td(false)}>${e.revEst.toFixed(2)}B</td>
+                        <td style={{padding:"7px 0",borderBottom:`1px solid ${c.border}`,whiteSpace:"nowrap"}}>
+                          <span style={{fontFamily:gs,fontSize:"0.62rem",fontWeight:700,color:resCol,background:`${resCol}18`,border:`1px solid ${resCol}40`,borderRadius:"5px",padding:"2px 7px",letterSpacing:"0.03em"}}>{resLabel}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {canShowMore&&(
+              <button onClick={()=>setPastShown(s=>Math.min(20,s+5))}
+                style={{marginTop:"0.9rem",background:c.surface,border:`1px solid ${c.border}`,borderRadius:"4px",padding:"7px 16px",cursor:"pointer",color:c.text,fontFamily:gs,fontSize:"0.76rem",fontWeight:600}}>
+                Show 5 more
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1150,6 +1338,50 @@ const RANGE_DAYS={"1W":5,"1M":20,"3M":60,"6M":120,"1Y":260,"2Y":260,"3Y":260,"5Y
 const MOCK_EARNINGS_DATES=["2024-02-21","2024-05-22","2024-08-28","2024-11-20","2025-02-26","2025-05-28","2025-08-27","2025-11-19","2026-02-25"];
 const MOCK_ETF_DIV_DATES=["2024-03-21","2024-06-20","2024-09-19","2024-12-19","2025-03-20","2025-06-19","2025-09-18","2025-12-18"];
 
+// ─── Earnings calendar mock data (stock only) — replaced by FMP earnings calendar later
+const EARNINGS_MISS={4:0.82,5:0.85,19:0.94}; // index → severity multiplier (lower = bigger miss)
+function genEarningsEvents(){
+  const events=[];
+  let d=new Date(2021,7,18); // 2021-08-18
+  let rev=4.45, eps=0.075;
+  for(let i=0;i<25;i++){
+    const isFuture=i>=20;
+    const missMult=EARNINGS_MISS[i];
+    const isMiss=missMult!=null;
+    rev=+(rev*1.143*(isMiss?missMult:1)).toFixed(2);
+    eps=+(eps*1.158*(isMiss?missMult*0.75:1)).toFixed(3);
+    const revEst=+(rev*(isMiss?1.06:0.96)).toFixed(2);
+    const epsEst=+(eps*(isMiss?1.08:0.96)).toFixed(3);
+    events.push({
+      date:d.toISOString().slice(0,10),
+      revEst, revActual:isFuture?null:rev,
+      epsEst, epsActual:isFuture?null:eps,
+    });
+    d=new Date(d.getTime()+91*864e5);
+  }
+  return events;
+}
+const EARNINGS_EVENTS=genEarningsEvents();
+
+// ─── Dividend calendar mock data (ETFs and Indexes) — replaced by FMP later
+function genDividendEvents(){
+  const events=[];
+  let d=new Date(2021,8,17); // 2021-09-17
+  let amt=0.480;
+  for(let i=0;i<25;i++){
+    amt=+(amt*1.017).toFixed(3);
+    const payDate=new Date(d.getTime()+10*864e5);
+    events.push({
+      exDate:d.toISOString().slice(0,10),
+      payDate:payDate.toISOString().slice(0,10),
+      amount:amt,
+    });
+    d=new Date(d.getTime()+91*864e5);
+  }
+  return events;
+}
+const DIVIDEND_EVENTS=genDividendEvents();
+
 function snapEvents(events,data){
   if(!data.length)return[];
   const min=data[0].date,max=data[data.length-1].date;
@@ -1174,6 +1406,17 @@ const _v20=ALL_CHART[Math.max(0,ALL_CHART.length-21)]?.price??_latestP;
 const _momPct=((_latestP-_v20)/_v20)*100;
 const MOMENTUM_SCORE=_momPct<-5?1:_momPct<-1?2:_momPct<1?3:_momPct<5?4:5;
 
+// ─── Company Health Score: liquidity + solvency + profitability + efficiency ──
+const HEALTH_SCORE=(()=>{
+  const liq=D.liquidity["2026"],lev=D.leverage["2026"],prof=D.profitability["2026"];
+  const eff=D.efficiency["2026"],cf=D.cashflow["2026"];
+  const liqScore=Math.min(100,(liq.current/2.5)*60+(liq.quick/2)*40);
+  const solvScore=Math.min(100,(lev.intCoverage/10)*100)*0.6+Math.max(0,100-lev.debtEquity*50)*0.4;
+  const profScore=(Math.min(100,prof.netMargin/20*100)+Math.min(100,prof.roe/30*100)+Math.min(100,prof.roic/25*100))/3;
+  const effScore=Math.min(100,eff.assetTurnover/1.2*100)*0.5+cf.fcfOcfRatio*100*0.5;
+  return Math.round(liqScore*0.25+solvScore*0.25+profScore*0.25+effScore*0.25);
+})();
+
 // ─── Main page ─────────────────────────────────────────────────────────────────
 export default function Page(){
   const { mode } = useTheme();
@@ -1184,12 +1427,17 @@ export default function Page(){
   const [userPlan,setUserPlan]=useState("essential");
   const [instrumentType,setInstrumentType]=useState("stock");
   const [instrumentGated,setInstrumentGated]=useState(false);
+  const [dataReady,setDataReady]=useState(false);
   const [inWL,setInWL]=useState(false);
   const [chartExpanded,setChartExpanded]=useState(false);
+  const [signalsView,setSignalsView]=useState("bars");
+  const [hoveredDate,setHoveredDate]=useState(null);
   const [wlToken,setWlToken]=useState(null);
   const [aiState,setAiState]=useState(null);
   const [timeRange,setTimeRange]=useState("3M");
   const [mobileTab,setMobileTab]=useState("statistics");
+  const [statsOpen,setStatsOpen]=useState(false);
+  const [finOpen,setFinOpen]=useState(false);
   const [isMobile,setIsMobile]=useState(false);
   const [portOpen,setPortOpen]=useState(false);
   const [addedTo,setAddedTo]=useState(null);
@@ -1203,8 +1451,9 @@ export default function Page(){
 
   // ── Auth + watchlist state + portfolios ──────────────────────────────────────
   useEffect(()=>{
+    setDataReady(false);
     supabase.auth.getSession().then(async ({data:{session}})=>{
-      if(!session) return;
+      if(!session) { setDataReady(true); return; }
       const tok = session.access_token;
       setWlToken(tok);
 
@@ -1212,43 +1461,63 @@ export default function Page(){
       const plan = session.user?.user_metadata?.plan || "essential";
       setUserPlan(plan);
 
-      // Wire instrumentType from FMP profile
-      try {
-        const res = await fetch(`/api/analysis/${ticker.toUpperCase()}`);
-        if (res.ok) {
-          const data = await res.json();
-          const profile = data.profile || {};
-          const t = ticker.toUpperCase();
+      // Wire instrumentType: explicit ?type= param (passed from Discovery/Watchlist)
+      // wins first. Otherwise fall back to known mock tickers, then FMP profile.
+      const t = ticker.toUpperCase();
+      const VALID_TYPES = ["stock","etf","commodity","index"];
+      const urlType = typeof window!=="undefined"
+        ? new URLSearchParams(window.location.search).get("type")
+        : null;
 
-          // Detect type from FMP profile fields and ticker pattern
+      const applyType = (detectedType) => {
+        // Plan gating: commodity = all plans, index = pro+, etf = ultimate only
+        const PLAN_RANK = { essential:1, pro:2, ultimate:3 };
+        const TYPE_MIN  = { stock:1, commodity:1, index:2, etf:3 };
+        const userRank  = PLAN_RANK[plan] || 1;
+        const typeMin   = TYPE_MIN[detectedType] || 1;
+        if (userRank < typeMin) {
+          setInstrumentType("stock"); // safe fallback so page doesn't break
+          setInstrumentGated(true);
+        } else {
+          setInstrumentType(detectedType);
+          setInstrumentGated(false);
+        }
+        setDataReady(true);
+      };
+
+      // Known mock tickers (mirrors Discovery's MOCK_STOCKS) — guarantees correct
+      // typing for dev/mock instruments even without an FMP Starter plan.
+      const KNOWN_INDEX     = ["SPX","NDX","DJI"];
+      const KNOWN_ETF       = ["QQQ","SPY","VTI"];
+      const KNOWN_COMMODITY = ["XAUUSD","XAGUSD","WTICL"];
+
+      if (urlType && VALID_TYPES.includes(urlType)) {
+        applyType(urlType);
+      } else {
+        try {
+          const res = await fetch(`/api/analysis/${t}`);
+          const data = res.ok ? await res.json() : {};
+          const profile = data.profile || {};
+
           const COMMODITY_SUFFIXES = ["=F","=X","XAUUSD","XAGUSD","XPTUSD","XPDUSD","WTICL","BRENT","NGAS","COPPER"];
-          const isCommodity = COMMODITY_SUFFIXES.some(s => t.endsWith(s) || t === s) || profile.sector === "Commodities";
-          const isIndex     = t.startsWith("^") || profile.isIndex === true;
-          const isEtf       = profile.isEtf === true;
+          const isCommodity = KNOWN_COMMODITY.includes(t) || COMMODITY_SUFFIXES.some(s => t.endsWith(s) || t === s) || profile.sector === "Commodities";
+          const isIndex     = KNOWN_INDEX.includes(t) || t.startsWith("^") || profile.isIndex === true;
+          const isEtf       = KNOWN_ETF.includes(t) || profile.isEtf === true;
 
           let detectedType = "stock";
           if (isCommodity) detectedType = "commodity";
           else if (isIndex) detectedType = "index";
           else if (isEtf)   detectedType = "etf";
 
-          // Plan gating: commodity = all plans, index = pro+, etf = ultimate only
-          const PLAN_RANK = { essential:1, pro:2, ultimate:3 };
-          const TYPE_MIN  = { stock:1, commodity:1, index:2, etf:3 };
-          const userRank  = PLAN_RANK[plan] || 1;
-          const typeMin   = TYPE_MIN[detectedType] || 1;
-
-          if (userRank < typeMin) {
-            setInstrumentType("stock"); // safe fallback so page doesn't break
-            setInstrumentGated(true);
-          } else {
-            setInstrumentType(detectedType);
-            setInstrumentGated(false);
-          }
+          applyType(detectedType);
+        } catch {
+          // FMP unavailable — still honour known ticker lists before defaulting to stock
+          let detectedType = "stock";
+          if (KNOWN_COMMODITY.includes(t)) detectedType = "commodity";
+          else if (KNOWN_INDEX.includes(t)) detectedType = "index";
+          else if (KNOWN_ETF.includes(t))   detectedType = "etf";
+          applyType(detectedType);
         }
-      } catch {
-        // FMP unavailable — default to stock layout, no gate
-        setInstrumentType("stock");
-        setInstrumentGated(false);
       }
 
       // Check if this ticker is already in watchlist
@@ -1285,7 +1554,7 @@ export default function Page(){
       await fetch("/api/watchlist",{
         method:"POST",
         headers:{"Content-Type":"application/json",Authorization:`Bearer ${wlToken}`},
-        body:JSON.stringify({ticker,name:ticker,sector:"Technology",market:"US"}),
+        body:JSON.stringify({ticker,name:ticker,sector:"Technology",market:"US",type:instrumentType}),
       });
     }
   },[wlToken,inWL,ticker]);
@@ -1298,6 +1567,10 @@ export default function Page(){
   const chartMax=Math.max(...chartData.map(d=>d.price))*1.007;
   const visibleEarnings=useMemo(()=>snapEvents(MOCK_EARNINGS_DATES,chartData),[timeRange]);
   const visibleDivs=useMemo(()=>snapEvents(MOCK_ETF_DIV_DATES,chartData),[timeRange]);
+  const isHoveringEvent = !!hoveredDate && (
+    (instrumentType==="stock" && visibleEarnings.includes(hoveredDate)) ||
+    (instrumentType==="etf" && visibleDivs.includes(hoveredDate))
+  );
 
   const generateAnalysis = useCallback(async (type) => {
     setAiLoading(true); setAiError(null);
@@ -1344,7 +1617,7 @@ export default function Page(){
     <div style={{fontFamily:gs,background:c.bg,minHeight:"100vh",color:c.text}}>
       <link rel="preconnect" href="https://fonts.googleapis.com"/>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-      <style>{`*{box-sizing:border-box;margin:0;padding:0;}::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-thumb{background:#303032;border-radius:2px;}.scroll-x{overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}.scroll-x::-webkit-scrollbar{display:none;}`}</style>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0;}::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-thumb{background:#303032;border-radius:2px;}.scroll-x{overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}.scroll-x::-webkit-scrollbar{display:none;}.recharts-wrapper,.recharts-wrapper *{outline:none !important;-webkit-tap-highlight-color:transparent;}.recharts-wrapper *:focus,.recharts-wrapper *:focus-visible{outline:none !important;}.recharts-surface{outline:none !important;}`}</style>
 
       {/* Sticky sub-header — no overflow:hidden so Portfolio dropdown can escape */}
       <div style={{position:"sticky",top:0,zIndex:99,background:mode==="dark"?"rgba(9,9,9,0.96)":"rgba(247,247,245,0.96)",backdropFilter:"blur(12px)",borderBottom:`1px solid ${c.border}`}}>
@@ -1422,8 +1695,21 @@ export default function Page(){
           </div>
         </div>
 
+        {!dataReady && (
+          <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1rem",marginBottom:"1.5rem"}}>
+            <div style={{height:"10px",width:"90px",background:c.surface,borderRadius:"4px",marginBottom:"0.9rem",opacity:0.5}}/>
+            {[1,2,3,4,5,6].map(i=>(
+              <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${c.border}`}}>
+                <div style={{height:"10px",width:"80px",background:c.surface,borderRadius:"3px",opacity:0.35}}/>
+                <div style={{height:"10px",width:"50px",background:c.surface,borderRadius:"3px",opacity:0.45}}/>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Key Metrics + Signals & Ranges */}
-        <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1rem",marginBottom:"1.5rem",display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:"0",alignItems:"start"}}>
+        {dataReady && (
+        <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1rem",marginBottom:"1.5rem",display:"grid",gridTemplateColumns: (instrumentType==="stock" && !instrumentGated) ? "1fr auto 1fr" : "1fr",gap:"0",alignItems:"start"}}>
           {/* LEFT: Key Metrics */}
           <div>
             <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"0.75rem"}}>Key Metrics</p>
@@ -1433,98 +1719,153 @@ export default function Page(){
                 <span style={{fontFamily:gs,fontSize:"0.74rem",fontWeight:600,color:c.text}}>{v}</span>
               </div>
             ))}
+
+            <div style={{height:"1px",background:c.border,margin:"0.9rem 0 0.8rem"}}/>
+
+            <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"0.6rem"}}>Price Ranges</p>
+            {[{l:"1 Day",lo:831.20,hi:891.60},{l:"52 Week",lo:402.01,hi:974.00}].map((r)=>{
+              const pct=Math.min(100,Math.max(0,((875.40-r.lo)/(r.hi-r.lo))*100));
+              return (
+                <div key={r.l} style={{marginBottom:"0.65rem"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
+                    <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,fontWeight:600}}>{r.l}</span>
+                    <span style={{fontFamily:gs,fontSize:"0.66rem",color:c.text,fontWeight:600}}>$875.40</span>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                    <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.red,fontWeight:600,minWidth:"38px",textAlign:"right"}}>${r.lo.toFixed(0)}</span>
+                    <div style={{flex:1,height:"7px",background:c.surface,borderRadius:"4px",position:"relative"}}>
+                      <div style={{position:"absolute",left:0,width:`${pct}%`,height:"100%",background:`linear-gradient(90deg,${c.red},${c.green})`,borderRadius:"4px"}}/>
+                      <div style={{position:"absolute",top:"-8px",left:`clamp(0px,calc(${pct}% - 5px),calc(100% - 10px))`,width:0,height:0,borderLeft:"5px solid transparent",borderRight:"5px solid transparent",borderTop:`8px solid ${c.text}`}}/>
+                    </div>
+                    <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.green,fontWeight:600,minWidth:"38px"}}>${r.hi.toFixed(0)}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          {/* Divider */}
-          <div style={{width:"1px",background:c.border,alignSelf:"stretch",margin:"0 1rem"}}/>
-          {/* RIGHT: Signals + Price Ranges */}
+          {/* Divider — stocks only, and only when not a gated fallback */}
+          {instrumentType==="stock" && !instrumentGated && <div style={{width:"1px",background:c.border,alignSelf:"stretch",margin:"0 1rem"}}/>}
+          {/* RIGHT: Smart Signals — stocks only, PEG/Fair Value are earnings-based metrics */}
+          {instrumentType==="stock" && !instrumentGated && (
           <div>
             {(()=>{
+              const isProPlus=userPlan==="pro"||userPlan==="ultimate";
               const pegVal=D.valuation["2026"].peg??0;
               const pegPct=Math.min(100,Math.max(0,(pegVal/2)*100));
               const pegLabel=pegVal<0.75?"Undervalued":pegVal<1.25?"Fair Value":"Overvalued";
               const pegCol=pegVal<0.75?c.green:pegVal<1.25?c.text:c.red;
+              const pegScore=Math.round(Math.max(0,Math.min(100,(1-pegVal/2)*100)));
+              const momPct=Math.round(MOMENTUM_SCORE/5*100);
+              const momLabel=MOMENTUM_SCORE>=5?"Very Strong":MOMENTUM_SCORE>=4?"Strong":MOMENTUM_SCORE===3?"Neutral":MOMENTUM_SCORE>=2?"Weak":"Very Weak";
               const momCol=MOMENTUM_SCORE>=4?c.green:MOMENTUM_SCORE<=2?c.red:c.muted;
+              const momScore=momPct;
+              const healthLabel=HEALTH_SCORE>=90?"Excellent":HEALTH_SCORE>=75?"Strong":HEALTH_SCORE>=60?"Good":HEALTH_SCORE>=40?"Fair":"Poor";
+              const healthCol=HEALTH_SCORE>=75?c.green:HEALTH_SCORE>=50?c.text:c.red;
               const premium=Math.round(((875.40-FAIR_PRICE)/FAIR_PRICE)*100);
+              const fpPct=Math.min(100,Math.max(0,50+premium/4));
+              const fpScore=Math.round(Math.max(0,Math.min(100,FAIR_PRICE/875.40*100)));
+              const fpScoreInverted=Math.max(0,Math.min(100,100-fpScore));
+              const fpCol=premium>20?c.red:premium>-20?c.text:c.green;
+
+              // Estimates rendered text width so each label centers on its slider
+              // without ever crossing the bar's own left/right edges.
+              
+
               return (
                 <>
-                  {/* Signals */}
-                  <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"0.7rem"}}>Signals</p>
-
-                  {/* PEG (Lynch) */}
-                  <div style={{marginBottom:"0.7rem"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
-                      <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,fontWeight:600}}>PEG (Lynch)</span>
-                      <span style={{fontFamily:gs,fontSize:"0.64rem",color:pegCol,fontWeight:700}}>{pegVal.toFixed(2)} — {pegLabel}</span>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
-                      <span style={{fontFamily:gs,fontSize:"0.56rem",color:c.green,fontWeight:600,minWidth:"10px"}}>0</span>
-                      <div style={{flex:1,height:"4px",background:c.surface,borderRadius:"2px",position:"relative"}}>
-                        <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,${c.green},${c.muted},${c.red})`,borderRadius:"2px",opacity:0.45}}/>
-                        <div style={{position:"absolute",top:"-4px",left:`calc(${pegPct}% - 4px)`,width:"8px",height:"12px",background:c.text,borderRadius:"2px",border:`1px solid ${c.bg}`}}/>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"0.65rem"}}>
+                    <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500}}>Smart Signals</p>
+                    {isProPlus&&(
+                      <div style={{display:"flex",background:c.surface,borderRadius:"4px",padding:"2px",border:`1px solid ${c.border}`}}>
+                        <button onClick={()=>setSignalsView("bars")}
+                          style={{background:signalsView==="bars"?c.text:"transparent",color:signalsView==="bars"?c.bg:c.muted,border:"none",borderRadius:"2px",padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",transition:"all 0.15s ease"}}>
+                          <FaChartSimple style={{width:13,height:13}}/>
+                        </button>
+                        <button onClick={()=>setSignalsView("donuts")}
+                          style={{background:signalsView==="donuts"?c.text:"transparent",color:signalsView==="donuts"?c.bg:c.muted,border:"none",borderRadius:"2px",padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",transition:"all 0.15s ease"}}>
+                          <FaRegCircleDot style={{width:13,height:13}}/>
+                        </button>
                       </div>
-                      <span style={{fontFamily:gs,fontSize:"0.56rem",color:c.red,fontWeight:600,minWidth:"14px",textAlign:"right"}}>2+</span>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Momentum */}
-                  <div style={{marginBottom:"0.7rem"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
-                      <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,fontWeight:600}}>Momentum (20d)</span>
-                      <span style={{fontFamily:gs,fontSize:"0.64rem",color:momCol,fontWeight:700}}>{MOMENTUM_SCORE} / 5</span>
+                  {!isProPlus?(
+                    <div style={{background:mode==="dark"?"rgba(68,136,255,0.05)":"rgba(30,85,204,0.04)",border:`1px solid ${c.blue}30`,borderRadius:"10px",padding:"0.9rem"}}>
+                      <p style={{fontFamily:gs,fontSize:"0.74rem",color:c.muted,lineHeight:1.65,marginBottom:"0.7rem"}}>PEG valuation, momentum, company health, and fair price signals are available on the Pro plan.</p>
+                      <button onClick={()=>router.push("/dashboard/account?tab=plan")}
+                        style={{background:"transparent",border:`1px solid ${c.borderHi}`,borderRadius:"4px",padding:"5px 13px",fontFamily:gs,fontSize:"0.73rem",fontWeight:600,color:c.text,cursor:"pointer"}}>
+                        View plans
+                      </button>
                     </div>
-                    <div style={{display:"flex",gap:"3px",height:"5px"}}>
-                      {[1,2,3,4,5].map(i=>(
-                        <div key={i} style={{flex:1,borderRadius:"2px",
-                          background:i<=MOMENTUM_SCORE?momCol:c.surface,
-                          opacity:i<=MOMENTUM_SCORE?0.88:0.25,
-                          transition:"opacity 0.2s"}}/>
-                      ))}
+                  ):signalsView==="donuts"?(
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
+                      <SignalDonut score={pegScore} label="Valuation" sub={`${pegLabel} (${pegVal.toFixed(2)})`} c={c}/>
+                      <SignalDonut score={momScore} label="Momentum" sub={`${momLabel} (${MOMENTUM_SCORE}/5)`} c={c}/>
+                      {instrumentType==="stock"&&<SignalDonut score={HEALTH_SCORE} label="Health" sub={`${healthLabel} (${HEALTH_SCORE})`} c={c}/>}
+                      <SignalDonut score={fpScoreInverted} label="Fair Value" sub={premium>0?`Overvalued (+${premium}%)`:`Undervalued (${Math.abs(premium)}%)`} c={c} invertColor={true}/>
                     </div>
-                  </div>
-
-                  {/* Fair Price */}
-                  <div style={{marginBottom:"0.75rem"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"2px"}}>
-                      <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,fontWeight:600}}>Fair Price</span>
-                      <span style={{fontFamily:gs,fontSize:"0.78rem",color:c.text,fontWeight:700}}>${FAIR_PRICE.toLocaleString()}</span>
-                    </div>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontFamily:gs,fontSize:"0.56rem",color:c.muted,fontStyle:"italic"}}>PEG · FCF · Graham composite</span>
-                      <span style={{fontFamily:gs,fontSize:"0.62rem",fontWeight:600,color:premium>0?c.red:c.green}}>
-                        {premium>0?`+${premium}% premium`:`${Math.abs(premium)}% discount`}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Section divider */}
-                  <div style={{height:"1px",background:c.border,margin:"0.5rem 0 0.7rem"}}/>
-
-                  {/* Price Ranges */}
-                  <p style={{fontFamily:gs,fontSize:"0.6rem",color:c.muted,letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:500,marginBottom:"0.6rem"}}>Price Ranges</p>
-                  {[{l:"1 Day",lo:831.20,hi:891.60},{l:"52 Week",lo:402.01,hi:974.00}].map((r)=>{
-                    const pct=Math.min(100,Math.max(0,((875.40-r.lo)/(r.hi-r.lo))*100));
-                    return (
-                      <div key={r.l} style={{marginBottom:"0.65rem"}}>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px"}}>
-                          <span style={{fontFamily:gs,fontSize:"0.62rem",color:c.muted,fontWeight:600}}>{r.l}</span>
-                          <span style={{fontFamily:gs,fontSize:"0.66rem",color:c.text,fontWeight:600}}>$875.40</span>
+                  ):(
+                    <div>
+                      <div style={{marginBottom:"1.15rem"}}>
+                        <span style={{fontFamily:gs,fontSize:"0.63rem",color:c.muted,fontWeight:600}}>Valuation</span>
+                        <div style={{position:"relative",height:"14px",marginTop:"4px",marginBottom:"8px"}}>
+                          <SignalLabel pct={pegPct} col={pegCol}>{pegLabel} ({pegVal.toFixed(2)})</SignalLabel>
                         </div>
-                        <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                          <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.red,fontWeight:600,minWidth:"38px",textAlign:"right"}}>${r.lo.toFixed(0)}</span>
-                          <div style={{flex:1,height:"4px",background:c.surface,borderRadius:"2px",position:"relative"}}>
-                            <div style={{position:"absolute",left:0,width:`${pct}%`,height:"100%",background:`linear-gradient(90deg,${c.red},${c.green})`,borderRadius:"2px"}}/>
-                            <div style={{position:"absolute",top:"-4px",left:`calc(${pct}% - 4px)`,width:"8px",height:"12px",background:c.text,borderRadius:"2px",border:`1px solid ${c.bg}`}}/>
+                        <div style={{height:"7px",background:c.surface,borderRadius:"4px",position:"relative"}}>
+                          <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,${c.green},${c.red})`,borderRadius:"4px"}}/>
+                          <div style={{position:"absolute",top:"-8px",left:`clamp(0px,calc(${pegPct}% - 5px),calc(100% - 10px))`,width:0,height:0,borderLeft:"5px solid transparent",borderRight:"5px solid transparent",borderTop:`8px solid ${c.text}`}}/>
+                        </div>
+                      </div>
+
+                      <div style={{marginBottom:"1.15rem"}}>
+                        <span style={{fontFamily:gs,fontSize:"0.63rem",color:c.muted,fontWeight:600}}>Momentum (20d)</span>
+                        <div style={{position:"relative",height:"14px",marginTop:"4px",marginBottom:"8px"}}>
+                          <SignalLabel pct={momPct} col={momCol}>{momLabel} ({MOMENTUM_SCORE}/5)</SignalLabel>
+                        </div>
+                        <div style={{height:"7px",background:c.surface,borderRadius:"4px",position:"relative"}}>
+                          <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,${c.red},${c.green})`,borderRadius:"4px"}}/>
+                          <div style={{position:"absolute",top:"-8px",left:`clamp(0px,calc(${momPct}% - 5px),calc(100% - 10px))`,width:0,height:0,borderLeft:"5px solid transparent",borderRight:"5px solid transparent",borderTop:`8px solid ${c.text}`}}/>
+                        </div>
+                      </div>
+
+                      {instrumentType==="stock"&&(
+                        <div style={{marginBottom:"1.15rem"}}>
+                          <span style={{fontFamily:gs,fontSize:"0.63rem",color:c.muted,fontWeight:600}}>Health</span>
+                          <div style={{position:"relative",height:"14px",marginTop:"4px",marginBottom:"8px"}}>
+                            <SignalLabel pct={HEALTH_SCORE} col={healthCol}>{healthLabel} ({HEALTH_SCORE})</SignalLabel>
                           </div>
-                          <span style={{fontFamily:gs,fontSize:"0.65rem",color:c.green,fontWeight:600,minWidth:"38px"}}>${r.hi.toFixed(0)}</span>
+                          <div style={{height:"7px",background:c.surface,borderRadius:"4px",position:"relative"}}>
+                            <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,${c.red},${c.green})`,borderRadius:"4px"}}/>
+                            <div style={{position:"absolute",top:"-8px",left:`clamp(0px,calc(${HEALTH_SCORE}% - 5px),calc(100% - 10px))`,width:0,height:0,borderLeft:"5px solid transparent",borderRight:"5px solid transparent",borderTop:`8px solid ${c.text}`}}/>
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"4px"}}>
+                          <span style={{fontFamily:gs,fontSize:"0.63rem",color:c.muted,fontWeight:600}}>Fair Value</span>
+                          <span style={{fontFamily:gs,fontSize:"0.72rem",fontWeight:700,color:fpCol}}>${FAIR_PRICE.toLocaleString()}</span>
+                        </div>
+                        <div style={{position:"relative",height:"14px",marginTop:"4px",marginBottom:"8px"}}>
+                          <SignalLabel pct={fpPct} col={fpCol}>
+                            {premium>0?`Overvalued (+${premium}%)`:`Undervalued (${Math.abs(premium)}%)`}
+                          </SignalLabel>
+                        </div>
+                        <div style={{height:"7px",background:c.surface,borderRadius:"4px",position:"relative"}}>
+                          <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,${c.green},${c.red})`,borderRadius:"4px"}}/>
+                          <div style={{position:"absolute",top:0,bottom:0,left:"50%",width:"1px",background:c.bg,opacity:0.3}}/>
+                          <div style={{position:"absolute",top:"-8px",left:`clamp(0px,calc(${fpPct}% - 5px),calc(100% - 10px))`,width:0,height:0,borderLeft:"5px solid transparent",borderRight:"5px solid transparent",borderTop:`8px solid ${c.text}`}}/>
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  )}
                 </>
               );
             })()}
           </div>
+          )}
         </div>
+        )}
 
         {/* Price chart */}
         <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1.25rem",marginBottom:"1.5rem"}}>
@@ -1549,7 +1890,9 @@ export default function Page(){
             </div>
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={chartData} margin={{top:8,right:8,bottom:0,left:0}}>
+            <AreaChart data={chartData} margin={{top:8,right:8,bottom:0,left:0}}
+              onMouseMove={state=>{if(state&&state.activeLabel)setHoveredDate(state.activeLabel);}}
+              onMouseLeave={()=>setHoveredDate(null)}>
               <defs>
                 <linearGradient id="blueG" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={c.blue} stopOpacity={0.22}/><stop offset="95%" stopColor={c.blue} stopOpacity={0}/>
@@ -1563,7 +1906,7 @@ export default function Page(){
                 axisLine={false} tickLine={false}
                 tickFormatter={v=>`$${v>=1000?(v/1000).toFixed(0)+"k":v.toFixed(0)}`} width={44}/>
               <Tooltip content={<ChartTip/>} wrapperStyle={{outline:"none",background:"transparent"}}
-                cursor={{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
+                cursor={isHoveringEvent?false:{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
               <Area type="monotone" dataKey="price" stroke={c.blue} strokeWidth={2} fill="url(#blueG)" dot={false}/>
               {instrumentType==="stock"&&visibleEarnings.map(d=>(
                 <ReferenceLine key={`e-${d}`} x={d} stroke={c.green} strokeDasharray="4 3" strokeWidth={1.5} opacity={0.75}/>
@@ -1694,30 +2037,35 @@ export default function Page(){
               </button>
             </div>
           )}
-          <StatisticsPanel c={c} mode={mode} userPlan={userPlan} instrumentType={instrumentType} router={router} ticker={ticker}/>
+          {/* Statistics — collapsible, collapsed by default */}
+          <button onClick={()=>setStatsOpen(o=>!o)}
+            style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex",alignItems:"center",gap:"0.5rem",width:"100%",textAlign:"left",marginBottom:statsOpen?"0.9rem":0}}>
+            <span style={{fontSize:"0.65rem",color:c.muted,transform:`rotate(${statsOpen?90:0}deg)`,transition:"transform 0.2s",display:"inline-block",flexShrink:0}}>▶</span>
+            <span style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text}}>Statistics</span>
+          </button>
+          {statsOpen&&(
+            <StatisticsPanel c={c} mode={mode} userPlan={userPlan} instrumentType={instrumentType} router={router} ticker={ticker} hideTitle/>
+          )}
 
-          {/* Financials — below Statistics, only for stocks, hidden on mobile unless selected */}
+          {/* Financials — collapsible, stock only */}
           {(instrumentType!=="etf"&&instrumentType!=="commodity"&&instrumentType!=="index")&&(
             <>
-              <div style={{height:"1px",background:c.border,margin:"1.5rem 0"}}/>
-              {isMobile ? (
-                <div>
-                  <div style={{display:"flex",gap:"0",background:c.surface,borderRadius:"8px",padding:"4px",border:`1px solid ${c.border}`,marginBottom:"1rem"}}>
-                    {["statistics","financials"].map(t=>(
-                      <button key={t} onClick={()=>setMobileTab(t)} style={{flex:1,background:mobileTab===t?c.text:"transparent",color:mobileTab===t?c.bg:c.muted,border:"none",borderRadius:"4px",padding:"7px",fontFamily:gs,fontSize:"0.78rem",fontWeight:600,cursor:"pointer",textTransform:"capitalize",transition:"opacity 0.18s ease"}}>{t}</button>
-                    ))}
-                  </div>
-                  {mobileTab==="financials"&&<FinancialsPanel c={c} mode={mode} userPlan={userPlan}/>}
-                </div>
-              ) : (
-                <FinancialsPanel c={c} mode={mode} userPlan={userPlan}/>
-              )}
+              <div style={{height:"1px",background:c.border,margin:"1.25rem 0"}}/>
+              <button onClick={()=>setFinOpen(o=>!o)}
+                style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex",alignItems:"center",gap:"0.5rem",width:"100%",textAlign:"left",marginBottom:finOpen?"0.9rem":0}}>
+                <span style={{fontSize:"0.65rem",color:c.muted,transform:`rotate(${finOpen?90:0}deg)`,transition:"transform 0.2s",display:"inline-block",flexShrink:0}}>▶</span>
+                <span style={{fontFamily:gs,fontSize:"0.88rem",fontWeight:600,color:c.text}}>Financials</span>
+              </button>
+              {finOpen&&<FinancialsPanel c={c} mode={mode} userPlan={userPlan} hideTitle/>}
             </>
           )}
 
           {/* Terms Explained: spans full width, context-aware by instrument type */}
           <TermsExplained c={c} instrumentType={instrumentType}/>
         </div>
+
+        {/* Earnings / Dividends Calendar — stocks, ETFs and Indexes (not commodities) */}
+        <CalendarPanel c={c} mode={mode} instrumentType={instrumentType}/>
 
         {/* Company Profile */}
         <div style={{background:c.card,border:`1px solid ${c.border}`,borderRadius:"14px",padding:"1.25rem"}}>
@@ -1743,7 +2091,7 @@ export default function Page(){
             <div onClick={()=>setChartExpanded(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.78)",backdropFilter:"blur(6px)"}}/>
             <div style={{
               position:"relative",zIndex:1,
-              width:"min(1160px,95vw)",height:"84vh",
+              width:"min(1280px,96vw)",height:"min(660px,68vh)",
               background:mode==="dark"?"#0E0E10":"#FFFFFF",
               border:`1px solid ${c.borderHi}`,borderRadius:"16px",
               boxShadow:"0 32px 80px rgba(0,0,0,0.55)",
@@ -1780,7 +2128,9 @@ export default function Page(){
               <div style={{flex:1,padding:"1.25rem 1.5rem 0.75rem",display:"flex",flexDirection:"column",minHeight:0}}>
                 <div style={{flex:1,minHeight:0}}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{top:8,right:8,bottom:0,left:0}}>
+                    <AreaChart data={chartData} margin={{top:8,right:8,bottom:0,left:0}}
+                      onMouseMove={state=>{if(state&&state.activeLabel)setHoveredDate(state.activeLabel);}}
+                      onMouseLeave={()=>setHoveredDate(null)}>
                       <defs>
                         <linearGradient id="blueGExp" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor={c.blue} stopOpacity={0.22}/>
@@ -1795,7 +2145,7 @@ export default function Page(){
                         axisLine={false} tickLine={false}
                         tickFormatter={v=>`$${v>=1000?(v/1000).toFixed(0)+"k":v.toFixed(0)}`} width={48}/>
                       <Tooltip content={<ChartTip/>} wrapperStyle={{outline:"none",background:"transparent"}}
-                        cursor={{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
+                        cursor={isHoveringEvent?false:{stroke:c.borderHi,strokeWidth:1,strokeDasharray:"3 3"}}/>
                       <Area type="monotone" dataKey="price" stroke={c.blue} strokeWidth={2.5} fill="url(#blueGExp)" dot={false}/>
                       {instrumentType==="stock"&&visibleEarnings.map(d=>(
                         <ReferenceLine key={`ee-${d}`} x={d} stroke={c.green} strokeDasharray="4 3" strokeWidth={1.5} opacity={0.8}/>
